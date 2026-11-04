@@ -7,13 +7,14 @@
 - T-02: Dependencies
 - T-03: Folder skeleton
 - T-04: Fonts & assets
-- T-05: l10n (ported 382 keys from upstream en/es + mobile keys to app_en.arb, app_es.arb, app_ar.arb; configured l10n.yaml for L10n; generated code via flutter gen-l10n with no untranslated warnings; unit tests passing)
+- T-05: l10n
+- T-06: CI (created .github/workflows/ci.yml with Android APK build and iOS unsigned build)
 
 ## In Progress
-- T-06: CI
-
-## Next
 - CHECKPOINT A
 
+## Next
+- Phase 1: Design system (T-07)
+
 ## Left
-- 65 tasks remaining (T-06 to T-70)
+- 64 tasks remaining (T-07 to T-70)

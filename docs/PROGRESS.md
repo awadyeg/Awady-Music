@@ -6,7 +6,7 @@
 - [x] T-03 Folder skeleton
 - [x] T-04 Fonts & assets
 - [x] T-05 l10n
-- [ ] T-06 CI
+- [x] T-06 CI
 - **CHECKPOINT A**
 
 ## Phase 1: Design system
