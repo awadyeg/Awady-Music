@@ -1,16 +1,90 @@
+import 'package:awady_music/data/db/app_database.dart';
 import 'package:awady_music/data/models/artist.dart';
 import 'package:awady_music/data/models/enums.dart';
+import 'package:awady_music/data/models/stream_info.dart';
 import 'package:awady_music/data/models/track.dart';
+import 'package:awady_music/data/sources/audius/audius_client.dart';
+import 'package:awady_music/data/sources/ytstream/stream_resolver_impl.dart';
+import 'package:awady_music/data/sources/ytstream/stream_resolver_provider.dart';
 import 'package:awady_music/player/audio_handler.dart';
 import 'package:awady_music/player/player_controller.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:just_audio/just_audio.dart' hide PlayerState;
+
+class FakeAudioHandler extends AwadyAudioHandler {
+  AudioSource? lastSource;
+  bool isPlayingState = false;
+
+  @override
+  Future<Duration?> setAudioSource(
+    AudioSource source, {
+    Duration? initialPosition,
+    bool preload = true,
+  }) async {
+    lastSource = source;
+    return const Duration(seconds: 180);
+  }
+
+  @override
+  Future<void> playPlayer() async {
+    isPlayingState = true;
+  }
+
+  @override
+  Future<void> pausePlayer() async {
+    isPlayingState = false;
+  }
+
+  @override
+  Future<void> stop() async {
+    isPlayingState = false;
+  }
+
+  @override
+  Future<void> dispose() async {}
+}
+
+class FakeStreamResolver implements StreamResolver {
+  @override
+  Future<StreamInfo> resolve(String videoId, {bool forceFresh = false}) async {
+    return StreamInfo(
+      url: Uri.parse('https://googlevideo.com/playback/$videoId'),
+      expiresAt: DateTime.now().add(const Duration(hours: 4)),
+      mimeType: 'audio/mp4',
+      bitrate: 128000,
+    );
+  }
+
+  @override
+  void invalidate(String videoId) {}
+
+  @override
+  void prefetch(String videoId) {}
+}
+
+class FakeAudiusClient implements AudiusClient {
+  @override
+  String streamUrl(String trackId) => 'https://audius.co/stream/$trackId';
+
+  @override
+  Future<List<Track>> searchTracks(
+    String query, {
+    int limit = 40,
+    int? offset,
+  }) async => [];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 Track makeTrack(String id, {String title = 'Song', int duration = 180}) {
   return Track(
     id: id,
     title: '$title $id',
     artist: Artist(id: 'a-$id', name: 'Artist $id'),
+    source: TrackSource.yt,
     streamId: id,
     duration: duration,
   );
@@ -19,19 +93,27 @@ Track makeTrack(String id, {String title = 'Song', int duration = 180}) {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late AwadyAudioHandler audioHandler;
+  late FakeAudioHandler audioHandler;
+  late AppDatabase db;
   late ProviderContainer container;
 
   setUp(() {
-    audioHandler = AwadyAudioHandler();
+    audioHandler = FakeAudioHandler();
+    db = AppDatabase(NativeDatabase.memory());
     container = ProviderContainer(
-      overrides: [audioHandlerProvider.overrideWithValue(audioHandler)],
+      overrides: [
+        audioHandlerProvider.overrideWithValue(audioHandler),
+        appDatabaseProvider.overrideWithValue(db),
+        streamResolverProvider.overrideWithValue(FakeStreamResolver()),
+        audiusClientProvider.overrideWithValue(FakeAudiusClient()),
+      ],
     );
   });
 
   tearDown(() async {
     container.dispose();
     await audioHandler.dispose();
+    await db.close();
   });
 
   group('PlayerController core queue semantics tests', () {
@@ -189,7 +271,12 @@ void main() {
 
       // Test idle player starts playing on enqueue
       final idleContainer = ProviderContainer(
-        overrides: [audioHandlerProvider.overrideWithValue(audioHandler)],
+        overrides: [
+          audioHandlerProvider.overrideWithValue(audioHandler),
+          appDatabaseProvider.overrideWithValue(db),
+          streamResolverProvider.overrideWithValue(FakeStreamResolver()),
+          audiusClientProvider.overrideWithValue(FakeAudiusClient()),
+        ],
       );
       addTearDown(idleContainer.dispose);
       final idleController = idleContainer.read(

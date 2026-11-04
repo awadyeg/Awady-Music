@@ -1,13 +1,20 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:awady_music/core/util/log.dart';
+import 'package:awady_music/data/db/app_database.dart';
 import 'package:awady_music/data/models/enums.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/models/track_validator.dart';
+import 'package:awady_music/data/sources/audius/audius_client.dart';
+import 'package:awady_music/data/sources/ytstream/stream_resolver_impl.dart';
+import 'package:awady_music/data/sources/ytstream/stream_resolver_provider.dart';
 import 'package:awady_music/player/audio_handler.dart';
 import 'package:awady_music/player/player_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio/just_audio.dart' hide PlayerState;
 
 extension TrackMediaItemX on Track {
   MediaItem toMediaItem() {
@@ -45,12 +52,17 @@ final playerControllerProvider =
 
 class PlayerController extends Notifier<PlayerState> {
   AwadyAudioHandler get _audioHandler => ref.read(audioHandlerProvider);
+  StreamResolver get _streamResolver => ref.read(streamResolverProvider);
+  AudiusClient get _audiusClient => ref.read(audiusClientProvider);
+  AppDatabase get _db => ref.read(appDatabaseProvider);
+
   final List<StreamSubscription<dynamic>> _subscriptions = [];
   Timer? _noticeTimer;
 
   // Circuit breaker & load sequence counters
   int loadSeq = 0;
   int autoFailStreak = 0;
+  int streamRetries = 0;
 
   @override
   PlayerState build() {
@@ -180,10 +192,10 @@ class PlayerController extends Notifier<PlayerState> {
 
     if (state.isPlaying) {
       state = state.copyWith(isPlaying: false);
-      await _audioHandler.player.pause();
+      await _audioHandler.pausePlayer();
     } else {
       state = state.copyWith(isPlaying: true);
-      await _audioHandler.player.play();
+      await _audioHandler.playPlayer();
     }
   }
 
@@ -199,7 +211,7 @@ class PlayerController extends Notifier<PlayerState> {
 
     if (auto && repeat == RepeatMode.one) {
       seek(Duration.zero);
-      unawaited(_audioHandler.player.play());
+      unawaited(_audioHandler.playPlayer());
       return;
     }
 
@@ -229,7 +241,7 @@ class PlayerController extends Notifier<PlayerState> {
       } else if (!auto) {
         return;
       } else {
-        unawaited(_audioHandler.player.pause());
+        unawaited(_audioHandler.pausePlayer());
         state = state.copyWith(isPlaying: false, buffering: false);
         return;
       }
@@ -517,12 +529,30 @@ class PlayerController extends Notifier<PlayerState> {
   void setAutoplay({required bool value}) =>
       state = state.copyWith(autoplay: value);
 
-  /// Loads and plays track at [index].
+  /// Circuit breaker advancing to next track when resolution or playback fails.
+  void failAdvance() {
+    if (!ref.mounted) return;
+    final ni = state.index + 1;
+    autoFailStreak++;
+    if (autoFailStreak >= 3 || ni >= state.queue.length) {
+      autoFailStreak = 0;
+      unawaited(_audioHandler.pausePlayer());
+      state = state.copyWith(buffering: false, isPlaying: false);
+      notify('core.noConnection');
+      return;
+    }
+    unawaited(loadAt(ni));
+  }
+
+  /// Loads and plays track at [index] using resolver, downloaded file, or
+  /// Audius fallback.
   Future<void> loadAt(int index, [Duration? startPos]) async {
     if (index < 0 || index >= state.queue.length) return;
     final track = state.queue[index];
 
     final seq = ++loadSeq;
+    streamRetries = 0;
+
     state = state.copyWith(
       index: index,
       buffering: true,
@@ -535,10 +565,86 @@ class PlayerController extends Notifier<PlayerState> {
       ..setCurrentQueueIndex(index)
       ..updateCurrentMediaItem(track.toMediaItem());
 
-    // In T-29 core, set state and invoke handler.
-    // In T-30, StreamResolver pipeline runs here.
-    if (seq == loadSeq) {
+    // 1. Check local download first
+    AudioSource? source;
+    try {
+      final dl = await _db.downloadsDao.getDownload(track.id);
+      if (dl != null && File(dl.filePath).existsSync()) {
+        source = AudioSource.file(dl.filePath);
+      }
+    } on Object catch (e, st) {
+      Log.w('Failed checking downloads for ${track.id}: $e', e, st);
+    }
+
+    if (!ref.mounted || seq != loadSeq) return;
+
+    // 2. Resolve stream URL if not downloaded
+    if (source == null) {
+      if (track.source == TrackSource.yt) {
+        final videoId = track.streamId ?? track.id;
+        try {
+          final info = await _streamResolver.resolve(videoId);
+          source = AudioSource.uri(info.url);
+        } on Object catch (e, st) {
+          Log.w('Stream resolve failed for $videoId: $e', e, st);
+          if (streamRetries == 0) {
+            streamRetries = 1;
+            _streamResolver.invalidate(videoId);
+            try {
+              final freshInfo = await _streamResolver.resolve(
+                videoId,
+                forceFresh: true,
+              );
+              source = AudioSource.uri(freshInfo.url);
+            } on Object catch (e2, st2) {
+              Log.w('Stream retry failed for $videoId: $e2', e2, st2);
+            }
+          }
+
+          if (source == null && ref.mounted && seq == loadSeq) {
+            // Audius fallback
+            try {
+              final audiusResults = await _audiusClient.searchTracks(
+                '${track.title} ${track.artist.name}',
+              );
+              if (audiusResults.isNotEmpty) {
+                final matched = audiusResults.first;
+                final audiusUrl = _audiusClient.streamUrl(matched.id);
+                source = AudioSource.uri(Uri.parse(audiusUrl));
+              }
+            } on Object catch (ae, ast) {
+              Log.w('Audius fallback search failed: $ae', ae, ast);
+            }
+          }
+        }
+      } else {
+        // Audius track
+        final trackId = track.streamId ?? track.id;
+        final audiusUrl = _audiusClient.streamUrl(trackId);
+        source = AudioSource.uri(Uri.parse(audiusUrl));
+      }
+    }
+
+    if (!ref.mounted || seq != loadSeq) return;
+
+    if (source == null) {
+      state = state.copyWith(buffering: false);
+      notify('core.unavailable');
+      failAdvance();
+      return;
+    }
+
+    try {
+      await _audioHandler.setAudioSource(source, initialPosition: startPos);
+      if (!ref.mounted || seq != loadSeq) return;
+      await _audioHandler.playPlayer();
+      if (!ref.mounted || seq != loadSeq) return;
+      autoFailStreak = 0;
       state = state.copyWith(buffering: false, isPlaying: true);
+    } on Object catch (e, st) {
+      Log.e('Playback error for ${track.id}: $e', e, st);
+      if (!ref.mounted || seq != loadSeq) return;
+      failAdvance();
     }
   }
 }

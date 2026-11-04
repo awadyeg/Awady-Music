@@ -38,11 +38,13 @@
 
 - T-29: PlayerController core (implemented PlayerController with Freezed PlayerState managing queue, history, shuffle with Spotify-style deck drain and dealing, repeat modes off/all/one, next with repeat & autoplay semantics, prev with >3s restart, seek, volume, mute, cycleRepeat, jumpTo, enqueue, playNextUp, removeAt, clearQueue, moveInQueue; unit tests passing)
 
+- T-30: Load pipeline & fallback (implemented loadAt with loadSeq staleness prevention, downloaded-file priority via DownloadsDao, StreamResolver resolve and forceFresh cache invalidation retry, Audius search fallback on permanent stream error, and 3-auto-fail circuit breaker stop with core.noConnection notice; unit tests passing)
+
 ## In Progress
-- Phase 3: Player (T-30 Load pipeline & fallback)
+- Phase 3: Player (T-31 Prefetch)
 
 ## Next
-- T-31: Prefetch
+- T-32: Radio/autoplay
 
 ## Left
-- 41 tasks remaining (T-30 to T-70)
+- 40 tasks remaining (T-31 to T-70)

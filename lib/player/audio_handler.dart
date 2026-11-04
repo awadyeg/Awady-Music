@@ -100,6 +100,10 @@ class AwadyAudioHandler extends BaseAudioHandler
     );
   }
 
+  Future<void> playPlayer() => _player.play();
+
+  Future<void> pausePlayer() => _player.pause();
+
   @override
   Future<void> play() async {
     if (onPlayRequested != null) {

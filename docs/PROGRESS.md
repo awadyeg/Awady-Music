@@ -39,7 +39,7 @@
 ## Phase 3: Player
 - [x] T-28 AudioHandler
 - [x] T-29 PlayerController core
-- [ ] T-30 Load pipeline & fallback
+- [x] T-30 Load pipeline & fallback
 - [ ] T-31 Prefetch
 - [ ] T-32 Radio/autoplay
 - [ ] T-33 Persistence of player
