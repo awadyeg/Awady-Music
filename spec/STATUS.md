@@ -3,13 +3,14 @@
 ## Done
 - Spec files read and understood
 - Cloned upstream repository to `../freebify-ref`
-- T-01: Create project (flutter create, upstream clone, LICENSE, NOTICE, README, docs/DECISIONS.md, docs/PROGRESS.md, verified analyze and build apk)
+- T-01: Create project
+- T-02: Dependencies (added runtime + dev dependencies from constitution §2, analysis_options.yaml with very_good_analysis, blank MaterialApp in lib/main.dart, verified with V)
 
 ## In Progress
-- T-02: Dependencies
-
-## Next
 - T-03: Folder skeleton
 
+## Next
+- T-04: Fonts & assets
+
 ## Left
-- 69 tasks remaining (T-02 to T-70)
+- 68 tasks remaining (T-03 to T-70)
