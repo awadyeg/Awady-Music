@@ -1,3 +1,4 @@
+import 'package:awady_music/data/sources/ytstream/stream_resolver_impl.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -579,9 +580,12 @@ class StatsDao extends DatabaseAccessor<AppDatabase> with _$StatsDaoMixin {
     LyricOffsetsTable,
   ],
 )
-class CacheDao extends DatabaseAccessor<AppDatabase> with _$CacheDaoMixin {
+class CacheDao extends DatabaseAccessor<AppDatabase>
+    with _$CacheDaoMixin
+    implements StreamCacheStorage {
   CacheDao(super.attachedDatabase);
 
+  @override
   Future<void> putStreamUrl(String videoId, String url, DateTime expiresAt) {
     return into(streamCacheTable).insertOnConflictUpdate(
       StreamCacheTableCompanion.insert(
@@ -592,6 +596,7 @@ class CacheDao extends DatabaseAccessor<AppDatabase> with _$CacheDaoMixin {
     );
   }
 
+  @override
   Future<String?> getStreamUrl(String videoId) async {
     final now = DateTime.now();
     final query = select(streamCacheTable)

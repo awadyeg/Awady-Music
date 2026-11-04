@@ -29,7 +29,7 @@
 - [x] T-20 Parsers: album/playlist
 - [x] T-21 Parsers: home/explore/charts/new releases/moods/mood/upNext
 - [x] T-22 Import matcher
-- [ ] T-23 StreamResolver
+- [x] T-23 StreamResolver
 - [ ] T-24 Audius client
 - [ ] T-25 Deezer radio
 - [ ] T-26 CatalogRepository
