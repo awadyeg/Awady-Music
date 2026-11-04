@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/core/util/semaphore.dart';
 import 'package:awady_music/data/models/artist_page.dart';
+import 'package:awady_music/data/models/playlist_page.dart';
 import 'package:awady_music/data/models/search_results.dart';
 import 'package:awady_music/data/sources/http.dart';
 import 'package:awady_music/data/sources/innertube/parsers/artist_parser.dart';
+import 'package:awady_music/data/sources/innertube/parsers/playlist_parser.dart';
 import 'package:awady_music/data/sources/innertube/parsers/search_parser.dart';
 import 'package:dio/dio.dart';
 
@@ -166,6 +168,7 @@ class InnertubeClient {
 
   final _searchParser = const SearchParser();
   final _artistParser = const ArtistParser();
+  final _playlistParser = const PlaylistParser();
 
   /// Searches Innertube and returns parsed [SearchResults].
   Future<SearchResults> search(String query) async {
@@ -190,5 +193,49 @@ class InnertubeClient {
       channelId: cleanId,
       nameHint: nameHint,
     );
+  }
+
+  /// Fetches an album by its browseId (e.g. MPREb_...).
+  Future<PlaylistPage> album(String browseId) async {
+    final cleanId = browseId.startsWith('ytalb-')
+        ? browseId.substring(6)
+        : browseId;
+    final res = await post('browse', {'browseId': cleanId});
+    return _playlistParser.parseAlbum(res, cleanId);
+  }
+
+  /// Fetches a playlist by its browseId with VL-prefix strip/retry.
+  Future<PlaylistPage> playlist(String browseId) async {
+    final cleanId = browseId.startsWith('ytpl-')
+        ? browseId.substring(5)
+        : browseId;
+    final stripped = cleanId.replaceFirst(RegExp('^VL'), '');
+    final candidates = {
+      if (cleanId.startsWith('VL')) ...[
+        cleanId,
+        stripped,
+      ] else ...[
+        'VL$cleanId',
+        cleanId,
+      ],
+    }.toList();
+
+    Exception? lastError;
+    for (final candidate in candidates) {
+      try {
+        final res = await post('browse', {'browseId': candidate});
+        final page = _playlistParser.parsePlaylist(res, cleanId);
+        if (page.tracks.isNotEmpty || candidate == candidates.last) {
+          return page;
+        }
+      } on Exception catch (e) {
+        lastError = e;
+        if (candidate == candidates.last) {
+          rethrow;
+        }
+      }
+    }
+
+    throw lastError ?? Exception('Failed to load playlist: $cleanId');
   }
 }

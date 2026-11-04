@@ -23,12 +23,13 @@
 - T-17: Innertube base (implemented InnertubeClient with session bootstrap from music.youtube.com ytcfg, WEB_REMIX context payload, limiter 4, defensive dig/digAs helpers; tool/record_fixture.dart recorded 12 real raw JSON fixtures in test/fixtures/innertube; fixture-backed tests verified)
 - T-18: Innertube parsers: search & suggest (implemented SearchParser parsing top result card, song items with cleaned titles, duration, plays and album linkage, artist channels, and playlists/albums, suggestions parser; fixture unit and integration tests verified)
 - T-19: Parsers: artist (implemented ArtistParser parsing profile metadata, top songs, album/single carousels, bio, and parseMpadDiscography; InnertubeClient.artist integration; fixture tests verified)
+- T-20: Parsers: album/playlist (implemented PlaylistParser parsing albums and playlists with full metadata, artwork fallback, and track lists; InnertubeClient.album and InnertubeClient.playlist with VL-prefix strip/retry candidates; fixture and integration tests verified)
 
 ## In Progress
-- T-20: Parsers: album/playlist
-
-## Next
 - T-21: Parsers: home/explore/charts/new releases/moods/mood/upNext
 
+## Next
+- T-22: Import matcher
+
 ## Left
-- 51 tasks remaining (T-20 to T-70)
+- 50 tasks remaining (T-21 to T-70)
