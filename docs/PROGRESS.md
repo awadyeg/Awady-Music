@@ -23,7 +23,7 @@
 - [x] T-14 Validators
 - [x] T-15 Database
 - [x] T-16 Http core
-- [ ] T-17 Innertube base
+- [x] T-17 Innertube base
 - [ ] T-18 Innertube parsers: search & suggest
 - [ ] T-19 Parsers: artist
 - [ ] T-20 Parsers: album/playlist
