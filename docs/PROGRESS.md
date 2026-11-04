@@ -20,7 +20,7 @@
 
 ## Phase 2: Data layer
 - [x] T-13 Models
-- [ ] T-14 Validators
+- [x] T-14 Validators
 - [ ] T-15 Database
 - [ ] T-16 Http core
 - [ ] T-17 Innertube base

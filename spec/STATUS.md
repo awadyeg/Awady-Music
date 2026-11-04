@@ -17,12 +17,13 @@
 - T-12: App shell & router (implemented GoRouter appRouterProvider with StatefulShellRoute.indexedStack across /home, /search, /library, /stats, all shared & modal routes, GlassTabBar floating capsule, SettingsProvider with theme/locale/transparency via SharedPreferences, MaterialApp.router integration; tests & debug APK verified)
 - CHECKPOINT B: Design system & app shell preview goldens in dark-en, light-en, dark-ar
 - T-13: Models (implemented freezed + json models for Track, Artist with hasArtistPage, RemotePlaylist, LocalPlaylist, DownloadItem, StreamInfo, LyricLine, Lyrics, TrackAgg, ArtistAgg, MonthAgg, RewindData, PlaylistExport; tests for round trip and .freebify.json import passed)
+- T-14: Validators (implemented isValidTrack, isValidUser, repairTrack, slimTrack, sanitizeTrackList in data/models/track_validator.dart; ported all test cases from storage.test.ts)
 
 ## In Progress
-- T-14: Validators
-
-## Next
 - T-15: Database
 
+## Next
+- T-16: Http core
+
 ## Left
-- 57 tasks remaining (T-14 to T-70)
+- 56 tasks remaining (T-15 to T-70)
