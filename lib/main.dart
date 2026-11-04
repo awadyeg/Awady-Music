@@ -5,10 +5,17 @@ void main() {
 }
 
 class AwadyMusicApp extends StatelessWidget {
-  const new({super.key});
+  const AwadyMusicApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(title: 'Awady Music', home: Scaffold());
+    return MaterialApp(
+      title: 'Awady Music',
+      theme: ThemeData(
+        fontFamily: 'Inter',
+        fontFamilyFallback: const ['IBMPlexSansArabic'],
+      ),
+      home: const Scaffold(),
+    );
   }
 }

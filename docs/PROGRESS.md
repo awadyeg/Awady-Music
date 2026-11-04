@@ -4,7 +4,7 @@
 - [x] T-01 Create project
 - [x] T-02 Dependencies
 - [x] T-03 Folder skeleton
-- [ ] T-04 Fonts & assets
+- [x] T-04 Fonts & assets
 - [ ] T-05 l10n
 - [ ] T-06 CI
 - **CHECKPOINT A**
