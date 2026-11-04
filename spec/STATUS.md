@@ -27,12 +27,13 @@
 - T-21: Parsers: home/explore/charts/new releases/moods/mood/upNext (implemented BrowseParser and Mood models handling home/explore feeds, new releases, charts playlist resolution, 34-category mood directory, category pages, and upNext playlist panel videos; tests against all fixtures verified)
 - T-22: Import matcher (implemented matcher.dart with diacritics folding, cleanText normalisation for feat/remaster/brackets/accents, firstArtist extractor, matchKey caching, scored candidate selection matchScore, and InnertubeClient.match batch resolver; tests verified)
 - T-23: StreamResolver (implemented VisionOS player resolver + YouTubeExplode fallback, LRU memory cache + StreamCacheStorage SQLite DAO persistence, in-flight deduplication, prefetch & invalidate; tool/try_stream.dart CLI verified live googlevideo.com resolution; tests passed)
+- T-24: Audius client (implemented AudiusClient with discovery node pool bootstrap, automatic host rotation on failure, deterministic 4xx fatal bail, ranking & originality filtering, mappers to Track/Artist/RemotePlaylist, streamUrl; unit tests passing)
 
 ## In Progress
-- T-24: Audius client
-
-## Next
 - T-25: Deezer radio
 
+## Next
+- T-26: CatalogRepository
+
 ## Left
-- 47 tasks remaining (T-24 to T-70)
+- 46 tasks remaining (T-25 to T-70)
