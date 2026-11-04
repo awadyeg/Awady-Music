@@ -15,6 +15,7 @@ import 'package:awady_music/data/sources/innertube/parsers/browse_parser.dart';
 import 'package:awady_music/data/sources/innertube/parsers/playlist_parser.dart';
 import 'package:awady_music/data/sources/innertube/parsers/search_parser.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Represents a bootstrapped session context for Innertube.
 class InnertubeSession {
@@ -357,3 +358,8 @@ class InnertubeClient {
     return results;
   }
 }
+
+/// Provider for [InnertubeClient].
+final innertubeClientProvider = Provider<InnertubeClient>((ref) {
+  return InnertubeClient();
+});

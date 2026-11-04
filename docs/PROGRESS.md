@@ -31,7 +31,7 @@
 - [x] T-22 Import matcher
 - [x] T-23 StreamResolver
 - [x] T-24 Audius client
-- [ ] T-25 Deezer radio
+- [x] T-25 Deezer radio
 - [ ] T-26 CatalogRepository
 - [ ] T-27 LibraryRepository
 - **CHECKPOINT C**

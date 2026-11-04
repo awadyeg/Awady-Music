@@ -28,12 +28,13 @@
 - T-22: Import matcher (implemented matcher.dart with diacritics folding, cleanText normalisation for feat/remaster/brackets/accents, firstArtist extractor, matchKey caching, scored candidate selection matchScore, and InnertubeClient.match batch resolver; tests verified)
 - T-23: StreamResolver (implemented VisionOS player resolver + YouTubeExplode fallback, LRU memory cache + StreamCacheStorage SQLite DAO persistence, in-flight deduplication, prefetch & invalidate; tool/try_stream.dart CLI verified live googlevideo.com resolution; tests passed)
 - T-24: Audius client (implemented AudiusClient with discovery node pool bootstrap, automatic host rotation on failure, deterministic 4xx fatal bail, ranking & originality filtering, mappers to Track/Artist/RemotePlaylist, streamUrl; unit tests passing)
+- T-25: Deezer radio (implemented DeezerClient with public search/artist, related artists, top tracks round-robin, seed drop, deduplication, match integration via InnertubeClient; http_mock_adapter unit tests passing)
 
 ## In Progress
-- T-25: Deezer radio
-
-## Next
 - T-26: CatalogRepository
 
+## Next
+- T-27: LibraryRepository
+
 ## Left
-- 46 tasks remaining (T-25 to T-70)
+- 45 tasks remaining (T-26 to T-70)
