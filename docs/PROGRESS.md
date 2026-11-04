@@ -12,7 +12,7 @@
 ## Phase 1: Design system
 - [x] T-07 Tokens
 - [x] T-08 ThemeData
-- [ ] T-09 GlassSurface
+- [x] T-09 GlassSurface
 - [ ] T-10 Shared widgets A
 - [ ] T-11 Shared widgets B
 - [ ] T-12 App shell & router

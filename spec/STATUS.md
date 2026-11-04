@@ -10,13 +10,14 @@
 - T-05: l10n
 - T-06: CI
 - T-07: Tokens
-- T-08: ThemeData (implemented AppTheme.dark() and AppTheme.light() with Material 3, NoSplash, Inter typography scale with Arabic fallback, GlassTokens extension; tests passing)
+- T-08: ThemeData
+- T-09: GlassSurface (implemented GlassSurface in lib/core/theme/glass.dart with reduceTransparencyProvider & highContrast fallbacks, BackdropFilter blur, top highlight gradient, 1px hairline stroke; golden tests dark/light passed)
 
 ## In Progress
-- T-09: GlassSurface
-
-## Next
 - T-10: Shared widgets A
 
+## Next
+- T-11: Shared widgets B
+
 ## Left
-- 62 tasks remaining (T-09 to T-70)
+- 61 tasks remaining (T-10 to T-70)
