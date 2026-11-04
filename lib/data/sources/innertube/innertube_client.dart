@@ -9,6 +9,7 @@ import 'package:awady_music/data/models/remote_playlist.dart';
 import 'package:awady_music/data/models/search_results.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/sources/http.dart';
+import 'package:awady_music/data/sources/innertube/matcher.dart';
 import 'package:awady_music/data/sources/innertube/parsers/artist_parser.dart';
 import 'package:awady_music/data/sources/innertube/parsers/browse_parser.dart';
 import 'package:awady_music/data/sources/innertube/parsers/playlist_parser.dart';
@@ -330,5 +331,29 @@ class InnertubeClient {
   Future<List<Track>> upNext(String videoId, {int limit = 40}) async {
     final res = await post('next', {'videoId': videoId});
     return _browseParser.parseUpNext(res, limit: limit);
+  }
+
+  /// Resolves a batch of [MatchQuery] items with concurrency limiter.
+  Future<List<Track?>> match(List<MatchQuery> items) async {
+    final results = List<Track?>.filled(items.length, null);
+    final limiter = Semaphore(4);
+
+    final futures = <Future<void>>[];
+    for (var i = 0; i < items.length; i++) {
+      final index = i;
+      final query = items[i];
+      futures.add(
+        limiter.run(() async {
+          try {
+            results[index] = await matchSingleTrack(this, query);
+          } on Exception catch (e) {
+            Log.w('Match failed for "${query.title}" by "${query.artist}": $e');
+          }
+        }),
+      );
+    }
+
+    await Future.wait(futures);
+    return results;
   }
 }

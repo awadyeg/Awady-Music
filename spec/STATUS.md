@@ -25,12 +25,13 @@
 - T-19: Parsers: artist (implemented ArtistParser parsing profile metadata, top songs, album/single carousels, bio, and parseMpadDiscography; InnertubeClient.artist integration; fixture tests verified)
 - T-20: Parsers: album/playlist (implemented PlaylistParser parsing albums and playlists with full metadata, artwork fallback, and track lists; InnertubeClient.album and InnertubeClient.playlist with VL-prefix strip/retry candidates; fixture and integration tests verified)
 - T-21: Parsers: home/explore/charts/new releases/moods/mood/upNext (implemented BrowseParser and Mood models handling home/explore feeds, new releases, charts playlist resolution, 34-category mood directory, category pages, and upNext playlist panel videos; tests against all fixtures verified)
+- T-22: Import matcher (implemented matcher.dart with diacritics folding, cleanText normalisation for feat/remaster/brackets/accents, firstArtist extractor, matchKey caching, scored candidate selection matchScore, and InnertubeClient.match batch resolver; tests verified)
 
 ## In Progress
-- T-22: Import matcher
-
-## Next
 - T-23: StreamResolver
 
+## Next
+- T-24: Audius client
+
 ## Left
-- 49 tasks remaining (T-22 to T-70)
+- 48 tasks remaining (T-23 to T-70)

@@ -17,6 +17,9 @@ class SearchResults {
   /// Track hits.
   final List<Track> songs;
 
+  /// Alias for songs.
+  List<Track> get tracks => songs;
+
   /// Artist hits.
   final List<Artist> artists;
 
