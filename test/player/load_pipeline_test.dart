@@ -14,6 +14,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeAudioHandler extends AwadyAudioHandler {
   AudioSource? lastSource;
@@ -130,6 +131,7 @@ void main() {
   late ProviderContainer container;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     audioHandler = FakeAudioHandler();
     fakeResolver = FakeStreamResolver();
     fakeAudius = FakeAudiusClient();

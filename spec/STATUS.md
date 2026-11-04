@@ -44,11 +44,13 @@
 
 - T-32: Radio/autoplay (implemented maybeFillRadio triggering when queue remaining < 4, normalized title and stream ID deduplication, pickRadioSeeds queue tail walking, DeezerClient radio fallback with Innertube match, and startRadio truncating upcoming queue with fresh genre mix and core.radioStarted notice; unit tests passing)
 
+- T-33: Persistence of player (persisting sanitized queue list, index, and playback position to Drift queue_state table with 2s debounce and immediate flush on pause/background; cold boot restoration with paused state; volume, muted, shuffle, repeat, and autoplay persisted to SharedPreferences; unit tests passing)
+
 ## In Progress
-- Phase 3: Player (T-33 Persistence of player)
+- Phase 3: Player (T-34 Sleep timer, fade, normalisation)
 
 ## Next
-- T-34: Sleep timer, fade, normalisation
+- T-35: Android EQ
 
 ## Left
-- 38 tasks remaining (T-33 to T-70)
+- 37 tasks remaining (T-34 to T-70)

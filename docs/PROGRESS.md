@@ -42,7 +42,7 @@
 - [x] T-30 Load pipeline & fallback
 - [x] T-31 Prefetch
 - [x] T-32 Radio/autoplay
-- [ ] T-33 Persistence of player
+- [x] T-33 Persistence of player
 - [ ] T-34 Sleep timer, fade, normalisation
 - [ ] T-35 Android EQ
 - [ ] T-36 Stats recorder

@@ -2,15 +2,18 @@ import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:awady_music/app.dart';
+import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/player/audio_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Log.init();
   await initAudioSession();
+  final prefs = await SharedPreferences.getInstance();
 
   AwadyAudioHandler audioHandler;
   try {
@@ -29,7 +32,10 @@ Future<void> main() async {
 
   runApp(
     ProviderScope(
-      overrides: [audioHandlerProvider.overrideWithValue(audioHandler)],
+      overrides: [
+        audioHandlerProvider.overrideWithValue(audioHandler),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
       child: const AwadyMusicApp(),
     ),
   );

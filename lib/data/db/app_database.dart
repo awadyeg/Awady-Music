@@ -680,6 +680,9 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   int get schemaVersion => 1;
+
+  Future<void> saveQueueState(String json) => cacheDao.saveQueueState(json);
+  Future<String?> getQueueState() => cacheDao.getQueueState();
 }
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {

@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/data/db/app_database.dart';
 import 'package:awady_music/data/models/enums.dart';
@@ -16,8 +18,10 @@ import 'package:awady_music/data/sources/ytstream/stream_resolver_impl.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_provider.dart';
 import 'package:awady_music/player/audio_handler.dart';
 import 'package:awady_music/player/player_state.dart';
+import 'package:flutter/widgets.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
+import 'package:shared_preferences/shared_preferences.dart';
 
 extension TrackMediaItemX on Track {
   MediaItem toMediaItem() {
@@ -73,6 +77,8 @@ class PlayerController extends Notifier<PlayerState> {
 
   final List<StreamSubscription<dynamic>> _subscriptions = [];
   Timer? _noticeTimer;
+  Timer? _saveQueueDebounceTimer;
+  AppLifecycleListener? _lifecycleListener;
 
   // Circuit breaker & load sequence counters
   int loadSeq = 0;
@@ -92,10 +98,203 @@ class PlayerController extends Notifier<PlayerState> {
       }
       _subscriptions.clear();
       _noticeTimer?.cancel();
+      _saveQueueDebounceTimer?.cancel();
+      _lifecycleListener?.dispose();
     });
 
     _setupAudioHandlerHooks();
+    _setupLifecycleListener();
+    unawaited(restorePersistedState());
     return const PlayerState();
+  }
+
+  void _setupLifecycleListener() {
+    _lifecycleListener = AppLifecycleListener(
+      onPause: () => unawaited(saveQueueStateNow()),
+      onInactive: () => unawaited(saveQueueStateNow()),
+      onHide: () => unawaited(saveQueueStateNow()),
+    );
+  }
+
+  /// Restores queue, index, position, and settings from persistent storage.
+  /// Audio playback is restored paused per spec.
+  Future<void> restorePersistedState() async {
+    try {
+      final prefs =
+          ref.read(sharedPreferencesProvider) ??
+          await SharedPreferences.getInstance();
+
+      final volume = prefs.getDouble('player_volume') ?? 1.0;
+      final muted = prefs.getBool('player_muted') ?? false;
+      final shuffle = prefs.getBool('player_shuffle') ?? false;
+      final repeatStr = prefs.getString('player_repeat') ?? 'off';
+      final repeat = switch (repeatStr) {
+        'one' => RepeatMode.one,
+        'all' => RepeatMode.all,
+        _ => RepeatMode.off,
+      };
+      final autoplay = prefs.getBool('player_autoplay') ?? true;
+
+      final rawJson = await _db.getQueueState();
+      var queue = <Track>[];
+      var index = -1;
+      var pos = Duration.zero;
+      Track? current;
+
+      if (rawJson != null && rawJson.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(rawJson);
+          if (decoded is Map<String, dynamic>) {
+            final rawQueue = decoded['queue'];
+            queue = sanitizeTrackList(rawQueue, 300);
+
+            final rawIndex = decoded['index'];
+            if (rawIndex is int) {
+              index = rawIndex.clamp(-1, queue.length - 1);
+            }
+
+            final rawPosMs = decoded['positionMs'];
+            if (rawPosMs is int && rawPosMs > 0) {
+              pos = Duration(milliseconds: rawPosMs);
+            }
+
+            final rawCurrent = decoded['current'];
+            if (rawCurrent is Map<String, dynamic> &&
+                isValidTrack(rawCurrent)) {
+              current = slimTrack(repairTrack(Track.fromJson(rawCurrent)));
+            } else if (index >= 0 && index < queue.length) {
+              current = queue[index];
+            }
+
+            if (current != null) {
+              final found = queue.indexWhere((t) => t.id == current!.id);
+              if (found >= 0) {
+                index = found;
+              } else {
+                queue = [current, ...queue];
+                index = 0;
+              }
+            }
+          }
+        } on Object catch (e, st) {
+          Log.w('Failed parsing persisted queue JSON: $e', e, st);
+        }
+      }
+
+      if (!ref.mounted) return;
+
+      if (state.queue.isNotEmpty || state.isPlaying) {
+        state = state.copyWith(
+          volume: volume,
+          muted: muted,
+          shuffle: shuffle,
+          repeat: repeat,
+          autoplay: autoplay,
+        );
+        return;
+      }
+
+      if (queue.isEmpty) {
+        state = state.copyWith(
+          volume: volume,
+          muted: muted,
+          shuffle: shuffle,
+          repeat: repeat,
+          autoplay: autoplay,
+        );
+        return;
+      }
+
+      final deck = shuffle && queue.isNotEmpty
+          ? shuffledIndices(queue.length, index >= 0 ? index : 0)
+          : <int>[];
+
+      state = state.copyWith(
+        volume: volume,
+        muted: muted,
+        shuffle: shuffle,
+        repeat: repeat,
+        autoplay: autoplay,
+        queue: queue,
+        index: index,
+        currentTime: pos,
+        shuffleDeck: deck,
+        isPlaying: false,
+        buffering: false,
+      );
+
+      if (queue.isNotEmpty) {
+        _audioHandler
+          ..updateCurrentQueue(queue.map((t) => t.toMediaItem()).toList())
+          ..setCurrentQueueIndex(index >= 0 ? index : null);
+        if (current != null) {
+          _audioHandler.updateCurrentMediaItem(current.toMediaItem());
+        }
+      }
+    } on Object catch (e, st) {
+      Log.w('Failed restoring persisted player state: $e', e, st);
+    }
+  }
+
+  /// Flushes current queue state, index, and playback position to DB
+  /// immediately.
+  Future<void> saveQueueStateNow() async {
+    _saveQueueDebounceTimer?.cancel();
+    _saveQueueDebounceTimer = null;
+    try {
+      final slimmed = sanitizeTrackList(state.queue, 300);
+      final jsonMap = {
+        'queue': slimmed.map((t) => t.toJson()).toList(),
+        'index': state.index,
+        'positionMs': state.currentTime.inMilliseconds,
+        'current': state.current != null
+            ? slimTrack(state.current!).toJson()
+            : null,
+      };
+      await _db.saveQueueState(jsonEncode(jsonMap));
+    } on Object catch (e, st) {
+      Log.w('Failed saving queue state: $e', e, st);
+    }
+  }
+
+  void _scheduleSaveQueueState() {
+    _saveQueueDebounceTimer?.cancel();
+    _saveQueueDebounceTimer = Timer(const Duration(seconds: 2), () {
+      unawaited(saveQueueStateNow());
+    });
+  }
+
+  Future<void> _savePrefDouble(String key, double val) async {
+    try {
+      final prefs =
+          ref.read(sharedPreferencesProvider) ??
+          await SharedPreferences.getInstance();
+      await prefs.setDouble(key, val);
+    } on Object catch (e) {
+      Log.w('Failed saving pref $key: $e');
+    }
+  }
+
+  Future<void> _savePrefBool(String key, bool val) async {
+    try {
+      final prefs =
+          ref.read(sharedPreferencesProvider) ??
+          await SharedPreferences.getInstance();
+      await prefs.setBool(key, val);
+    } on Object catch (e) {
+      Log.w('Failed saving pref $key: $e');
+    }
+  }
+
+  Future<void> _savePrefString(String key, String val) async {
+    try {
+      final prefs =
+          ref.read(sharedPreferencesProvider) ??
+          await SharedPreferences.getInstance();
+      await prefs.setString(key, val);
+    } on Object catch (e) {
+      Log.w('Failed saving pref $key: $e');
+    }
   }
 
   void _setupAudioHandlerHooks() {
@@ -123,14 +322,20 @@ class PlayerController extends Notifier<PlayerState> {
             buffering:
                 ps.processingState == AudioProcessingState.buffering ||
                 ps.processingState == AudioProcessingState.loading,
-            currentTime: ps.position,
+            currentTime: ps.processingState == AudioProcessingState.idle
+                ? state.currentTime
+                : ps.position,
           );
         }),
       )
       ..add(
         _audioHandler.positionStream.listen((pos) {
-          state = state.copyWith(currentTime: pos);
-          _checkPrefetchAt50Percent(pos);
+          if (state.isPlaying ||
+              _audioHandler.playbackState.value.processingState !=
+                  AudioProcessingState.idle) {
+            state = state.copyWith(currentTime: pos);
+            _checkPrefetchAt50Percent(pos);
+          }
         }),
       )
       ..add(
@@ -179,6 +384,7 @@ class PlayerController extends Notifier<PlayerState> {
     _audioHandler.updateCurrentQueue(
       playable.map((t) => t.toMediaItem()).toList(),
     );
+    _scheduleSaveQueueState();
     unawaited(loadAt(i));
   }
 
@@ -214,9 +420,15 @@ class PlayerController extends Notifier<PlayerState> {
     if (state.isPlaying) {
       state = state.copyWith(isPlaying: false);
       await _audioHandler.pausePlayer();
+      unawaited(saveQueueStateNow());
     } else {
-      state = state.copyWith(isPlaying: true);
-      await _audioHandler.playPlayer();
+      final ps = _audioHandler.playbackState.value.processingState;
+      if (ps == AudioProcessingState.idle) {
+        await loadAt(state.index, state.currentTime);
+      } else {
+        state = state.copyWith(isPlaying: true);
+        await _audioHandler.playPlayer();
+      }
     }
   }
 
@@ -322,21 +534,24 @@ class PlayerController extends Notifier<PlayerState> {
 
     unawaited(_audioHandler.seek(clamped));
     state = state.copyWith(currentTime: clamped);
+    _scheduleSaveQueueState();
   }
 
   void setVolume(double volume) {
     final vol = volume.clamp(0.0, 1.0);
-    if (vol > 0 && state.muted) {
-      state = state.copyWith(muted: false);
-    }
-    state = state.copyWith(volume: vol, muted: vol == 0.0 && state.muted);
+    final wasMuted = state.muted;
+    final newMuted = vol == 0.0 && wasMuted;
+    state = state.copyWith(volume: vol, muted: newMuted);
     unawaited(_audioHandler.setVolume(vol));
+    unawaited(_savePrefDouble('player_volume', vol));
+    unawaited(_savePrefBool('player_muted', newMuted));
   }
 
   void toggleMute() {
     final m = !state.muted;
     state = state.copyWith(muted: m);
     unawaited(_audioHandler.setVolume(m ? 0.0 : state.volume));
+    unawaited(_savePrefBool('player_muted', m));
   }
 
   void toggleShuffle() {
@@ -346,12 +561,15 @@ class PlayerController extends Notifier<PlayerState> {
         : <int>[];
 
     state = state.copyWith(shuffle: newShuffle, shuffleDeck: deck);
+    unawaited(_savePrefBool('player_shuffle', newShuffle));
   }
 
   void cycleRepeat() {
     const order = [RepeatMode.off, RepeatMode.all, RepeatMode.one];
     final nextIdx = (order.indexOf(state.repeat) + 1) % order.length;
-    state = state.copyWith(repeat: order[nextIdx]);
+    final nextMode = order[nextIdx];
+    state = state.copyWith(repeat: nextMode);
+    unawaited(_savePrefString('player_repeat', nextMode.name));
   }
 
   void jumpTo(int i) {
@@ -410,6 +628,7 @@ class PlayerController extends Notifier<PlayerState> {
     _audioHandler.updateCurrentQueue(
       newQueue.map((t) => t.toMediaItem()).toList(),
     );
+    _scheduleSaveQueueState();
     notify('core.addedQueue');
   }
 
@@ -445,6 +664,7 @@ class PlayerController extends Notifier<PlayerState> {
     _audioHandler.updateCurrentQueue(
       newQueue.map((t) => t.toMediaItem()).toList(),
     );
+    _scheduleSaveQueueState();
     notify('core.playNext');
   }
 
@@ -474,6 +694,7 @@ class PlayerController extends Notifier<PlayerState> {
     _audioHandler
       ..updateCurrentQueue(newQueue.map((t) => t.toMediaItem()).toList())
       ..setCurrentQueueIndex(newIndex);
+    _scheduleSaveQueueState();
 
     final remaining = newQueue.length - (newIndex + 1);
     if (remaining < 4) {
@@ -506,6 +727,7 @@ class PlayerController extends Notifier<PlayerState> {
         ..updateCurrentQueue(const [])
         ..setCurrentQueueIndex(null);
     }
+    _scheduleSaveQueueState();
   }
 
   void moveInQueue(int from, int to) {
@@ -546,14 +768,17 @@ class PlayerController extends Notifier<PlayerState> {
     _audioHandler
       ..updateCurrentQueue(newQueue.map((t) => t.toMediaItem()).toList())
       ..setCurrentQueueIndex(newIndex);
+    _scheduleSaveQueueState();
   }
 
   void setNpOpen({required bool value}) =>
       state = state.copyWith(npOpen: value);
   void setQueueOpen({required bool value}) =>
       state = state.copyWith(queueOpen: value);
-  void setAutoplay({required bool value}) =>
-      state = state.copyWith(autoplay: value);
+  void setAutoplay({required bool value}) {
+    state = state.copyWith(autoplay: value);
+    unawaited(_savePrefBool('player_autoplay', value));
+  }
 
   /// Circuit breaker advancing to next track when resolution or playback fails.
   void failAdvance() {
@@ -725,6 +950,7 @@ class PlayerController extends Notifier<PlayerState> {
       _audioHandler.updateCurrentQueue(
         newQueue.map((t) => t.toMediaItem()).toList(),
       );
+      _scheduleSaveQueueState();
     } on Object catch (_) {
       _radioFilledFor = null;
     }
@@ -785,6 +1011,7 @@ class PlayerController extends Notifier<PlayerState> {
       _audioHandler.updateCurrentQueue(
         newQueue.map((t) => t.toMediaItem()).toList(),
       );
+      _scheduleSaveQueueState();
       notify('core.radioStarted');
     } on Object catch (_) {
       notify('table.radioFail');
@@ -834,6 +1061,7 @@ class PlayerController extends Notifier<PlayerState> {
       currentTime: startPos ?? Duration.zero,
       duration: Duration(seconds: track.duration),
     );
+    _scheduleSaveQueueState();
 
     _audioHandler
       ..setCurrentQueueIndex(index)
