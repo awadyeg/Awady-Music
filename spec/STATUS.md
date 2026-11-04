@@ -11,13 +11,14 @@
 - T-06: CI
 - T-07: Tokens
 - T-08: ThemeData
-- T-09: GlassSurface (implemented GlassSurface in lib/core/theme/glass.dart with reduceTransparencyProvider & highContrast fallbacks, BackdropFilter blur, top highlight gradient, 1px hairline stroke; golden tests dark/light passed)
+- T-09: GlassSurface
+- T-10: Shared widgets A (implemented ArtworkImage with multi-size & mirror fallback sequence, Skeletons, GlassToast with toastProvider, LiveBars animated jumping equalizer; unit & widget tests verified)
 
 ## In Progress
-- T-10: Shared widgets A
-
-## Next
 - T-11: Shared widgets B
 
+## Next
+- T-12: App shell & router
+
 ## Left
-- 61 tasks remaining (T-10 to T-70)
+- 60 tasks remaining (T-11 to T-70)

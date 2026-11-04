@@ -13,7 +13,7 @@
 - [x] T-07 Tokens
 - [x] T-08 ThemeData
 - [x] T-09 GlassSurface
-- [ ] T-10 Shared widgets A
+- [x] T-10 Shared widgets A
 - [ ] T-11 Shared widgets B
 - [ ] T-12 App shell & router
 - **CHECKPOINT B**
