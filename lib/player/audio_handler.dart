@@ -33,6 +33,10 @@ class AwadyAudioHandler extends BaseAudioHandler
 
   AudioPlayer get player => _player;
 
+  Stream<Duration> get positionStream => _player.positionStream;
+
+  Stream<Duration?> get durationStream => _player.durationStream;
+
   void setCurrentQueueIndex(int? index) {
     _currentQueueIndex = index;
     _broadcastState();

@@ -40,11 +40,13 @@
 
 - T-30: Load pipeline & fallback (implemented loadAt with loadSeq staleness prevention, downloaded-file priority via DownloadsDao, StreamResolver resolve and forceFresh cache invalidation retry, Audius search fallback on permanent stream error, and 3-auto-fail circuit breaker stop with core.noConnection notice; unit tests passing)
 
+- T-31: Prefetch (implemented next-track prefetching at 50% playback duration with playback deduping, and VisibilityDetector-free prefetchTopTracks / prefetchTracksWithResolver helper for top 3 list items; unit tests passing)
+
 ## In Progress
-- Phase 3: Player (T-31 Prefetch)
+- Phase 3: Player (T-32 Radio/autoplay)
 
 ## Next
-- T-32: Radio/autoplay
+- T-33: Persistence of player
 
 ## Left
-- 40 tasks remaining (T-31 to T-70)
+- 39 tasks remaining (T-32 to T-70)

@@ -63,9 +63,11 @@ class PlayerController extends Notifier<PlayerState> {
   int loadSeq = 0;
   int autoFailStreak = 0;
   int streamRetries = 0;
+  String? _prefetchedForTrackId;
 
   @override
   PlayerState build() {
+    _prefetchedForTrackId = null;
     ref.onDispose(() {
       for (final s in _subscriptions) {
         unawaited(s.cancel());
@@ -108,12 +110,13 @@ class PlayerController extends Notifier<PlayerState> {
         }),
       )
       ..add(
-        _audioHandler.player.positionStream.listen((pos) {
+        _audioHandler.positionStream.listen((pos) {
           state = state.copyWith(currentTime: pos);
+          _checkPrefetchAt50Percent(pos);
         }),
       )
       ..add(
-        _audioHandler.player.durationStream.listen((dur) {
+        _audioHandler.durationStream.listen((dur) {
           if (dur != null) {
             state = state.copyWith(duration: dur);
           }
@@ -544,6 +547,32 @@ class PlayerController extends Notifier<PlayerState> {
     unawaited(loadAt(ni));
   }
 
+  void _checkPrefetchAt50Percent(Duration pos) {
+    final cur = state.current;
+    if (cur == null || _prefetchedForTrackId == cur.id) return;
+
+    final dur = state.duration > Duration.zero
+        ? state.duration
+        : Duration(seconds: cur.duration);
+    if (dur <= Duration.zero) return;
+
+    if (pos >= dur * 0.5) {
+      _prefetchedForTrackId = cur.id;
+      final nextIdx = state.shuffle && state.shuffleDeck.isNotEmpty
+          ? state.shuffleDeck.first
+          : state.index + 1;
+      if (nextIdx >= 0 && nextIdx < state.queue.length) {
+        final nextTrack = state.queue[nextIdx];
+        final vid =
+            nextTrack.streamId ??
+            (nextTrack.id.startsWith('yt-') ? nextTrack.id : null);
+        if (nextTrack.source == TrackSource.yt && vid != null) {
+          _streamResolver.prefetch(vid);
+        }
+      }
+    }
+  }
+
   /// Loads and plays track at [index] using resolver, downloaded file, or
   /// Audius fallback.
   Future<void> loadAt(int index, [Duration? startPos]) async {
@@ -552,6 +581,7 @@ class PlayerController extends Notifier<PlayerState> {
 
     final seq = ++loadSeq;
     streamRetries = 0;
+    _prefetchedForTrackId = null;
 
     state = state.copyWith(
       index: index,
