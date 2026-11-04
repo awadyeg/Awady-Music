@@ -5,7 +5,7 @@
 - [x] T-02 Dependencies
 - [x] T-03 Folder skeleton
 - [x] T-04 Fonts & assets
-- [ ] T-05 l10n
+- [x] T-05 l10n
 - [ ] T-06 CI
 - **CHECKPOINT A**
 

@@ -6,13 +6,14 @@
 - T-01: Create project
 - T-02: Dependencies
 - T-03: Folder skeleton
-- T-04: Fonts & assets (bundled Inter-Variable.ttf and IBMPlexSansArabic-*.ttf in assets/fonts/, generated placeholder app_icon.png in assets/icon/, declared in pubspec.yaml with Arabic fallback, verified V)
+- T-04: Fonts & assets
+- T-05: l10n (ported 382 keys from upstream en/es + mobile keys to app_en.arb, app_es.arb, app_ar.arb; configured l10n.yaml for L10n; generated code via flutter gen-l10n with no untranslated warnings; unit tests passing)
 
 ## In Progress
-- T-05: l10n
-
-## Next
 - T-06: CI
 
+## Next
+- CHECKPOINT A
+
 ## Left
-- 66 tasks remaining (T-05 to T-70)
+- 65 tasks remaining (T-06 to T-70)

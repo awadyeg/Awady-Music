@@ -1,0 +1,291 @@
+{
+  "app.updateAvail": {
+    "value": "v{version} available",
+    "vars": [
+      "{version}"
+    ]
+  },
+  "app.updateReady": {
+    "value": "v{version} ready",
+    "vars": [
+      "{version}"
+    ]
+  },
+  "card.followers": {
+    "value": "{n} followers",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "card.plays": {
+    "value": "{n} plays",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "card.tracks": {
+    "value": "{n} tracks",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "eq.sleepIn": {
+    "value": "in {n} min",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "queue.removeTrack": {
+    "value": "Remove {title} from queue",
+    "vars": [
+      "{title}"
+    ]
+  },
+  "side.morePlaylists": {
+    "value": "+{n} more, see all",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "side.tracks": {
+    "value": "{n} tracks",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "table.addedToPlaylist": {
+    "value": "Added to \\\"{name}\\\"",
+    "vars": [
+      "{name}"
+    ]
+  },
+  "table.downloading": {
+    "value": "Downloading… {pct}%",
+    "vars": [
+      "{pct}"
+    ]
+  },
+  "table.playTrack": {
+    "value": "Play {title}",
+    "vars": [
+      "{title}"
+    ]
+  },
+  "table.removedFromPlaylist": {
+    "value": "Removed from \\\"{name}\\\"",
+    "vars": [
+      "{name}"
+    ]
+  },
+  "rewind.artistStats": {
+    "value": "{plays} plays · {time} this month",
+    "vars": [
+      "{plays}",
+      "{time}"
+    ]
+  },
+  "rewind.chipArtists": {
+    "value": "{n} artists",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "rewind.chipPlays": {
+    "value": "{n} plays",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "rewind.chipTotal": {
+    "value": "{time} total",
+    "vars": [
+      "{time}"
+    ]
+  },
+  "rewind.chipTracks": {
+    "value": "{n} tracks",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "rewind.durHm": {
+    "value": "{h}h {m}m",
+    "vars": [
+      "{h}",
+      "{m}"
+    ]
+  },
+  "rewind.durM": {
+    "value": "{m}m",
+    "vars": [
+      "{m}"
+    ]
+  },
+  "rewind.playsAcross": {
+    "value": "{time} · {plays} plays across {tracks} tracks",
+    "vars": [
+      "{time}",
+      "{plays}",
+      "{tracks}"
+    ]
+  },
+  "rewind.title": {
+    "value": "{month} Rewind",
+    "vars": [
+      "{month}"
+    ]
+  },
+  "downloads.subtitle": {
+    "value": "{n} tracks, stored on this device, playable offline",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "home.becauseListened": {
+    "value": "Because you listened to {name}",
+    "vars": [
+      "{name}"
+    ]
+  },
+  "home.moodMixes": {
+    "value": "{name} mixes",
+    "vars": [
+      "{name}"
+    ]
+  },
+  "home.rewind.partialReady": {
+    "value": "Your {label} so far is ready",
+    "vars": [
+      "{label}"
+    ]
+  },
+  "home.rewind.ready": {
+    "value": "Your {label} Rewind is ready",
+    "vars": [
+      "{label}"
+    ]
+  },
+  "mood.playlists": {
+    "value": "{name} playlists",
+    "vars": [
+      "{name}"
+    ]
+  },
+  "search.noResults": {
+    "value": "No results for “{q}”",
+    "vars": [
+      "{q}"
+    ]
+  },
+  "stats.rewind.full": {
+    "value": "Watch your {label} Rewind",
+    "vars": [
+      "{label}"
+    ]
+  },
+  "stats.rewind.partial": {
+    "value": "Watch your {label} so far",
+    "vars": [
+      "{label}"
+    ]
+  },
+  "stats.weekTotal": {
+    "value": "{t} this week",
+    "vars": [
+      "{t}"
+    ]
+  },
+  "artist.monthlyListeners": {
+    "value": "{n} monthly listeners",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "artist.notFound.named": {
+    "value": "Couldn't load {name}'s page. It may have moved or the network hiccuped.",
+    "vars": [
+      "{name}"
+    ]
+  },
+  "artist.showAll": {
+    "value": "Show all {n}",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "artist.stats": {
+    "value": "{followers} followers · {tracks} tracks",
+    "vars": [
+      "{followers}",
+      "{tracks}"
+    ]
+  },
+  "import.imported": {
+    "value": "Imported {n} tracks",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "import.limited": {
+    "value": "Imported {n} tracks. Spotify only published the first 100, export a CSV to bring the rest.",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "library.trackCount": {
+    "value": "{n} tracks",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "playlist.downloading": {
+    "value": "Downloading {n} tracks",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "playlist.noMatch": {
+    "value": "No tracks match “{q}”.",
+    "vars": [
+      "{q}"
+    ]
+  },
+  "playlist.plays": {
+    "value": "{n} plays",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "playlist.trackCount": {
+    "value": "{n} tracks",
+    "vars": [
+      "{n}"
+    ]
+  },
+  "settings.aboutVersions": {
+    "value": "Electron {electron} · Chromium {chromium}",
+    "vars": [
+      "{electron}",
+      "{chromium}"
+    ]
+  },
+  "settings.libraryStats": {
+    "value": "{liked} liked songs · {playlists} playlists, stored locally on this device.",
+    "vars": [
+      "{liked}",
+      "{playlists}"
+    ]
+  },
+  "settings.update.available": {
+    "value": "v{v} available, downloading in the background",
+    "vars": [
+      "{v}"
+    ]
+  },
+  "settings.update.pending": {
+    "value": "v{v} is ready. Restart from the banner",
+    "vars": [
+      "{v}"
+    ]
+  }
+}

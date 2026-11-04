@@ -1,0 +1,2197 @@
+{
+  "@@locale": "en",
+  "appDismissUpdate": "Dismiss update",
+  "@appDismissUpdate": {
+    "description": "original key: app.dismissUpdate"
+  },
+  "appDownload": "Download",
+  "@appDownload": {
+    "description": "original key: app.download"
+  },
+  "appOffline": "You are offline. Showing downloaded and cached music",
+  "@appOffline": {
+    "description": "original key: appOffline"
+  },
+  "appRestart": "Restart",
+  "@appRestart": {
+    "description": "original key: app.restart"
+  },
+  "appUpdateAvail": "Update available",
+  "@appUpdateAvail": {
+    "description": "original key: appUpdateAvail"
+  },
+  "appUpdateManualHint": "Download the new dmg",
+  "@appUpdateManualHint": {
+    "description": "original key: app.updateManualHint"
+  },
+  "appUpdateReady": "v{version} ready",
+  "@appUpdateReady": {
+    "description": "original key: app.updateReady",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "appUpdateRestartHint": "Restart to update",
+  "@appUpdateRestartHint": {
+    "description": "original key: app.updateRestartHint"
+  },
+  "cardAlbum": "Album",
+  "@cardAlbum": {
+    "description": "original key: card.album"
+  },
+  "cardArtist": "Artist",
+  "@cardArtist": {
+    "description": "original key: card.artist"
+  },
+  "cardFollowers": "{n} followers",
+  "@cardFollowers": {
+    "description": "original key: card.followers",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "cardOpen": "Open",
+  "@cardOpen": {
+    "description": "original key: card.open"
+  },
+  "cardPlay": "Play",
+  "@cardPlay": {
+    "description": "original key: card.play"
+  },
+  "cardPlaylist": "Playlist",
+  "@cardPlaylist": {
+    "description": "original key: card.playlist"
+  },
+  "cardPlays": "{n} plays",
+  "@cardPlays": {
+    "description": "original key: card.plays",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "cardScrollLeft": "Scroll left",
+  "@cardScrollLeft": {
+    "description": "original key: card.scrollLeft"
+  },
+  "cardScrollRight": "Scroll right",
+  "@cardScrollRight": {
+    "description": "original key: card.scrollRight"
+  },
+  "cardTracks": "{n} tracks",
+  "@cardTracks": {
+    "description": "original key: card.tracks",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "eqCrossfade": "Crossfade",
+  "@eqCrossfade": {
+    "description": "original key: eqCrossfade"
+  },
+  "eqDrive": "Drive",
+  "@eqDrive": {
+    "description": "original key: eq.drive"
+  },
+  "eqEcho": "Echo",
+  "@eqEcho": {
+    "description": "original key: eq.echo"
+  },
+  "eqEnhance": "Enhance",
+  "@eqEnhance": {
+    "description": "original key: eq.enhance"
+  },
+  "eqReverb": "Reverb",
+  "@eqReverb": {
+    "description": "original key: eq.reverb"
+  },
+  "eqSpace": "Space",
+  "@eqSpace": {
+    "description": "original key: eq.space"
+  },
+  "eqCrossfadeSeconds": "Crossfade seconds",
+  "@eqCrossfadeSeconds": {
+    "description": "original key: eq.crossfadeSeconds"
+  },
+  "eqCustom": "Custom",
+  "@eqCustom": {
+    "description": "original key: eq.custom"
+  },
+  "eqNormalize": "Normalize volume",
+  "@eqNormalize": {
+    "description": "original key: eqNormalize"
+  },
+  "eqOff": "off",
+  "@eqOff": {
+    "description": "original key: eq.off"
+  },
+  "eqPresetBass": "Bass boost",
+  "@eqPresetBass": {
+    "description": "original key: eqPresetBass"
+  },
+  "eqPresetBright": "Bright",
+  "@eqPresetBright": {
+    "description": "original key: eqPresetBright"
+  },
+  "eqPresetFlat": "Flat",
+  "@eqPresetFlat": {
+    "description": "original key: eqPresetFlat"
+  },
+  "eqPresetVocal": "Vocal boost",
+  "@eqPresetVocal": {
+    "description": "original key: eqPresetVocal"
+  },
+  "eqPresetVshape": "V-Shape",
+  "@eqPresetVshape": {
+    "description": "original key: eqPresetVshape"
+  },
+  "eqResetAria": "Reset equalizer",
+  "@eqResetAria": {
+    "description": "original key: eq.resetAria"
+  },
+  "eqResetTitle": "Reset to flat",
+  "@eqResetTitle": {
+    "description": "original key: eq.resetTitle"
+  },
+  "eqSleepIn": "in {n} min",
+  "@eqSleepIn": {
+    "description": "original key: eq.sleepIn",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "eqSleepOff": "Off",
+  "@eqSleepOff": {
+    "description": "original key: eq.sleepOff"
+  },
+  "eqSleepTimer": "Sleep timer",
+  "@eqSleepTimer": {
+    "description": "original key: eq.sleepTimer"
+  },
+  "eqTitle": "Equalizer",
+  "@eqTitle": {
+    "description": "original key: eq.title"
+  },
+  "navHome": "Home",
+  "@navHome": {
+    "description": "original key: nav.home"
+  },
+  "navHomeAria": "Freebify home",
+  "@navHomeAria": {
+    "description": "original key: nav.homeAria"
+  },
+  "navLibrary": "Library",
+  "@navLibrary": {
+    "description": "original key: nav.library"
+  },
+  "navSearch": "Search",
+  "@navSearch": {
+    "description": "original key: nav.search"
+  },
+  "navSettings": "Settings",
+  "@navSettings": {
+    "description": "original key: nav.settings"
+  },
+  "navStats": "Stats",
+  "@navStats": {
+    "description": "original key: nav.stats"
+  },
+  "playerCancelLoading": "Cancel loading",
+  "@playerCancelLoading": {
+    "description": "original key: player.cancelLoading"
+  },
+  "playerLike": "Save to Liked Songs",
+  "@playerLike": {
+    "description": "original key: player.like"
+  },
+  "playerMute": "Mute",
+  "@playerMute": {
+    "description": "original key: player.mute"
+  },
+  "playerNext": "Next",
+  "@playerNext": {
+    "description": "original key: player.next"
+  },
+  "playerNowPlaying": "Now playing",
+  "@playerNowPlaying": {
+    "description": "original key: player.nowPlaying"
+  },
+  "playerOpenNowPlaying": "Open Now Playing",
+  "@playerOpenNowPlaying": {
+    "description": "original key: player.openNowPlaying"
+  },
+  "playerPause": "Pause",
+  "@playerPause": {
+    "description": "original key: player.pause"
+  },
+  "playerPick": "Pick something to play",
+  "@playerPick": {
+    "description": "original key: player.pick"
+  },
+  "playerPlay": "Play",
+  "@playerPlay": {
+    "description": "original key: player.play"
+  },
+  "playerPrev": "Previous",
+  "@playerPrev": {
+    "description": "original key: player.prev"
+  },
+  "playerQueue": "Queue",
+  "@playerQueue": {
+    "description": "original key: player.queue"
+  },
+  "playerRepeatAll": "Repeat: all",
+  "@playerRepeatAll": {
+    "description": "original key: player.repeatAll"
+  },
+  "playerRepeatOff": "Repeat: off",
+  "@playerRepeatOff": {
+    "description": "original key: player.repeatOff"
+  },
+  "playerRepeatOne": "Repeat: one",
+  "@playerRepeatOne": {
+    "description": "original key: player.repeatOne"
+  },
+  "playerSeek": "Seek",
+  "@playerSeek": {
+    "description": "original key: player.seek"
+  },
+  "playerShuffle": "Shuffle",
+  "@playerShuffle": {
+    "description": "original key: player.shuffle"
+  },
+  "playerUnlike": "Remove from Liked Songs",
+  "@playerUnlike": {
+    "description": "original key: player.unlike"
+  },
+  "playerUnmute": "Unmute",
+  "@playerUnmute": {
+    "description": "original key: player.unmute"
+  },
+  "playerVolume": "Volume",
+  "@playerVolume": {
+    "description": "original key: player.volume"
+  },
+  "queueAutoplay": "Autoplay similar songs",
+  "@queueAutoplay": {
+    "description": "original key: queueAutoplay"
+  },
+  "queueClear": "Clear queue",
+  "@queueClear": {
+    "description": "original key: queue.clear"
+  },
+  "queueClearConfirmAria": "Confirm: clear queue",
+  "@queueClearConfirmAria": {
+    "description": "original key: queue.clearConfirmAria"
+  },
+  "queueClearConfirmTitle": "Click again to clear the queue",
+  "@queueClearConfirmTitle": {
+    "description": "original key: queue.clearConfirmTitle"
+  },
+  "queueClearQuestion": "Clear the entire playback queue?",
+  "@queueClearQuestion": {
+    "description": "original key: queueClearQuestion"
+  },
+  "queueClose": "Close queue",
+  "@queueClose": {
+    "description": "original key: queue.close"
+  },
+  "queueEmpty": "Queue is empty",
+  "@queueEmpty": {
+    "description": "original key: queueEmpty"
+  },
+  "queueEndHint": "Autoplay will queue similar tracks when the queue runs low",
+  "@queueEndHint": {
+    "description": "original key: queueEndHint"
+  },
+  "queueNextUp": "Next up",
+  "@queueNextUp": {
+    "description": "original key: queue.nextUp"
+  },
+  "queueNowPlaying": "Now playing",
+  "@queueNowPlaying": {
+    "description": "original key: queue.nowPlaying"
+  },
+  "queueRadio": "Start radio from this song",
+  "@queueRadio": {
+    "description": "original key: queue.radio"
+  },
+  "queueRemoveTrack": "Remove {title} from queue",
+  "@queueRemoveTrack": {
+    "description": "original key: queue.removeTrack",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "queueSaveAs": "Save queue as playlist",
+  "@queueSaveAs": {
+    "description": "original key: queue.saveAs"
+  },
+  "queueSavedAsPlaylist": "Saved queue as playlist",
+  "@queueSavedAsPlaylist": {
+    "description": "original key: queue.savedAsPlaylist"
+  },
+  "queueTitle": "Queue",
+  "@queueTitle": {
+    "description": "original key: queue.title"
+  },
+  "sideDownloads": "Downloads",
+  "@sideDownloads": {
+    "description": "original key: side.downloads"
+  },
+  "sideLiked": "Liked Songs",
+  "@sideLiked": {
+    "description": "original key: side.liked"
+  },
+  "sideMorePlaylists": "+{n} more, see all",
+  "@sideMorePlaylists": {
+    "description": "original key: side.morePlaylists",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "sideRecentlyPlayed": "Recently played",
+  "@sideRecentlyPlayed": {
+    "description": "original key: side.recentlyPlayed"
+  },
+  "sideTracks": "{n} tracks",
+  "@sideTracks": {
+    "description": "original key: side.tracks",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "sideYourLibrary": "Your library",
+  "@sideYourLibrary": {
+    "description": "original key: side.yourLibrary"
+  },
+  "tableAddPlaylist": "Add to playlist",
+  "@tableAddPlaylist": {
+    "description": "original key: table.addPlaylist"
+  },
+  "tableAddQueue": "Add to queue",
+  "@tableAddQueue": {
+    "description": "original key: table.addQueue"
+  },
+  "tableAddedNewPlaylist": "Added to new playlist",
+  "@tableAddedNewPlaylist": {
+    "description": "original key: table.addedNewPlaylist"
+  },
+  "tableAddedToPlaylist": "Added to \\\"{name}\\\"",
+  "@tableAddedToPlaylist": {
+    "description": "original key: table.addedToPlaylist",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tableBadgeEdit": "Edit",
+  "@tableBadgeEdit": {
+    "description": "original key: table.badgeEdit"
+  },
+  "tableBadgeSet": "Set",
+  "@tableBadgeSet": {
+    "description": "original key: table.badgeSet"
+  },
+  "tableColArtist": "Artist",
+  "@tableColArtist": {
+    "description": "original key: table.colArtist"
+  },
+  "tableColPlays": "Plays",
+  "@tableColPlays": {
+    "description": "original key: table.colPlays"
+  },
+  "tableColTime": "Time",
+  "@tableColTime": {
+    "description": "original key: table.colTime"
+  },
+  "tableColTitle": "Title",
+  "@tableColTitle": {
+    "description": "original key: table.colTitle"
+  },
+  "tableCopied": "Copied",
+  "@tableCopied": {
+    "description": "original key: table.copied"
+  },
+  "tableCopyLink": "Copy link",
+  "@tableCopyLink": {
+    "description": "original key: table.copyLink"
+  },
+  "tableDownload": "Download",
+  "@tableDownload": {
+    "description": "original key: table.download"
+  },
+  "tableDownloading": "Downloading… {pct}%",
+  "@tableDownloading": {
+    "description": "original key: table.downloading",
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "tableEmpty": "Nothing here yet.",
+  "@tableEmpty": {
+    "description": "original key: table.empty"
+  },
+  "tableGoAlbum": "Go to album",
+  "@tableGoAlbum": {
+    "description": "original key: table.goAlbum"
+  },
+  "tableGoArtist": "Go to artist",
+  "@tableGoArtist": {
+    "description": "original key: table.goArtist"
+  },
+  "tableLike": "Save to Liked Songs",
+  "@tableLike": {
+    "description": "original key: table.like"
+  },
+  "tableLinkCopied": "Link copied",
+  "@tableLinkCopied": {
+    "description": "original key: table.linkCopied"
+  },
+  "tableMore": "More options",
+  "@tableMore": {
+    "description": "original key: table.more"
+  },
+  "tableNewPlaylist": "New playlist",
+  "@tableNewPlaylist": {
+    "description": "original key: table.newPlaylist"
+  },
+  "tablePlayNext": "Play next",
+  "@tablePlayNext": {
+    "description": "original key: table.playNext"
+  },
+  "tablePlayTrack": "Play {title}",
+  "@tablePlayTrack": {
+    "description": "original key: table.playTrack",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "tableRadioFail": "Couldn't start a radio for this track",
+  "@tableRadioFail": {
+    "description": "original key: table.radioFail"
+  },
+  "tableRemoveDownload": "Remove download",
+  "@tableRemoveDownload": {
+    "description": "original key: table.removeDownload"
+  },
+  "tableRemoveFrom": "Remove from playlist",
+  "@tableRemoveFrom": {
+    "description": "original key: table.removeFrom"
+  },
+  "tableRemovedFromPlaylist": "Removed from \\\"{name}\\\"",
+  "@tableRemovedFromPlaylist": {
+    "description": "original key: table.removedFromPlaylist",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tableStartRadio": "Start radio",
+  "@tableStartRadio": {
+    "description": "original key: table.startRadio"
+  },
+  "tableUnlike": "Remove from Liked Songs",
+  "@tableUnlike": {
+    "description": "original key: table.unlike"
+  },
+  "topBack": "Back",
+  "@topBack": {
+    "description": "original key: top.back"
+  },
+  "topForward": "Forward",
+  "@topForward": {
+    "description": "original key: top.forward"
+  },
+  "winClose": "Close",
+  "@winClose": {
+    "description": "original key: win.close"
+  },
+  "winCloseToTray": "Close to tray",
+  "@winCloseToTray": {
+    "description": "original key: win.closeToTray"
+  },
+  "winMaximize": "Maximize",
+  "@winMaximize": {
+    "description": "original key: win.maximize"
+  },
+  "winMinimize": "Minimize",
+  "@winMinimize": {
+    "description": "original key: win.minimize"
+  },
+  "winRestore": "Restore",
+  "@winRestore": {
+    "description": "original key: win.restore"
+  },
+  "coreNoConnection": "Couldn't play. Check your connection and try again",
+  "@coreNoConnection": {
+    "description": "original key: core.noConnection"
+  },
+  "coreNothingPlayable": "Nothing playable in this list",
+  "@coreNothingPlayable": {
+    "description": "original key: core.nothingPlayable"
+  },
+  "coreUnavailable": "That track isn't available for streaming",
+  "@coreUnavailable": {
+    "description": "original key: core.unavailable"
+  },
+  "coreQueueFull": "Queue is full",
+  "@coreQueueFull": {
+    "description": "original key: core.queueFull"
+  },
+  "coreAddedQueue": "Added to queue",
+  "@coreAddedQueue": {
+    "description": "original key: core.addedQueue"
+  },
+  "corePlayNext": "Will play next",
+  "@corePlayNext": {
+    "description": "original key: core.playNext"
+  },
+  "coreRadioStarted": "Radio started. Similar songs queued",
+  "@coreRadioStarted": {
+    "description": "original key: core.radioStarted"
+  },
+  "coreSleepPaused": "Sleep timer: playback paused",
+  "@coreSleepPaused": {
+    "description": "original key: core.sleepPaused"
+  },
+  "errorBody": "An unexpected error occurred while loading this view.",
+  "@errorBody": {
+    "description": "original key: errorBody"
+  },
+  "errorReload": "Reload",
+  "@errorReload": {
+    "description": "original key: errorReload"
+  },
+  "errorTitle": "Something went wrong",
+  "@errorTitle": {
+    "description": "original key: errorTitle"
+  },
+  "npAccuracyNote": "Lyrics may not be accurate for some songs",
+  "@npAccuracyNote": {
+    "description": "original key: np.accuracyNote"
+  },
+  "npClose": "Close",
+  "@npClose": {
+    "description": "original key: np.close"
+  },
+  "npLike": "Save to Liked Songs",
+  "@npLike": {
+    "description": "original key: np.like"
+  },
+  "npLineHint": "Click to jump · Shift+click to sync this line to now",
+  "@npLineHint": {
+    "description": "original key: np.lineHint"
+  },
+  "npLyrics": "Lyrics",
+  "@npLyrics": {
+    "description": "original key: np.lyrics"
+  },
+  "npMute": "Mute",
+  "@npMute": {
+    "description": "original key: np.mute"
+  },
+  "npNext": "Next",
+  "@npNext": {
+    "description": "original key: np.next"
+  },
+  "npNoLyrics": "No lyrics found for this track.",
+  "@npNoLyrics": {
+    "description": "original key: np.noLyrics"
+  },
+  "npPause": "Pause",
+  "@npPause": {
+    "description": "original key: np.pause"
+  },
+  "npPlay": "Play",
+  "@npPlay": {
+    "description": "original key: np.play"
+  },
+  "npPrev": "Previous",
+  "@npPrev": {
+    "description": "original key: np.prev"
+  },
+  "npQueue": "Queue",
+  "@npQueue": {
+    "description": "original key: np.queue"
+  },
+  "npRepeatAll": "Repeat: all",
+  "@npRepeatAll": {
+    "description": "original key: np.repeatAll"
+  },
+  "npRepeatOff": "Repeat: off",
+  "@npRepeatOff": {
+    "description": "original key: np.repeatOff"
+  },
+  "npRepeatOne": "Repeat: one",
+  "@npRepeatOne": {
+    "description": "original key: np.repeatOne"
+  },
+  "npSeek": "Seek",
+  "@npSeek": {
+    "description": "original key: np.seek"
+  },
+  "npShuffle": "Shuffle",
+  "@npShuffle": {
+    "description": "original key: np.shuffle"
+  },
+  "npTitle": "Now playing",
+  "@npTitle": {
+    "description": "original key: np.title"
+  },
+  "npUnlike": "Remove from Liked Songs",
+  "@npUnlike": {
+    "description": "original key: np.unlike"
+  },
+  "npUnmute": "Unmute",
+  "@npUnmute": {
+    "description": "original key: np.unmute"
+  },
+  "npVolume": "Volume",
+  "@npVolume": {
+    "description": "original key: np.volume"
+  },
+  "rewindArtistStats": "{plays} plays · {time} this month",
+  "@rewindArtistStats": {
+    "description": "original key: rewind.artistStats",
+    "placeholders": {
+      "plays": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "rewindChipArtists": "{n} artists",
+  "@rewindChipArtists": {
+    "description": "original key: rewind.chipArtists",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "rewindChipPlays": "{n} plays",
+  "@rewindChipPlays": {
+    "description": "original key: rewind.chipPlays",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "rewindChipTotal": "{time} total",
+  "@rewindChipTotal": {
+    "description": "original key: rewind.chipTotal",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "rewindChipTracks": "{n} tracks",
+  "@rewindChipTracks": {
+    "description": "original key: rewind.chipTracks",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "rewindClose": "Close rewind",
+  "@rewindClose": {
+    "description": "original key: rewind.close"
+  },
+  "rewindDurHm": "{h}h {m}m",
+  "@rewindDurHm": {
+    "description": "original key: rewind.durHm",
+    "placeholders": {
+      "h": {
+        "type": "String"
+      },
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "rewindDurM": "{m}m",
+  "@rewindDurM": {
+    "description": "original key: rewind.durM",
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "rewindIntroLine": "A month of yours: every play, counted on this device.",
+  "@rewindIntroLine": {
+    "description": "original key: rewind.introLine"
+  },
+  "rewindIntroLinePartial": "Your month so far: every play, counted on this device.",
+  "@rewindIntroLinePartial": {
+    "description": "original key: rewind.introLinePartial"
+  },
+  "rewindIntroTag": "Freebify · monthly",
+  "@rewindIntroTag": {
+    "description": "original key: rewind.introTag"
+  },
+  "rewindIntroTagPartial": "Freebify · still counting",
+  "@rewindIntroTagPartial": {
+    "description": "original key: rewind.introTagPartial"
+  },
+  "rewindKeepListening": "Keep listening",
+  "@rewindKeepListening": {
+    "description": "original key: rewind.keepListening"
+  },
+  "rewindListenedFor": "you listened for",
+  "@rewindListenedFor": {
+    "description": "original key: rewind.listenedFor"
+  },
+  "rewindMin": "min",
+  "@rewindMin": {
+    "description": "original key: rewind.min"
+  },
+  "rewindNext": "Next",
+  "@rewindNext": {
+    "description": "original key: rewind.next"
+  },
+  "rewindNextSlide": "Next slide",
+  "@rewindNextSlide": {
+    "description": "original key: rewind.nextSlide"
+  },
+  "rewindOnRepeat": "on repeat",
+  "@rewindOnRepeat": {
+    "description": "original key: rewind.onRepeat"
+  },
+  "rewindPlayAgain": "Play it again",
+  "@rewindPlayAgain": {
+    "description": "original key: rewind.playAgain"
+  },
+  "rewindPlayTop": "Play your top tracks",
+  "@rewindPlayTop": {
+    "description": "original key: rewind.playTop"
+  },
+  "rewindPlaysAcross": "{time} · {plays} plays across {tracks} tracks",
+  "@rewindPlaysAcross": {
+    "description": "original key: rewind.playsAcross",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "plays": {
+        "type": "String"
+      },
+      "tracks": {
+        "type": "String"
+      }
+    }
+  },
+  "rewindPrev": "Previous",
+  "@rewindPrev": {
+    "description": "original key: rewind.prev"
+  },
+  "rewindPrevSlide": "Previous slide",
+  "@rewindPrevSlide": {
+    "description": "original key: rewind.prevSlide"
+  },
+  "rewindThatWas": "that was",
+  "@rewindThatWas": {
+    "description": "original key: rewind.thatWas"
+  },
+  "rewindTitle": "{month} Rewind",
+  "@rewindTitle": {
+    "description": "original key: rewind.title",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "rewindTopArtist": "your #1 artist",
+  "@rewindTopArtist": {
+    "description": "original key: rewind.topArtist"
+  },
+  "rewindTracksTitle": "The songs you couldn't stop",
+  "@rewindTracksTitle": {
+    "description": "original key: rewind.tracksTitle"
+  },
+  "downloadsCancel": "Cancel download",
+  "@downloadsCancel": {
+    "description": "original key: downloads.cancel"
+  },
+  "downloadsEmptyCta": "Find music to download",
+  "@downloadsEmptyCta": {
+    "description": "original key: downloadsEmptyCta"
+  },
+  "downloadsEmptyHint": "Download tracks to listen offline anytime without an internet connection",
+  "@downloadsEmptyHint": {
+    "description": "original key: downloadsEmptyHint"
+  },
+  "downloadsEmptyNeedDesktop": "Downloads need the desktop app.",
+  "@downloadsEmptyNeedDesktop": {
+    "description": "original key: downloads.emptyNeedDesktop"
+  },
+  "downloadsEmptyTitle": "No downloaded songs",
+  "@downloadsEmptyTitle": {
+    "description": "original key: downloadsEmptyTitle"
+  },
+  "downloadsKicker": "Offline",
+  "@downloadsKicker": {
+    "description": "original key: downloads.kicker"
+  },
+  "downloadsOpenFolder": "Open folder",
+  "@downloadsOpenFolder": {
+    "description": "original key: downloads.openFolder"
+  },
+  "downloadsPlayAll": "Play all",
+  "@downloadsPlayAll": {
+    "description": "original key: downloads.playAll"
+  },
+  "downloadsQueued": "Queued",
+  "@downloadsQueued": {
+    "description": "original key: downloads.queued"
+  },
+  "downloadsRemoveLabel": "Delete download",
+  "@downloadsRemoveLabel": {
+    "description": "original key: downloads.removeLabel"
+  },
+  "downloadsSubtitle": "{n} tracks, stored on this device, playable offline",
+  "@downloadsSubtitle": {
+    "description": "original key: downloads.subtitle",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadsTitle": "Downloads",
+  "@downloadsTitle": {
+    "description": "original key: downloads.title"
+  },
+  "genreKicker": "Genre",
+  "@genreKicker": {
+    "description": "original key: genre.kicker"
+  },
+  "genreLoadError": "Couldn't load this genre right now.",
+  "@genreLoadError": {
+    "description": "original key: genre.loadError"
+  },
+  "genrePlay": "Play",
+  "@genrePlay": {
+    "description": "original key: genre.play"
+  },
+  "genreRetry": "Retry",
+  "@genreRetry": {
+    "description": "original key: genre.retry"
+  },
+  "genreTimeAllTime": "All time",
+  "@genreTimeAllTime": {
+    "description": "original key: genre.time.allTime"
+  },
+  "genreTimeMonth": "This month",
+  "@genreTimeMonth": {
+    "description": "original key: genre.time.month"
+  },
+  "genreTimeWeek": "This week",
+  "@genreTimeWeek": {
+    "description": "original key: genre.time.week"
+  },
+  "genreTopHits": "Top hits",
+  "@genreTopHits": {
+    "description": "original key: genre.topHits"
+  },
+  "genreTrending": "· trending",
+  "@genreTrending": {
+    "description": "original key: genre.trending"
+  },
+  "homeBecauseListened": "Because you listened to {name}",
+  "@homeBecauseListened": {
+    "description": "original key: home.becauseListened",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeChart": "Chart",
+  "@homeChart": {
+    "description": "original key: home.chart"
+  },
+  "homeGreetingAfternoon": "Good afternoon",
+  "@homeGreetingAfternoon": {
+    "description": "original key: home.greeting.afternoon"
+  },
+  "homeGreetingEvening": "Good evening",
+  "@homeGreetingEvening": {
+    "description": "original key: home.greeting.evening"
+  },
+  "homeGreetingLate": "Up late?",
+  "@homeGreetingLate": {
+    "description": "original key: home.greeting.late"
+  },
+  "homeGreetingMorning": "Good morning",
+  "@homeGreetingMorning": {
+    "description": "original key: home.greeting.morning"
+  },
+  "homeHotPlaylists": "Hot playlists",
+  "@homeHotPlaylists": {
+    "description": "original key: home.hotPlaylists"
+  },
+  "homeLoadError": "Couldn't load your music",
+  "@homeLoadError": {
+    "description": "original key: home.loadError"
+  },
+  "homeLoadErrorHint": "Check your connection. Both catalogs are unreachable.",
+  "@homeLoadErrorHint": {
+    "description": "original key: home.loadErrorHint"
+  },
+  "homeMoodMixes": "{name} mixes",
+  "@homeMoodMixes": {
+    "description": "original key: home.moodMixes",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNewForYou": "New for you",
+  "@homeNewForYou": {
+    "description": "original key: home.newForYou"
+  },
+  "homeNewReleases": "New releases",
+  "@homeNewReleases": {
+    "description": "original key: home.newReleases"
+  },
+  "homeRetry": "Retry",
+  "@homeRetry": {
+    "description": "original key: home.retry"
+  },
+  "homeRewindPartialReady": "Your {label} so far is ready",
+  "@homeRewindPartialReady": {
+    "description": "original key: home.rewind.partialReady",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRewindReady": "Your {label} Rewind is ready",
+  "@homeRewindReady": {
+    "description": "original key: home.rewind.ready",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRewindSub": "Every play, counted on this device.",
+  "@homeRewindSub": {
+    "description": "original key: home.rewind.sub"
+  },
+  "homeRewindWatch": "Watch",
+  "@homeRewindWatch": {
+    "description": "original key: home.rewind.watch"
+  },
+  "homeTopArtists": "Top artists",
+  "@homeTopArtists": {
+    "description": "original key: home.topArtists"
+  },
+  "homeTopSongs": "Top songs this week",
+  "@homeTopSongs": {
+    "description": "original key: home.topSongs"
+  },
+  "homeTrending": "Trending this week",
+  "@homeTrending": {
+    "description": "original key: home.trending"
+  },
+  "moodLoadError": "Couldn't load this mood",
+  "@moodLoadError": {
+    "description": "original key: mood.loadError"
+  },
+  "moodMixes": "Mixes",
+  "@moodMixes": {
+    "description": "original key: mood.mixes"
+  },
+  "moodPlaylists": "{name} playlists",
+  "@moodPlaylists": {
+    "description": "original key: mood.playlists",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moodRetry": "Retry",
+  "@moodRetry": {
+    "description": "original key: mood.retry"
+  },
+  "moodTopTracks": "Top tracks",
+  "@moodTopTracks": {
+    "description": "original key: mood.topTracks"
+  },
+  "searchAria": "Search",
+  "@searchAria": {
+    "description": "original key: search.aria"
+  },
+  "searchArtists": "Artists",
+  "@searchArtists": {
+    "description": "original key: search.artists"
+  },
+  "searchBrowseGenres": "Browse genres",
+  "@searchBrowseGenres": {
+    "description": "original key: search.browseGenres"
+  },
+  "searchClear": "Clear",
+  "@searchClear": {
+    "description": "original key: search.clear"
+  },
+  "searchFailed": "Search failed",
+  "@searchFailed": {
+    "description": "original key: searchFailed"
+  },
+  "searchFailedHint": "Could not reach the music catalog. Please check your connection and retry",
+  "@searchFailedHint": {
+    "description": "original key: searchFailedHint"
+  },
+  "searchMoods": "Moods & moments",
+  "@searchMoods": {
+    "description": "original key: search.moods"
+  },
+  "searchMoreTracks": "More tracks",
+  "@searchMoreTracks": {
+    "description": "original key: search.moreTracks"
+  },
+  "searchNoResults": "No results for “{q}”",
+  "@searchNoResults": {
+    "description": "original key: search.noResults",
+    "placeholders": {
+      "q": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNoResultsHint": "Check your spelling or try searching for another song, artist, or album",
+  "@searchNoResultsHint": {
+    "description": "original key: searchNoResultsHint"
+  },
+  "searchPlaceholder": "Songs, artists, playlists…",
+  "@searchPlaceholder": {
+    "description": "original key: search.placeholder"
+  },
+  "searchPlaylistsAlbums": "Playlists & albums",
+  "@searchPlaylistsAlbums": {
+    "description": "original key: search.playlistsAlbums"
+  },
+  "searchRetry": "Retry",
+  "@searchRetry": {
+    "description": "original key: search.retry"
+  },
+  "searchSong": "Song",
+  "@searchSong": {
+    "description": "original key: search.song"
+  },
+  "searchSongs": "Songs",
+  "@searchSongs": {
+    "description": "original key: search.songs"
+  },
+  "searchTopResult": "Top result",
+  "@searchTopResult": {
+    "description": "original key: search.topResult"
+  },
+  "statsArtistsHeard": "Artists heard",
+  "@statsArtistsHeard": {
+    "description": "original key: stats.artistsHeard"
+  },
+  "statsEmptyHint": "Start playing songs to track your favorite artists, tracks, and listening habits",
+  "@statsEmptyHint": {
+    "description": "original key: statsEmptyHint"
+  },
+  "statsEmptyTitle": "No listening stats yet",
+  "@statsEmptyTitle": {
+    "description": "original key: statsEmptyTitle"
+  },
+  "statsListeningTime": "Listening time",
+  "@statsListeningTime": {
+    "description": "original key: stats.listeningTime"
+  },
+  "statsNoListening": "no listening",
+  "@statsNoListening": {
+    "description": "original key: stats.noListening"
+  },
+  "statsRewindFull": "Watch your {label} Rewind",
+  "@statsRewindFull": {
+    "description": "original key: stats.rewind.full",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "statsRewindPartial": "Watch your {label} so far",
+  "@statsRewindPartial": {
+    "description": "original key: stats.rewind.partial",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "statsSubtitle": "Counted on this device. Never uploaded.",
+  "@statsSubtitle": {
+    "description": "original key: stats.subtitle"
+  },
+  "statsThisWeek": "This week",
+  "@statsThisWeek": {
+    "description": "original key: stats.thisWeek"
+  },
+  "statsTitle": "Your stats",
+  "@statsTitle": {
+    "description": "original key: stats.title"
+  },
+  "statsTopArtists": "Top artists",
+  "@statsTopArtists": {
+    "description": "original key: stats.topArtists"
+  },
+  "statsTopTracks": "Top tracks",
+  "@statsTopTracks": {
+    "description": "original key: stats.topTracks"
+  },
+  "statsTotalPlays": "Total plays",
+  "@statsTotalPlays": {
+    "description": "original key: stats.totalPlays"
+  },
+  "statsTracksPlayed": "Tracks played",
+  "@statsTracksPlayed": {
+    "description": "original key: stats.tracksPlayed"
+  },
+  "statsWeekTotal": "{t} this week",
+  "@statsWeekTotal": {
+    "description": "original key: stats.weekTotal",
+    "placeholders": {
+      "t": {
+        "type": "String"
+      }
+    }
+  },
+  "artistAbout": "About",
+  "@artistAbout": {
+    "description": "original key: artist.about"
+  },
+  "artistAlbums": "Albums",
+  "@artistAlbums": {
+    "description": "original key: artist.albums"
+  },
+  "artistFollow": "Follow",
+  "@artistFollow": {
+    "description": "original key: artist.follow"
+  },
+  "artistFollowing": "Following",
+  "@artistFollowing": {
+    "description": "original key: artist.following"
+  },
+  "artistMonthlyListeners": "{n} monthly listeners",
+  "@artistMonthlyListeners": {
+    "description": "original key: artist.monthlyListeners",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "artistNoTracks": "This artist hasn't uploaded tracks yet.",
+  "@artistNoTracks": {
+    "description": "original key: artist.noTracks"
+  },
+  "artistNotFound": "Artist not found",
+  "@artistNotFound": {
+    "description": "original key: artist.notFound"
+  },
+  "artistNotFoundNamed": "Couldn't load {name}'s page. It may have moved or the network hiccuped.",
+  "@artistNotFoundNamed": {
+    "description": "original key: artist.notFound.named",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "artistNotFoundSub": "They may have moved or the network hiccuped.",
+  "@artistNotFoundSub": {
+    "description": "original key: artist.notFound.sub"
+  },
+  "artistPlay": "Play",
+  "@artistPlay": {
+    "description": "original key: artist.play"
+  },
+  "artistPopular": "Popular",
+  "@artistPopular": {
+    "description": "original key: artist.popular"
+  },
+  "artistRetry": "Retry",
+  "@artistRetry": {
+    "description": "original key: artist.retry"
+  },
+  "artistShowAll": "Show all {n}",
+  "@artistShowAll": {
+    "description": "original key: artist.showAll",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "artistShowLess": "Show less",
+  "@artistShowLess": {
+    "description": "original key: artist.showLess"
+  },
+  "artistSingles": "Singles & EPs",
+  "@artistSingles": {
+    "description": "original key: artist.singles"
+  },
+  "artistStats": "{followers} followers · {tracks} tracks",
+  "@artistStats": {
+    "description": "original key: artist.stats",
+    "placeholders": {
+      "followers": {
+        "type": "String"
+      },
+      "tracks": {
+        "type": "String"
+      }
+    }
+  },
+  "artistTracksError": "Couldn't load the tracks. The artist page itself is fine.",
+  "@artistTracksError": {
+    "description": "original key: artist.tracksError"
+  },
+  "artistVerified": "Verified artist",
+  "@artistVerified": {
+    "description": "original key: artist.verified"
+  },
+  "importBadCsv": "Couldn't read that CSV",
+  "@importBadCsv": {
+    "description": "original key: import.badCsv"
+  },
+  "importBadJson": "Couldn't read that file. Expected a .freebify.json playlist",
+  "@importBadJson": {
+    "description": "original key: import.badJson"
+  },
+  "importButton": "Import",
+  "@importButton": {
+    "description": "original key: import.button"
+  },
+  "importChooseCsv": "Choose .csv file",
+  "@importChooseCsv": {
+    "description": "original key: import.chooseCsv"
+  },
+  "importClose": "Close",
+  "@importClose": {
+    "description": "original key: import.close"
+  },
+  "importCsvHint": "For longer or private playlists. Title + artist columns are detected automatically. Max 5000.",
+  "@importCsvHint": {
+    "description": "original key: import.csvHint"
+  },
+  "importCsvLabel": "CSV export",
+  "@importCsvLabel": {
+    "description": "original key: import.csvLabel"
+  },
+  "importFailed": "Import failed. Try again",
+  "@importFailed": {
+    "description": "original key: import.failed"
+  },
+  "importImported": "Imported {n} tracks",
+  "@importImported": {
+    "description": "original key: import.imported",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "importLimited": "Imported {n} tracks. Spotify only published the first 100, export a CSV to bring the rest.",
+  "@importLimited": {
+    "description": "original key: import.limited",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "importLinkHint": "Spotify: paste any public playlist link, full track list. YouTube Music: full list, no matching needed.",
+  "@importLinkHint": {
+    "description": "original key: import.linkHint"
+  },
+  "importLinkLabel": "Spotify or YouTube Music link",
+  "@importLinkLabel": {
+    "description": "original key: import.linkLabel"
+  },
+  "importNotFound": "Playlist not found. Check it isn't private",
+  "@importNotFound": {
+    "description": "original key: import.notFound"
+  },
+  "importPasteLink": "Paste a Spotify or YouTube Music playlist link",
+  "@importPasteLink": {
+    "description": "original key: import.pasteLink"
+  },
+  "importSubmit": "Import playlist",
+  "@importSubmit": {
+    "description": "original key: import.submit"
+  },
+  "importTitle": "Import a playlist",
+  "@importTitle": {
+    "description": "original key: import.title"
+  },
+  "importUnreadable": "Couldn't read that playlist. Check it's public",
+  "@importUnreadable": {
+    "description": "original key: import.unreadable"
+  },
+  "libraryEmptyLikedCta": "Find something to love",
+  "@libraryEmptyLikedCta": {
+    "description": "original key: library.emptyLiked.cta"
+  },
+  "libraryEmptyLikedSub": "Tap the heart on any track to save it.",
+  "@libraryEmptyLikedSub": {
+    "description": "original key: library.emptyLiked.sub"
+  },
+  "libraryEmptyLikedTitle": "Songs you like will live here",
+  "@libraryEmptyLikedTitle": {
+    "description": "original key: library.emptyLiked.title"
+  },
+  "libraryEmptyPlaylists": "Create a playlist and add songs from the ··· menu on any track.",
+  "@libraryEmptyPlaylists": {
+    "description": "original key: library.emptyPlaylists"
+  },
+  "libraryFollowed": "Artists you follow",
+  "@libraryFollowed": {
+    "description": "original key: library.followed"
+  },
+  "libraryLikedSongs": "Liked Songs",
+  "@libraryLikedSongs": {
+    "description": "original key: library.likedSongs"
+  },
+  "libraryNewPlaylist": "New playlist",
+  "@libraryNewPlaylist": {
+    "description": "original key: library.newPlaylist"
+  },
+  "libraryPlayAll": "Play all",
+  "@libraryPlayAll": {
+    "description": "original key: library.playAll"
+  },
+  "libraryPlaylistLabel": "Playlist",
+  "@libraryPlaylistLabel": {
+    "description": "original key: library.playlistLabel"
+  },
+  "libraryRecents": "Recently played",
+  "@libraryRecents": {
+    "description": "original key: library.recents"
+  },
+  "libraryTrackCount": "{n} tracks",
+  "@libraryTrackCount": {
+    "description": "original key: library.trackCount",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "libraryYourPlaylists": "Your playlists",
+  "@libraryYourPlaylists": {
+    "description": "original key: library.yourPlaylists"
+  },
+  "playlistAlbum": "Album",
+  "@playlistAlbum": {
+    "description": "original key: playlist.album"
+  },
+  "playlistAlreadyDownloaded": "Already downloaded",
+  "@playlistAlreadyDownloaded": {
+    "description": "original key: playlist.alreadyDownloaded"
+  },
+  "playlistCopyLink": "Copy link",
+  "@playlistCopyLink": {
+    "description": "original key: playlist.copyLink"
+  },
+  "playlistCopyLinkAria": "Copy playlist link",
+  "@playlistCopyLinkAria": {
+    "description": "original key: playlist.copyLinkAria"
+  },
+  "playlistDelete": "Delete",
+  "@playlistDelete": {
+    "description": "original key: playlist.delete"
+  },
+  "playlistDeleteConfirm": "Delete?",
+  "@playlistDeleteConfirm": {
+    "description": "original key: playlist.deleteConfirm"
+  },
+  "playlistDownloadAll": "Download all",
+  "@playlistDownloadAll": {
+    "description": "original key: playlist.downloadAll"
+  },
+  "playlistDownloadAllTitle": "Download all tracks for offline playback",
+  "@playlistDownloadAllTitle": {
+    "description": "original key: playlist.downloadAllTitle"
+  },
+  "playlistDownloading": "Downloading {n} tracks",
+  "@playlistDownloading": {
+    "description": "original key: playlist.downloading",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistEmpty": "This playlist is empty.",
+  "@playlistEmpty": {
+    "description": "original key: playlist.empty"
+  },
+  "playlistExport": "Export",
+  "@playlistExport": {
+    "description": "original key: playlist.export"
+  },
+  "playlistExportTitle": "Export as a shareable .freebify.json file",
+  "@playlistExportTitle": {
+    "description": "original key: playlist.exportTitle"
+  },
+  "playlistExported": "Playlist exported",
+  "@playlistExported": {
+    "description": "original key: playlist.exported"
+  },
+  "playlistEmptyLocalSub": "Use the ··· menu on any track.",
+  "@playlistEmptyLocalSub": {
+    "description": "original key: playlist.emptyLocal.sub"
+  },
+  "playlistEmptyLocalTitle": "Songs you add will live here",
+  "@playlistEmptyLocalTitle": {
+    "description": "original key: playlist.emptyLocal.title"
+  },
+  "playlistFindInPlaylist": "Find in playlist",
+  "@playlistFindInPlaylist": {
+    "description": "original key: playlist.findInPlaylist"
+  },
+  "playlistFindSongs": "Find songs",
+  "@playlistFindSongs": {
+    "description": "original key: playlist.findSongs"
+  },
+  "playlistNoMatch": "No tracks match “{q}”.",
+  "@playlistNoMatch": {
+    "description": "original key: playlist.noMatch",
+    "placeholders": {
+      "q": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistNotFound": "Playlist not found",
+  "@playlistNotFound": {
+    "description": "original key: playlist.notFound"
+  },
+  "playlistNotFoundLocalSub": "It may have been deleted.",
+  "@playlistNotFoundLocalSub": {
+    "description": "original key: playlist.notFound.localSub"
+  },
+  "playlistNotFoundSub": "It may have been removed or the network hiccuped.",
+  "@playlistNotFoundSub": {
+    "description": "original key: playlist.notFound.sub"
+  },
+  "playlistPlay": "Play",
+  "@playlistPlay": {
+    "description": "original key: playlist.play"
+  },
+  "playlistPlaylist": "Playlist",
+  "@playlistPlaylist": {
+    "description": "original key: playlist.playlist"
+  },
+  "playlistPlays": "{n} plays",
+  "@playlistPlays": {
+    "description": "original key: playlist.plays",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistRemoveLabel": "Remove from playlist",
+  "@playlistRemoveLabel": {
+    "description": "original key: playlist.removeLabel"
+  },
+  "playlistRename": "Rename",
+  "@playlistRename": {
+    "description": "original key: playlist.rename"
+  },
+  "playlistRenameAria": "Rename playlist",
+  "@playlistRenameAria": {
+    "description": "original key: playlist.renameAria"
+  },
+  "playlistRetry": "Retry",
+  "@playlistRetry": {
+    "description": "original key: playlist.retry"
+  },
+  "playlistSaveToLibrary": "Save to Library",
+  "@playlistSaveToLibrary": {
+    "description": "original key: playlist.saveToLibrary"
+  },
+  "playlistSort": "Sort",
+  "@playlistSort": {
+    "description": "original key: playlist.sort"
+  },
+  "playlistSortTitle": "Title",
+  "@playlistSortTitle": {
+    "description": "original key: playlist.sort.title"
+  },
+  "playlistSortArtist": "Artist",
+  "@playlistSortArtist": {
+    "description": "original key: playlist.sort.artist"
+  },
+  "playlistSortDuration": "Length",
+  "@playlistSortDuration": {
+    "description": "original key: playlist.sort.duration"
+  },
+  "playlistTrackCount": "{n} tracks",
+  "@playlistTrackCount": {
+    "description": "original key: playlist.trackCount",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistTracksError": "Couldn't load the tracks. The playlist itself is fine.",
+  "@playlistTracksError": {
+    "description": "original key: playlist.tracksError"
+  },
+  "playlistUnknown": "Unknown",
+  "@playlistUnknown": {
+    "description": "original key: playlist.unknown"
+  },
+  "settingsAbout": "About",
+  "@settingsAbout": {
+    "description": "original key: settings.about"
+  },
+  "settingsAboutBody": "Free, ad-free music. Freebify is a player, not a host: all audio & metadata are fetched by your device, directly from YouTube Music & the Audius public API, under their own terms. For personal, non-commercial use. Not affiliated with Spotify, YouTube, Google or Audius.",
+  "@settingsAboutBody": {
+    "description": "original key: settings.aboutBody"
+  },
+  "settingsAboutVersions": "Electron {electron} · Chromium {chromium}",
+  "@settingsAboutVersions": {
+    "description": "original key: settings.aboutVersions",
+    "placeholders": {
+      "electron": {
+        "type": "String"
+      },
+      "chromium": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAutoplay": "Autoplay similar songs",
+  "@settingsAutoplay": {
+    "description": "original key: settings.autoplay"
+  },
+  "settingsAutoplaySub": "Keep the queue going when it ends",
+  "@settingsAutoplaySub": {
+    "description": "original key: settings.autoplay.sub"
+  },
+  "settingsBackupExported": "Backup exported",
+  "@settingsBackupExported": {
+    "description": "original key: settings.backupExported"
+  },
+  "settingsCacheCleared": "Cache cleared. Your library is untouched",
+  "@settingsCacheCleared": {
+    "description": "original key: settings.cacheCleared"
+  },
+  "settingsCacheFailed": "Couldn't clear the cache",
+  "@settingsCacheFailed": {
+    "description": "original key: settings.cacheFailed"
+  },
+  "settingsCheckUpdates": "Check for updates",
+  "@settingsCheckUpdates": {
+    "description": "original key: settings.checkUpdates"
+  },
+  "settingsChecking": "Checking…",
+  "@settingsChecking": {
+    "description": "original key: settings.checking"
+  },
+  "settingsClearCache": "Clear artwork & lyrics cache",
+  "@settingsClearCache": {
+    "description": "original key: settings.clearCache"
+  },
+  "settingsContribute": "Open source. Contribute on GitHub",
+  "@settingsContribute": {
+    "description": "original key: settings.contribute"
+  },
+  "settingsDiscord": "Discord status",
+  "@settingsDiscord": {
+    "description": "original key: settings.discord"
+  },
+  "settingsDiscordSub": "Show what you're listening to on your profile",
+  "@settingsDiscordSub": {
+    "description": "original key: settings.discord.sub"
+  },
+  "settingsExport": "Export library & stats",
+  "@settingsExport": {
+    "description": "original key: settings.export"
+  },
+  "settingsExportFailed": "Export failed",
+  "@settingsExportFailed": {
+    "description": "original key: settings.exportFailed"
+  },
+  "settingsKSpace": "Space",
+  "@settingsKSpace": {
+    "description": "original key: settings.k.space"
+  },
+  "settingsLegal": "Legal: disclaimer & terms",
+  "@settingsLegal": {
+    "description": "original key: settings.legal"
+  },
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {
+    "description": "original key: settings.language"
+  },
+  "settingsLanguageSub": "Applies to the whole app instantly.",
+  "@settingsLanguageSub": {
+    "description": "original key: settings.language.sub"
+  },
+  "settingsLibrary": "Library",
+  "@settingsLibrary": {
+    "description": "original key: settings.library"
+  },
+  "settingsLibraryStats": "{liked} liked songs · {playlists} playlists, stored locally on this device.",
+  "@settingsLibraryStats": {
+    "description": "original key: settings.libraryStats",
+    "placeholders": {
+      "liked": {
+        "type": "String"
+      },
+      "playlists": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLogin": "Open Freebify when you sign in",
+  "@settingsLogin": {
+    "description": "original key: settings.login"
+  },
+  "settingsLoginSub": "Start with your desktop, ready in the background",
+  "@settingsLoginSub": {
+    "description": "original key: settings.login.sub"
+  },
+  "settingsOpenLogs": "Open logs folder",
+  "@settingsOpenLogs": {
+    "description": "original key: settings.openLogs"
+  },
+  "settingsPlayback": "Playback",
+  "@settingsPlayback": {
+    "description": "original key: settings.playback"
+  },
+  "settingsScClosePanels": "Close panels",
+  "@settingsScClosePanels": {
+    "description": "original key: settings.sc.closePanels"
+  },
+  "settingsScLike": "Like current track",
+  "@settingsScLike": {
+    "description": "original key: settings.sc.like"
+  },
+  "settingsScMute": "Mute",
+  "@settingsScMute": {
+    "description": "original key: settings.sc.mute"
+  },
+  "settingsScNowPlaying": "Now Playing",
+  "@settingsScNowPlaying": {
+    "description": "original key: settings.sc.nowPlaying"
+  },
+  "settingsScPlayPause": "Play / pause",
+  "@settingsScPlayPause": {
+    "description": "original key: settings.sc.playPause"
+  },
+  "settingsScQueue": "Queue",
+  "@settingsScQueue": {
+    "description": "original key: settings.sc.queue"
+  },
+  "settingsScSearch": "Search",
+  "@settingsScSearch": {
+    "description": "original key: settings.sc.search"
+  },
+  "settingsScSeek": "Seek 10 seconds",
+  "@settingsScSeek": {
+    "description": "original key: settings.sc.seek"
+  },
+  "settingsScVolume": "Volume",
+  "@settingsScVolume": {
+    "description": "original key: settings.sc.volume"
+  },
+  "settingsShortcuts": "Keyboard shortcuts",
+  "@settingsShortcuts": {
+    "description": "original key: settings.shortcuts"
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "original key: settings.title"
+  },
+  "settingsUpdateAvailable": "v{v} available, downloading in the background",
+  "@settingsUpdateAvailable": {
+    "description": "original key: settings.update.available",
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsUpdateFailed": "Update check failed",
+  "@settingsUpdateFailed": {
+    "description": "original key: settings.update.failed"
+  },
+  "settingsUpdateFailedLater": "Update check failed. Try again later",
+  "@settingsUpdateFailedLater": {
+    "description": "original key: settings.update.failedLater"
+  },
+  "settingsUpdateLatest": "You're up to date",
+  "@settingsUpdateLatest": {
+    "description": "original key: settings.update.latest"
+  },
+  "settingsUpdatePending": "v{v} is ready. Restart from the banner",
+  "@settingsUpdatePending": {
+    "description": "original key: settings.update.pending",
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "themeMode": "Theme",
+  "@themeMode": {
+    "description": "original key: themeMode"
+  },
+  "themeSystem": "System default",
+  "@themeSystem": {
+    "description": "original key: themeSystem"
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "original key: themeLight"
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "original key: themeDark"
+  },
+  "reduceTransparency": "Reduce transparency",
+  "@reduceTransparency": {
+    "description": "original key: reduceTransparency"
+  },
+  "reduceTransparencySubtitle": "Use solid surfaces instead of translucent blur effects",
+  "@reduceTransparencySubtitle": {
+    "description": "original key: reduceTransparencySubtitle"
+  },
+  "language": "Language",
+  "@language": {
+    "description": "original key: language"
+  },
+  "languageSystem": "System default",
+  "@languageSystem": {
+    "description": "original key: languageSystem"
+  },
+  "streamQuality": "Audio streaming quality",
+  "@streamQuality": {
+    "description": "original key: streamQuality"
+  },
+  "qualityHigh": "High (best audio)",
+  "@qualityHigh": {
+    "description": "original key: qualityHigh"
+  },
+  "qualityLow": "Data saver (low)",
+  "@qualityLow": {
+    "description": "original key: qualityLow"
+  },
+  "wifiOnlyDownloads": "Download over Wi-Fi only",
+  "@wifiOnlyDownloads": {
+    "description": "original key: wifiOnlyDownloads"
+  },
+  "clearCache": "Clear cache",
+  "@clearCache": {
+    "description": "original key: clearCache"
+  },
+  "cacheCleared": "Cache cleared successfully",
+  "@cacheCleared": {
+    "description": "original key: cacheCleared"
+  },
+  "exportBackup": "Export library backup",
+  "@exportBackup": {
+    "description": "original key: exportBackup"
+  },
+  "importBackup": "Import library backup",
+  "@importBackup": {
+    "description": "original key: importBackup"
+  },
+  "importBackupSuccess": "Library backup imported successfully",
+  "@importBackupSuccess": {
+    "description": "original key: importBackupSuccess"
+  },
+  "importBackupConfirm": "Importing this backup will merge playlists, liked songs, and listening history. Continue?",
+  "@importBackupConfirm": {
+    "description": "original key: importBackupConfirm"
+  },
+  "shareLogs": "Share logs",
+  "@shareLogs": {
+    "description": "original key: shareLogs"
+  },
+  "noLogs": "No logs found to share",
+  "@noLogs": {
+    "description": "original key: noLogs"
+  },
+  "synced": "Synced line to current playback time",
+  "@synced": {
+    "description": "original key: synced"
+  },
+  "syncLineToNow": "Sync this line to now",
+  "@syncLineToNow": {
+    "description": "original key: syncLineToNow"
+  },
+  "accuracyNote": "Lyrics timing may vary slightly between recordings",
+  "@accuracyNote": {
+    "description": "original key: accuracyNote"
+  },
+  "appUpdateDownload": "Download update",
+  "@appUpdateDownload": {
+    "description": "original key: appUpdateDownload"
+  },
+  "nowPlaying": "Now Playing",
+  "@nowPlaying": {
+    "description": "original key: nowPlaying"
+  },
+  "newPlaylist": "New playlist",
+  "@newPlaylist": {
+    "description": "original key: newPlaylist"
+  },
+  "createPlaylist": "Create playlist",
+  "@createPlaylist": {
+    "description": "original key: createPlaylist"
+  },
+  "playlistNamePlaceholder": "Playlist name",
+  "@playlistNamePlaceholder": {
+    "description": "original key: playlistNamePlaceholder"
+  },
+  "disclaimer": "Disclaimer",
+  "@disclaimer": {
+    "description": "original key: disclaimer"
+  },
+  "terms": "Terms of Service",
+  "@terms": {
+    "description": "original key: terms"
+  },
+  "privacy": "Privacy Policy",
+  "@privacy": {
+    "description": "original key: privacy"
+  },
+  "legal": "Legal & Licenses",
+  "@legal": {
+    "description": "original key: legal"
+  },
+  "aboutAttribution": "Based on Freebify by govu — https://github.com/govu/freebify",
+  "@aboutAttribution": {
+    "description": "original key: aboutAttribution"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "original key: retry"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "original key: cancel"
+  },
+  "confirm": "Confirm",
+  "@confirm": {
+    "description": "original key: confirm"
+  },
+  "save": "Save",
+  "@save": {
+    "description": "original key: save"
+  },
+  "deleteAction": "Delete",
+  "@deleteAction": {
+    "description": "original key: deleteAction"
+  },
+  "editAction": "Edit",
+  "@editAction": {
+    "description": "original key: editAction"
+  },
+  "doneAction": "Done",
+  "@doneAction": {
+    "description": "original key: doneAction"
+  },
+  "removeAction": "Remove",
+  "@removeAction": {
+    "description": "original key: removeAction"
+  },
+  "playAction": "Play",
+  "@playAction": {
+    "description": "original key: playAction"
+  },
+  "pauseAction": "Pause",
+  "@pauseAction": {
+    "description": "original key: pauseAction"
+  },
+  "shuffleAction": "Shuffle",
+  "@shuffleAction": {
+    "description": "original key: shuffleAction"
+  },
+  "addTracks": "Add tracks",
+  "@addTracks": {
+    "description": "original key: addTracks"
+  },
+  "renamePlaylist": "Rename playlist",
+  "@renamePlaylist": {
+    "description": "original key: renamePlaylist"
+  },
+  "deletePlaylistConfirm": "Are you sure you want to delete this playlist?",
+  "@deletePlaylistConfirm": {
+    "description": "original key: deletePlaylistConfirm"
+  },
+  "startRadio": "Start radio",
+  "@startRadio": {
+    "description": "original key: startRadio"
+  },
+  "goToArtist": "Go to artist",
+  "@goToArtist": {
+    "description": "original key: goToArtist"
+  },
+  "goToAlbum": "Go to album",
+  "@goToAlbum": {
+    "description": "original key: goToAlbum"
+  },
+  "saveToLibrary": "Save to library",
+  "@saveToLibrary": {
+    "description": "original key: saveToLibrary"
+  },
+  "removeFromLibrary": "Remove from library",
+  "@removeFromLibrary": {
+    "description": "original key: removeFromLibrary"
+  },
+  "downloadTrack": "Download track",
+  "@downloadTrack": {
+    "description": "original key: downloadTrack"
+  },
+  "removeDownload": "Remove download",
+  "@removeDownload": {
+    "description": "original key: removeDownload"
+  },
+  "downloaded": "Downloaded",
+  "@downloaded": {
+    "description": "original key: downloaded"
+  },
+  "downloading": "Downloading",
+  "@downloading": {
+    "description": "original key: downloading"
+  },
+  "queued": "Queued",
+  "@queued": {
+    "description": "original key: queued"
+  },
+  "shareTrack": "Share track",
+  "@shareTrack": {
+    "description": "original key: shareTrack"
+  },
+  "sharePlaylist": "Share playlist",
+  "@sharePlaylist": {
+    "description": "original key: sharePlaylist"
+  },
+  "copyLink": "Copy link",
+  "@copyLink": {
+    "description": "original key: copyLink"
+  },
+  "linkCopied": "Link copied to clipboard",
+  "@linkCopied": {
+    "description": "original key: linkCopied"
+  },
+  "noLyrics": "No lyrics available for this song",
+  "@noLyrics": {
+    "description": "original key: noLyrics"
+  },
+  "matchingProgress": "Matching {matched} of {total} tracks…",
+  "@matchingProgress": {
+    "description": "original key: matchingProgress",
+    "placeholders": {
+      "matched": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "importPlaylistTitle": "Import playlist",
+  "@importPlaylistTitle": {
+    "description": "original key: importPlaylistTitle"
+  },
+  "importUrlHint": "Paste Spotify or YouTube Music playlist link",
+  "@importUrlHint": {
+    "description": "original key: importUrlHint"
+  },
+  "importFileButton": "Choose CSV or .freebify.json file",
+  "@importFileButton": {
+    "description": "original key: importFileButton"
+  },
+  "allFilter": "All",
+  "@allFilter": {
+    "description": "original key: allFilter"
+  },
+  "songsFilter": "Songs",
+  "@songsFilter": {
+    "description": "original key: songsFilter"
+  },
+  "artistsFilter": "Artists",
+  "@artistsFilter": {
+    "description": "original key: artistsFilter"
+  },
+  "playlistsFilter": "Playlists & albums",
+  "@playlistsFilter": {
+    "description": "original key: playlistsFilter"
+  },
+  "topResult": "Top result",
+  "@topResult": {
+    "description": "original key: topResult"
+  },
+  "moreTracks": "More songs",
+  "@moreTracks": {
+    "description": "original key: moreTracks"
+  },
+  "popularTracks": "Popular",
+  "@popularTracks": {
+    "description": "original key: popularTracks"
+  },
+  "discography": "Discography",
+  "@discography": {
+    "description": "original key: discography"
+  },
+  "albumsSection": "Albums",
+  "@albumsSection": {
+    "description": "original key: albumsSection"
+  },
+  "singlesSection": "Singles & EPs",
+  "@singlesSection": {
+    "description": "original key: singlesSection"
+  },
+  "aboutArtist": "About",
+  "@aboutArtist": {
+    "description": "original key: aboutArtist"
+  },
+  "monthlyListenersCount": "{n} monthly listeners",
+  "@monthlyListenersCount": {
+    "description": "original key: monthlyListenersCount",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "followersCount": "{n} followers",
+  "@followersCount": {
+    "description": "original key: followersCount",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "trackCountLabel": "{n} tracks",
+  "@trackCountLabel": {
+    "description": "original key: trackCountLabel",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "listeningTime": "Listening time",
+  "@listeningTime": {
+    "description": "original key: listeningTime"
+  },
+  "totalPlays": "Total plays",
+  "@totalPlays": {
+    "description": "original key: totalPlays"
+  },
+  "tracksPlayed": "Tracks played",
+  "@tracksPlayed": {
+    "description": "original key: tracksPlayed"
+  },
+  "artistsHeard": "Artists heard",
+  "@artistsHeard": {
+    "description": "original key: artistsHeard"
+  },
+  "thisWeek": "This week",
+  "@thisWeek": {
+    "description": "original key: thisWeek"
+  },
+  "topTracks": "Top tracks",
+  "@topTracks": {
+    "description": "original key: topTracks"
+  },
+  "topArtists": "Top artists",
+  "@topArtists": {
+    "description": "original key: topArtists"
+  },
+  "rewindAction": "Watch Rewind",
+  "@rewindAction": {
+    "description": "original key: rewindAction"
+  },
+  "equalizerTitle": "Equalizer",
+  "@equalizerTitle": {
+    "description": "original key: equalizerTitle"
+  },
+  "eqPresetCustom": "Custom",
+  "@eqPresetCustom": {
+    "description": "original key: eqPresetCustom"
+  },
+  "sleepTimerTitle": "Sleep timer",
+  "@sleepTimerTitle": {
+    "description": "original key: sleepTimerTitle"
+  },
+  "sleepTimerOff": "Off",
+  "@sleepTimerOff": {
+    "description": "original key: sleepTimerOff"
+  },
+  "sleepTimer5": "5 minutes",
+  "@sleepTimer5": {
+    "description": "original key: sleepTimer5"
+  },
+  "sleepTimer15": "15 minutes",
+  "@sleepTimer15": {
+    "description": "original key: sleepTimer15"
+  },
+  "sleepTimer30": "30 minutes",
+  "@sleepTimer30": {
+    "description": "original key: sleepTimer30"
+  },
+  "sleepTimer45": "45 minutes",
+  "@sleepTimer45": {
+    "description": "original key: sleepTimer45"
+  },
+  "sleepTimer60": "60 minutes",
+  "@sleepTimer60": {
+    "description": "original key: sleepTimer60"
+  },
+  "sleepTimerTrackEnd": "End of current track",
+  "@sleepTimerTrackEnd": {
+    "description": "original key: sleepTimerTrackEnd"
+  }
+}
