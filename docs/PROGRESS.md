@@ -32,7 +32,7 @@
 - [x] T-23 StreamResolver
 - [x] T-24 Audius client
 - [x] T-25 Deezer radio
-- [ ] T-26 CatalogRepository
+- [x] T-26 CatalogRepository
 - [ ] T-27 LibraryRepository
 - **CHECKPOINT C**
 

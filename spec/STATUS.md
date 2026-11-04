@@ -29,12 +29,13 @@
 - T-23: StreamResolver (implemented VisionOS player resolver + YouTubeExplode fallback, LRU memory cache + StreamCacheStorage SQLite DAO persistence, in-flight deduplication, prefetch & invalidate; tool/try_stream.dart CLI verified live googlevideo.com resolution; tests passed)
 - T-24: Audius client (implemented AudiusClient with discovery node pool bootstrap, automatic host rotation on failure, deterministic 4xx fatal bail, ranking & originality filtering, mappers to Track/Artist/RemotePlaylist, streamUrl; unit tests passing)
 - T-25: Deezer radio (implemented DeezerClient with public search/artist, related artists, top tracks round-robin, seed drop, deduplication, match integration via InnertubeClient; http_mock_adapter unit tests passing)
+- T-26: CatalogRepository (implemented CatalogRepository and CatalogList with Innertube-to-Audius fallback for search, artist, album, playlist, home, trending, charts, newReleases; added fromFallback metadata flag; Riverpod FutureProvider and family with 5-minute keepAlive in catalog_providers.dart; unit tests passing)
 
 ## In Progress
-- T-26: CatalogRepository
-
-## Next
 - T-27: LibraryRepository
 
+## Next
+- CHECKPOINT C: Phase 2 review
+
 ## Left
-- 45 tasks remaining (T-26 to T-70)
+- 44 tasks remaining (T-27 to T-70)

@@ -1,0 +1,125 @@
+import 'dart:async';
+
+import 'package:awady_music/data/models/artist_page.dart';
+import 'package:awady_music/data/models/mood_models.dart';
+import 'package:awady_music/data/models/playlist_page.dart';
+import 'package:awady_music/data/models/remote_playlist.dart';
+import 'package:awady_music/data/models/search_results.dart';
+import 'package:awady_music/data/models/track.dart';
+import 'package:awady_music/data/repositories/catalog_repository.dart';
+import 'package:awady_music/data/sources/audius/audius_client.dart';
+import 'package:awady_music/data/sources/innertube/innertube_client.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+extension _KeepAlive5Min on Ref {
+  void keepAlive5Min() {
+    final link = keepAlive();
+    final timer = Timer(const Duration(minutes: 5), link.close);
+    onDispose(timer.cancel);
+  }
+}
+
+/// Provider for [CatalogRepository].
+final catalogRepositoryProvider = Provider<CatalogRepository>((ref) {
+  final innertube = ref.watch(innertubeClientProvider);
+  final audius = ref.watch(audiusClientProvider);
+  return CatalogRepositoryImpl(
+    innertubeClient: innertube,
+    audiusClient: audius,
+  );
+});
+
+/// Future provider family for catalog searches with 5 minute keepAlive.
+final searchProvider = FutureProvider.family<SearchResults, String>((
+  ref,
+  query,
+) {
+  ref.keepAlive5Min();
+  return ref.watch(catalogRepositoryProvider).search(query);
+});
+
+/// Future provider family for search query suggestions.
+final suggestProvider = FutureProvider.family<List<String>, String>((
+  ref,
+  query,
+) {
+  ref.keepAlive5Min();
+  return ref.watch(catalogRepositoryProvider).suggest(query);
+});
+
+/// Future provider family for artist detail page data.
+final artistPageProvider = FutureProvider.family<ArtistPage, String>((
+  ref,
+  channelId,
+) {
+  ref.keepAlive5Min();
+  return ref.watch(catalogRepositoryProvider).artist(channelId);
+});
+
+/// Future provider family for playlist page data.
+final playlistPageProvider = FutureProvider.family<PlaylistPage, String>((
+  ref,
+  browseId,
+) {
+  ref.keepAlive5Min();
+  return ref.watch(catalogRepositoryProvider).playlist(browseId);
+});
+
+/// Future provider family for album page data.
+final albumPageProvider = FutureProvider.family<PlaylistPage, String>((
+  ref,
+  browseId,
+) {
+  ref.keepAlive5Min();
+  return ref.watch(catalogRepositoryProvider).album(browseId);
+});
+
+/// Future provider for home screen playlists carousel.
+final homePlaylistsProvider = FutureProvider<CatalogList<RemotePlaylist>>((
+  ref,
+) {
+  ref.keepAlive5Min();
+  return ref.watch(catalogRepositoryProvider).homePlaylists();
+});
+
+/// Future provider for trending tracks.
+final trendingTracksProvider = FutureProvider<CatalogList<Track>>((ref) {
+  ref.keepAlive5Min();
+  return ref.watch(catalogRepositoryProvider).trending();
+});
+
+/// Future provider for charts tracks.
+final chartsProvider = FutureProvider<CatalogList<Track>>((ref) {
+  ref.keepAlive5Min();
+  return ref.watch(catalogRepositoryProvider).charts();
+});
+
+/// Future provider for new release albums/playlists.
+final newReleasesProvider = FutureProvider<CatalogList<RemotePlaylist>>((ref) {
+  ref.keepAlive5Min();
+  return ref.watch(catalogRepositoryProvider).newReleases();
+});
+
+/// Future provider for mood categories directory.
+final moodCategoriesProvider = FutureProvider<List<MoodCategory>>((ref) {
+  ref.keepAlive5Min();
+  return ref.watch(catalogRepositoryProvider).moods();
+});
+
+/// Future provider family for individual mood page data.
+final moodPageProvider = FutureProvider.family<MoodPageData, String>((
+  ref,
+  params,
+) {
+  ref.keepAlive5Min();
+  return ref.watch(catalogRepositoryProvider).mood(params);
+});
+
+/// Future provider family for up next / radio tracks.
+final upNextTracksProvider = FutureProvider.family<List<Track>, String>((
+  ref,
+  videoId,
+) {
+  ref.keepAlive5Min();
+  return ref.watch(catalogRepositoryProvider).upNext(videoId);
+});

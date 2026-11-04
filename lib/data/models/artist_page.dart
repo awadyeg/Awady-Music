@@ -10,6 +10,7 @@ class ArtistPage {
     this.albums = const [],
     this.singles = const [],
     this.bio,
+    this.fromFallback = false,
   });
 
   /// The artist profile details.
@@ -26,4 +27,7 @@ class ArtistPage {
 
   /// Bio or biography summary if available.
   final String? bio;
+
+  /// Whether this artist page was fetched from fallback (e.g. Audius).
+  final bool fromFallback;
 }
