@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,7 +38,9 @@ class GlassSurface extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).glass;
-    final reduceTransparency = ref.watch(reduceTransparencyProvider);
+    final reduceTransparency =
+        ref.watch(reduceTransparencyProvider) ||
+        ref.watch(settingsProvider.select((s) => s.reduceTransparency));
     final highContrast = MediaQuery.maybeHighContrastOf(context) ?? false;
     final shouldReduce = reduceTransparency || highContrast;
     final borderRadius = BorderRadius.circular(radius);

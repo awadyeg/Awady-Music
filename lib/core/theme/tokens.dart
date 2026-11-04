@@ -55,7 +55,9 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
 
   // Motion
   static const Duration defaultDuration = Duration(milliseconds: 220);
+  static const Duration motionDefault = defaultDuration;
   static const Curve defaultCurve = Curves.easeOutCubic;
+  static const Curve motionDefaultCurve = defaultCurve;
 
   static const GlassTokens dark = GlassTokens(
     bg: Color(0xFF000000),

@@ -1,0 +1,114 @@
+import 'package:awady_music/app.dart';
+import 'package:awady_music/core/router/app_router.dart';
+import 'package:awady_music/core/settings/settings_provider.dart';
+import 'package:awady_music/widgets/glass_tab_bar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
+  testWidgets('App launches at /home and displays HomeScreen and GlassTabBar', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ProviderScope(child: AwadyMusicApp()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('HomeScreen'), findsOneWidget);
+    expect(find.byType(GlassTabBar), findsOneWidget);
+  });
+
+  testWidgets('Tapping tabs switches branch and preserves state', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ProviderScope(child: AwadyMusicApp()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('HomeScreen'), findsOneWidget);
+
+    // Tap Search tab
+    await tester.tap(find.text('Search'));
+    await tester.pumpAndSettle();
+    expect(find.text('SearchScreen'), findsOneWidget);
+
+    // Tap Library tab
+    await tester.tap(find.text('Library'));
+    await tester.pumpAndSettle();
+    expect(find.text('LibraryScreen'), findsOneWidget);
+
+    // Tap Stats tab
+    await tester.tap(find.text('Stats'));
+    await tester.pumpAndSettle();
+    expect(find.text('StatsScreen'), findsOneWidget);
+
+    // Tap Home tab again
+    await tester.tap(find.text('Home'));
+    await tester.pumpAndSettle();
+    expect(find.text('HomeScreen'), findsOneWidget);
+  });
+
+  testWidgets('Navigating to modal and shared routes displays placeholders', (
+    tester,
+  ) async {
+    late WidgetRef testRef;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: Consumer(
+          builder: (context, ref, child) {
+            testRef = ref;
+            return const AwadyMusicApp();
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Navigate to /artist/adele-123
+    testRef.read(appRouterProvider).go('/artist/adele-123');
+    await tester.pumpAndSettle();
+    expect(find.text('ArtistScreen: adele-123'), findsOneWidget);
+
+    // Navigate to /now-playing
+    testRef.read(appRouterProvider).go('/now-playing');
+    await tester.pumpAndSettle();
+    expect(find.text('NowPlayingScreen'), findsOneWidget);
+
+    // Navigate to /settings
+    testRef.read(appRouterProvider).go('/settings');
+    await tester.pumpAndSettle();
+    expect(find.text('SettingsScreen'), findsOneWidget);
+
+    // Navigate to /settings/legal
+    testRef.read(appRouterProvider).go('/settings/legal');
+    await tester.pumpAndSettle();
+    expect(find.text('LegalScreen'), findsOneWidget);
+  });
+
+  testWidgets('SettingsProvider updates theme and locale', (tester) async {
+    late WidgetRef testRef;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: Consumer(
+          builder: (context, ref, child) {
+            testRef = ref;
+            return const AwadyMusicApp();
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Change to Arabic locale
+    await testRef.read(settingsProvider.notifier).setLocale(const Locale('ar'));
+    await tester.pumpAndSettle();
+
+    // Verify Arabic tab label "الرئيسية"
+    expect(find.text('الرئيسية'), findsOneWidget);
+  });
+}

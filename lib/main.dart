@@ -1,21 +1,8 @@
+import 'package:awady_music/app.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
-  runApp(const AwadyMusicApp());
-}
-
-class AwadyMusicApp extends StatelessWidget {
-  const AwadyMusicApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Awady Music',
-      theme: ThemeData(
-        fontFamily: 'Inter',
-        fontFamilyFallback: const ['IBMPlexSansArabic'],
-      ),
-      home: const Scaffold(),
-    );
-  }
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const ProviderScope(child: AwadyMusicApp()));
 }
