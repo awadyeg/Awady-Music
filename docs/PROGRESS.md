@@ -11,7 +11,7 @@
 
 ## Phase 1: Design system
 - [x] T-07 Tokens
-- [ ] T-08 ThemeData
+- [x] T-08 ThemeData
 - [ ] T-09 GlassSurface
 - [ ] T-10 Shared widgets A
 - [ ] T-11 Shared widgets B

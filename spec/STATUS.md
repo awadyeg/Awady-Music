@@ -9,13 +9,14 @@
 - T-04: Fonts & assets
 - T-05: l10n
 - T-06: CI
-- T-07: Tokens (implemented GlassTokens in lib/core/theme/tokens.dart with dark and light palettes, lerp, radii, spacing, and motion; unit tests passing)
+- T-07: Tokens
+- T-08: ThemeData (implemented AppTheme.dark() and AppTheme.light() with Material 3, NoSplash, Inter typography scale with Arabic fallback, GlassTokens extension; tests passing)
 
 ## In Progress
-- T-08: ThemeData
-
-## Next
 - T-09: GlassSurface
 
+## Next
+- T-10: Shared widgets A
+
 ## Left
-- 63 tasks remaining (T-08 to T-70)
+- 62 tasks remaining (T-09 to T-70)
