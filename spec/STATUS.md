@@ -34,11 +34,13 @@
 
 - CHECKPOINT C: Phase 2 review verified (159 passing tests, stream resolution verified via tool/try_stream.dart, live Innertube search dump verified)
 
+- T-28: AudioHandler (implemented AwadyAudioHandler extending BaseAudioHandler with QueueHandler and SeekHandler integrating just_audio; configured AndroidManifest with audio_service, foreground service, intent filters, AudioServiceActivity in MainActivity.kt, minSdk 26; configured iOS Info.plist with UIBackgroundModes audio and awadymusic scheme; initialized in main.dart; debug APK assembled; 162 unit tests passing)
+
 ## In Progress
-- Phase 3: Player (T-28 AudioHandler)
+- Phase 3: Player (T-29 PlayerController core)
 
 ## Next
-- T-29: PlayerController core
+- T-30: Load pipeline & fallback
 
 ## Left
-- 43 tasks remaining (T-28 to T-70)
+- 42 tasks remaining (T-29 to T-70)

@@ -1,8 +1,36 @@
+import 'dart:async';
+
+import 'package:audio_service/audio_service.dart';
 import 'package:awady_music/app.dart';
+import 'package:awady_music/core/util/log.dart';
+import 'package:awady_music/player/audio_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: AwadyMusicApp()));
+  await Log.init();
+  await initAudioSession();
+
+  AwadyAudioHandler audioHandler;
+  try {
+    audioHandler = await AudioService.init(
+      builder: AwadyAudioHandler.new,
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.awady.awady_music.channel.audio',
+        androidNotificationChannelName: 'Playback',
+        androidNotificationOngoing: true,
+      ),
+    );
+  } on Object catch (e, st) {
+    Log.w('AudioService.init fallback: $e', e, st);
+    audioHandler = AwadyAudioHandler();
+  }
+
+  runApp(
+    ProviderScope(
+      overrides: [audioHandlerProvider.overrideWithValue(audioHandler)],
+      child: const AwadyMusicApp(),
+    ),
+  );
 }

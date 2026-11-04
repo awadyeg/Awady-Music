@@ -37,7 +37,7 @@
 - **CHECKPOINT C: Complete (159 tests passed, stream & search verified)**
 
 ## Phase 3: Player
-- [ ] T-28 AudioHandler
+- [x] T-28 AudioHandler
 - [ ] T-29 PlayerController core
 - [ ] T-30 Load pipeline & fallback
 - [ ] T-31 Prefetch
