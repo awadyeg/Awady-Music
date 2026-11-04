@@ -3,7 +3,7 @@
 ## Phase 0: Project setup
 - [x] T-01 Create project
 - [x] T-02 Dependencies
-- [ ] T-03 Folder skeleton
+- [x] T-03 Folder skeleton
 - [ ] T-04 Fonts & assets
 - [ ] T-05 l10n
 - [ ] T-06 CI
