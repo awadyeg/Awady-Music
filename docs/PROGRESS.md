@@ -24,7 +24,7 @@
 - [x] T-15 Database
 - [x] T-16 Http core
 - [x] T-17 Innertube base
-- [ ] T-18 Innertube parsers: search & suggest
+- [x] T-18 Innertube parsers: search & suggest
 - [ ] T-19 Parsers: artist
 - [ ] T-20 Parsers: album/playlist
 - [ ] T-21 Parsers: home/explore/charts/new releases/moods/mood/upNext

@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/core/util/semaphore.dart';
+import 'package:awady_music/data/models/search_results.dart';
 import 'package:awady_music/data/sources/http.dart';
+import 'package:awady_music/data/sources/innertube/parsers/search_parser.dart';
 import 'package:dio/dio.dart';
 
 /// Represents a bootstrapped session context for Innertube.
@@ -158,5 +160,19 @@ class InnertubeClient {
     );
 
     return response.data ?? <String, dynamic>{};
+  }
+
+  final _searchParser = const SearchParser();
+
+  /// Searches Innertube and returns parsed [SearchResults].
+  Future<SearchResults> search(String query) async {
+    final res = await post('search', {'query': query});
+    return _searchParser.parseSearch(res);
+  }
+
+  /// Returns search suggestions for [query].
+  Future<List<String>> suggest(String query) async {
+    final res = await post('music/get_search_suggestions', {'input': query});
+    return _searchParser.parseSuggestions(res);
   }
 }
