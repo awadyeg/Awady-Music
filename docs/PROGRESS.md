@@ -33,7 +33,7 @@
 - [x] T-24 Audius client
 - [x] T-25 Deezer radio
 - [x] T-26 CatalogRepository
-- [ ] T-27 LibraryRepository
+- [x] T-27 LibraryRepository
 - **CHECKPOINT C**
 
 ## Phase 3: Player

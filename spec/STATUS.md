@@ -30,12 +30,13 @@
 - T-24: Audius client (implemented AudiusClient with discovery node pool bootstrap, automatic host rotation on failure, deterministic 4xx fatal bail, ranking & originality filtering, mappers to Track/Artist/RemotePlaylist, streamUrl; unit tests passing)
 - T-25: Deezer radio (implemented DeezerClient with public search/artist, related artists, top tracks round-robin, seed drop, deduplication, match integration via InnertubeClient; http_mock_adapter unit tests passing)
 - T-26: CatalogRepository (implemented CatalogRepository and CatalogList with Innertube-to-Audius fallback for search, artist, album, playlist, home, trending, charts, newReleases; added fromFallback metadata flag; Riverpod FutureProvider and family with 5-minute keepAlive in catalog_providers.dart; unit tests passing)
+- T-27: LibraryRepository (implemented LibraryRepository managing liked tracks, followed artists, recents capped at 50, playlists CRUD, reordering, in-place sort by title/artist/duration, placeholder resolution, dropped track cleanup, and playlistExportJson; ported all tests from library.test.ts; SQLite DAO hydration verified)
 
 ## In Progress
-- T-27: LibraryRepository
-
-## Next
 - CHECKPOINT C: Phase 2 review
 
+## Next
+- Phase 3: T-28 AudioHandler
+
 ## Left
-- 44 tasks remaining (T-27 to T-70)
+- 43 tasks remaining (T-28 to T-70)
