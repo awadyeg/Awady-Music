@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/core/util/semaphore.dart';
+import 'package:awady_music/data/models/artist_page.dart';
 import 'package:awady_music/data/models/search_results.dart';
 import 'package:awady_music/data/sources/http.dart';
+import 'package:awady_music/data/sources/innertube/parsers/artist_parser.dart';
 import 'package:awady_music/data/sources/innertube/parsers/search_parser.dart';
 import 'package:dio/dio.dart';
 
@@ -163,6 +165,7 @@ class InnertubeClient {
   }
 
   final _searchParser = const SearchParser();
+  final _artistParser = const ArtistParser();
 
   /// Searches Innertube and returns parsed [SearchResults].
   Future<SearchResults> search(String query) async {
@@ -174,5 +177,18 @@ class InnertubeClient {
   Future<List<String>> suggest(String query) async {
     final res = await post('music/get_search_suggestions', {'input': query});
     return _searchParser.parseSuggestions(res);
+  }
+
+  /// Fetches and parses full artist profile, top tracks, and discography.
+  Future<ArtistPage> artist(String channelId, {String? nameHint}) async {
+    final cleanId = channelId.startsWith('yt-')
+        ? channelId.substring(3)
+        : channelId;
+    final res = await post('browse', {'browseId': cleanId});
+    return _artistParser.parseArtistPage(
+      res,
+      channelId: cleanId,
+      nameHint: nameHint,
+    );
   }
 }

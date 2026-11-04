@@ -22,12 +22,13 @@
 - T-16: Http core (implemented Semaphore utility with concurrency tests; configured Dio factory with 8s connect / 15s receive timeouts, HttpLoggingInterceptor, and RetryInterceptor retrying 5xx/network errors but not 4xx)
 - T-17: Innertube base (implemented InnertubeClient with session bootstrap from music.youtube.com ytcfg, WEB_REMIX context payload, limiter 4, defensive dig/digAs helpers; tool/record_fixture.dart recorded 12 real raw JSON fixtures in test/fixtures/innertube; fixture-backed tests verified)
 - T-18: Innertube parsers: search & suggest (implemented SearchParser parsing top result card, song items with cleaned titles, duration, plays and album linkage, artist channels, and playlists/albums, suggestions parser; fixture unit and integration tests verified)
+- T-19: Parsers: artist (implemented ArtistParser parsing profile metadata, top songs, album/single carousels, bio, and parseMpadDiscography; InnertubeClient.artist integration; fixture tests verified)
 
 ## In Progress
-- T-19: Parsers: artist
-
-## Next
 - T-20: Parsers: album/playlist
 
+## Next
+- T-21: Parsers: home/explore/charts/new releases/moods/mood/upNext
+
 ## Left
-- 52 tasks remaining (T-19 to T-70)
+- 51 tasks remaining (T-20 to T-70)
