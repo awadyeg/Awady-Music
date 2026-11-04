@@ -22,7 +22,7 @@
 - [x] T-13 Models
 - [x] T-14 Validators
 - [x] T-15 Database
-- [ ] T-16 Http core
+- [x] T-16 Http core
 - [ ] T-17 Innertube base
 - [ ] T-18 Innertube parsers: search & suggest
 - [ ] T-19 Parsers: artist

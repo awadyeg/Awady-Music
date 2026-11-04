@@ -19,12 +19,13 @@
 - T-13: Models (implemented freezed + json models for Track, Artist with hasArtistPage, RemotePlaylist, LocalPlaylist, DownloadItem, StreamInfo, LyricLine, Lyrics, TrackAgg, ArtistAgg, MonthAgg, RewindData, PlaylistExport; tests for round trip and .freebify.json import passed)
 - T-14: Validators (implemented isValidTrack, isValidUser, repairTrack, slimTrack, sanitizeTrackList in data/models/track_validator.dart; ported all test cases from storage.test.ts)
 - T-15: Database (implemented Drift SQLite schema with 15 tables and DAOs: LibraryDao, PlaylistDao, DownloadsDao, StatsDao, CacheDao; in-memory SQLite unit tests verified)
+- T-16: Http core (implemented Semaphore utility with concurrency tests; configured Dio factory with 8s connect / 15s receive timeouts, HttpLoggingInterceptor, and RetryInterceptor retrying 5xx/network errors but not 4xx)
 
 ## In Progress
-- T-16: Http core
-
-## Next
 - T-17: Innertube base
 
+## Next
+- T-18: Innertube parsers: search & suggest
+
 ## Left
-- 55 tasks remaining (T-16 to T-70)
+- 54 tasks remaining (T-17 to T-70)
