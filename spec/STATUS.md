@@ -18,12 +18,13 @@
 - CHECKPOINT B: Design system & app shell preview goldens in dark-en, light-en, dark-ar
 - T-13: Models (implemented freezed + json models for Track, Artist with hasArtistPage, RemotePlaylist, LocalPlaylist, DownloadItem, StreamInfo, LyricLine, Lyrics, TrackAgg, ArtistAgg, MonthAgg, RewindData, PlaylistExport; tests for round trip and .freebify.json import passed)
 - T-14: Validators (implemented isValidTrack, isValidUser, repairTrack, slimTrack, sanitizeTrackList in data/models/track_validator.dart; ported all test cases from storage.test.ts)
+- T-15: Database (implemented Drift SQLite schema with 15 tables and DAOs: LibraryDao, PlaylistDao, DownloadsDao, StatsDao, CacheDao; in-memory SQLite unit tests verified)
 
 ## In Progress
-- T-15: Database
-
-## Next
 - T-16: Http core
 
+## Next
+- T-17: Innertube base
+
 ## Left
-- 56 tasks remaining (T-15 to T-70)
+- 55 tasks remaining (T-16 to T-70)
