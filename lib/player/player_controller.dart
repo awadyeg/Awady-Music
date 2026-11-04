@@ -78,6 +78,7 @@ class PlayerController extends Notifier<PlayerState> {
   final List<StreamSubscription<dynamic>> _subscriptions = [];
   Timer? _noticeTimer;
   Timer? _saveQueueDebounceTimer;
+  Timer? _sleepTimer;
   AppLifecycleListener? _lifecycleListener;
 
   // Circuit breaker & load sequence counters
@@ -99,6 +100,7 @@ class PlayerController extends Notifier<PlayerState> {
       _subscriptions.clear();
       _noticeTimer?.cancel();
       _saveQueueDebounceTimer?.cancel();
+      _sleepTimer?.cancel();
       _lifecycleListener?.dispose();
     });
 
@@ -134,6 +136,8 @@ class PlayerController extends Notifier<PlayerState> {
         _ => RepeatMode.off,
       };
       final autoplay = prefs.getBool('player_autoplay') ?? true;
+      final normOn = prefs.getBool('player_norm_on') ?? true;
+      final fadeSecs = prefs.getInt('player_fade_secs') ?? 4;
 
       final rawJson = await _db.getQueueState();
       var queue = <Track>[];
@@ -190,6 +194,8 @@ class PlayerController extends Notifier<PlayerState> {
           shuffle: shuffle,
           repeat: repeat,
           autoplay: autoplay,
+          normOn: normOn,
+          fadeSecs: fadeSecs,
         );
         return;
       }
@@ -201,6 +207,8 @@ class PlayerController extends Notifier<PlayerState> {
           shuffle: shuffle,
           repeat: repeat,
           autoplay: autoplay,
+          normOn: normOn,
+          fadeSecs: fadeSecs,
         );
         return;
       }
@@ -215,6 +223,8 @@ class PlayerController extends Notifier<PlayerState> {
         shuffle: shuffle,
         repeat: repeat,
         autoplay: autoplay,
+        normOn: normOn,
+        fadeSecs: fadeSecs,
         queue: queue,
         index: index,
         currentTime: pos,
@@ -294,6 +304,69 @@ class PlayerController extends Notifier<PlayerState> {
       await prefs.setString(key, val);
     } on Object catch (e) {
       Log.w('Failed saving pref $key: $e');
+    }
+  }
+
+  Future<void> _savePrefInt(String key, int val) async {
+    try {
+      final prefs =
+          ref.read(sharedPreferencesProvider) ??
+          await SharedPreferences.getInstance();
+      await prefs.setInt(key, val);
+    } on Object catch (e) {
+      Log.w('Failed saving pref $key: $e');
+    }
+  }
+
+  /// Sets or cancels the sleep timer in [mins] minutes.
+  /// When it fires, playback pauses and state is flushed to persistent storage.
+  void setSleepTimer(int? mins) {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    if (mins == null || mins <= 0) {
+      state = state.copyWith(sleepAt: null);
+      return;
+    }
+    final target = DateTime.now().add(Duration(minutes: mins));
+    state = state.copyWith(sleepAt: target);
+    _sleepTimer = Timer(Duration(minutes: mins), () async {
+      _sleepTimer = null;
+      state = state.copyWith(sleepAt: null, isPlaying: false);
+      await _audioHandler.pausePlayer();
+      unawaited(saveQueueStateNow());
+    });
+  }
+
+  void setNormOn({required bool value}) {
+    state = state.copyWith(normOn: value);
+    unawaited(_savePrefBool('player_norm_on', value));
+  }
+
+  void setFadeSecs(int secs) {
+    final clamped = secs.clamp(0, 12);
+    state = state.copyWith(fadeSecs: clamped);
+    unawaited(_savePrefInt('player_fade_secs', clamped));
+  }
+
+  /// Ramps volume smoothly between [from] and [to] over [duration].
+  Future<void> rampVolume({
+    required double from,
+    required double to,
+    required Duration duration,
+    int steps = 5,
+  }) async {
+    if (duration <= Duration.zero || steps <= 1) {
+      await _audioHandler.setVolume(to);
+      return;
+    }
+    final stepDuration = Duration(
+      milliseconds: duration.inMilliseconds ~/ steps,
+    );
+    for (var i = 1; i <= steps; i++) {
+      final frac = i / steps;
+      final current = from + (to - from) * frac;
+      await _audioHandler.setVolume(current);
+      await Future<void>.delayed(stepDuration);
     }
   }
 
@@ -1137,10 +1210,28 @@ class PlayerController extends Notifier<PlayerState> {
     }
 
     try {
+      final shouldFade =
+          state.fadeSecs > 0 &&
+          state.isPlaying &&
+          _audioHandler.playbackState.value.playing;
+      final halfFade = shouldFade
+          ? Duration(milliseconds: state.fadeSecs * 500)
+          : Duration.zero;
+
+      if (shouldFade) {
+        await rampVolume(from: state.volume, to: 0, duration: halfFade);
+        if (!ref.mounted || seq != loadSeq) return;
+      }
+
       await _audioHandler.setAudioSource(source, initialPosition: startPos);
       if (!ref.mounted || seq != loadSeq) return;
       await _audioHandler.playPlayer();
       if (!ref.mounted || seq != loadSeq) return;
+
+      if (shouldFade) {
+        unawaited(rampVolume(from: 0, to: state.volume, duration: halfFade));
+      }
+
       autoFailStreak = 0;
       state = state.copyWith(buffering: false, isPlaying: true);
       unawaited(maybeFillRadio());
