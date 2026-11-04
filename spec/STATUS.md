@@ -8,13 +8,14 @@
 - T-03: Folder skeleton
 - T-04: Fonts & assets
 - T-05: l10n
-- T-06: CI (created .github/workflows/ci.yml with Android APK build and iOS unsigned build)
+- T-06: CI
+- T-07: Tokens (implemented GlassTokens in lib/core/theme/tokens.dart with dark and light palettes, lerp, radii, spacing, and motion; unit tests passing)
 
 ## In Progress
-- CHECKPOINT A
+- T-08: ThemeData
 
 ## Next
-- Phase 1: Design system (T-07)
+- T-09: GlassSurface
 
 ## Left
-- 64 tasks remaining (T-07 to T-70)
+- 63 tasks remaining (T-08 to T-70)

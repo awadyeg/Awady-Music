@@ -10,7 +10,7 @@
 - **CHECKPOINT A**
 
 ## Phase 1: Design system
-- [ ] T-07 Tokens
+- [x] T-07 Tokens
 - [ ] T-08 ThemeData
 - [ ] T-09 GlassSurface
 - [ ] T-10 Shared widgets A
