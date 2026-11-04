@@ -34,7 +34,7 @@
 - [x] T-25 Deezer radio
 - [x] T-26 CatalogRepository
 - [x] T-27 LibraryRepository
-- **CHECKPOINT C**
+- **CHECKPOINT C: Complete (159 tests passed, stream & search verified)**
 
 ## Phase 3: Player
 - [ ] T-28 AudioHandler

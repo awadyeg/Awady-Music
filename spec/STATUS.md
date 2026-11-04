@@ -32,11 +32,13 @@
 - T-26: CatalogRepository (implemented CatalogRepository and CatalogList with Innertube-to-Audius fallback for search, artist, album, playlist, home, trending, charts, newReleases; added fromFallback metadata flag; Riverpod FutureProvider and family with 5-minute keepAlive in catalog_providers.dart; unit tests passing)
 - T-27: LibraryRepository (implemented LibraryRepository managing liked tracks, followed artists, recents capped at 50, playlists CRUD, reordering, in-place sort by title/artist/duration, placeholder resolution, dropped track cleanup, and playlistExportJson; ported all tests from library.test.ts; SQLite DAO hydration verified)
 
+- CHECKPOINT C: Phase 2 review verified (159 passing tests, stream resolution verified via tool/try_stream.dart, live Innertube search dump verified)
+
 ## In Progress
-- CHECKPOINT C: Phase 2 review
+- Phase 3: Player (T-28 AudioHandler)
 
 ## Next
-- Phase 3: T-28 AudioHandler
+- T-29: PlayerController core
 
 ## Left
 - 43 tasks remaining (T-28 to T-70)
