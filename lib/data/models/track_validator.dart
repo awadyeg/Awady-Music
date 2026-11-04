@@ -9,7 +9,12 @@ bool isValidUser(dynamic v) {
   return id is String && id.isNotEmpty && name is String;
 }
 
+bool isPlayableTrack(Track t) => t.isStreamable;
+
 bool isValidTrack(dynamic t) {
+  if (t is Track) {
+    return t.id.isNotEmpty && t.title.isNotEmpty && isPlayableTrack(t);
+  }
   if (t is! Map) return false;
 
   final id = t['id'];

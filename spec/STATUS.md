@@ -36,11 +36,13 @@
 
 - T-28: AudioHandler (implemented AwadyAudioHandler extending BaseAudioHandler with QueueHandler and SeekHandler integrating just_audio; configured AndroidManifest with audio_service, foreground service, intent filters, AudioServiceActivity in MainActivity.kt, minSdk 26; configured iOS Info.plist with UIBackgroundModes audio and awadymusic scheme; initialized in main.dart; debug APK assembled; 162 unit tests passing)
 
+- T-29: PlayerController core (implemented PlayerController with Freezed PlayerState managing queue, history, shuffle with Spotify-style deck drain and dealing, repeat modes off/all/one, next with repeat & autoplay semantics, prev with >3s restart, seek, volume, mute, cycleRepeat, jumpTo, enqueue, playNextUp, removeAt, clearQueue, moveInQueue; unit tests passing)
+
 ## In Progress
-- Phase 3: Player (T-29 PlayerController core)
+- Phase 3: Player (T-30 Load pipeline & fallback)
 
 ## Next
-- T-30: Load pipeline & fallback
+- T-31: Prefetch
 
 ## Left
-- 42 tasks remaining (T-29 to T-70)
+- 41 tasks remaining (T-30 to T-70)
