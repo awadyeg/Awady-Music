@@ -9,6 +9,9 @@ import 'package:awady_music/data/models/enums.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/models/track_validator.dart';
 import 'package:awady_music/data/sources/audius/audius_client.dart';
+import 'package:awady_music/data/sources/deezer/deezer_client.dart';
+import 'package:awady_music/data/sources/innertube/innertube_client.dart';
+import 'package:awady_music/data/sources/innertube/matcher.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_impl.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_provider.dart';
 import 'package:awady_music/player/audio_handler.dart';
@@ -47,6 +50,16 @@ List<int> shuffledIndices(int count, int excludeIndex, [Random? random]) {
   return list;
 }
 
+/// Normalizes a track title for deduplication against remixes/accents/brackets.
+/// Ported exactly from upstream `player.ts:normTitle`.
+String normTitle(String title) {
+  return fold(title)
+      .toLowerCase()
+      .replaceAll(RegExp(r'\s*(\([^)]*\)|\[[^\]]*\]|\|.*)$'), '')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+}
+
 final playerControllerProvider =
     NotifierProvider<PlayerController, PlayerState>(PlayerController.new);
 
@@ -54,6 +67,8 @@ class PlayerController extends Notifier<PlayerState> {
   AwadyAudioHandler get _audioHandler => ref.read(audioHandlerProvider);
   StreamResolver get _streamResolver => ref.read(streamResolverProvider);
   AudiusClient get _audiusClient => ref.read(audiusClientProvider);
+  InnertubeClient get _innertubeClient => ref.read(innertubeClientProvider);
+  DeezerClient get _deezerClient => ref.read(deezerClientProvider);
   AppDatabase get _db => ref.read(appDatabaseProvider);
 
   final List<StreamSubscription<dynamic>> _subscriptions = [];
@@ -64,6 +79,9 @@ class PlayerController extends Notifier<PlayerState> {
   int autoFailStreak = 0;
   int streamRetries = 0;
   String? _prefetchedForTrackId;
+
+  final Set<String> _radioTried = {};
+  ({String id, String tail})? _radioFilledFor;
 
   @override
   PlayerState build() {
@@ -456,6 +474,11 @@ class PlayerController extends Notifier<PlayerState> {
     _audioHandler
       ..updateCurrentQueue(newQueue.map((t) => t.toMediaItem()).toList())
       ..setCurrentQueueIndex(newIndex);
+
+    final remaining = newQueue.length - (newIndex + 1);
+    if (remaining < 4) {
+      unawaited(maybeFillRadio());
+    }
   }
 
   void clearQueue() {
@@ -545,6 +568,227 @@ class PlayerController extends Notifier<PlayerState> {
       return;
     }
     unawaited(loadAt(ni));
+  }
+
+  Future<List<Track>> _genreMix(String vid, Track seed) async {
+    List<Track> more;
+    try {
+      more = await _innertubeClient.upNext(vid);
+    } on Object catch (_) {
+      more = const [];
+    }
+
+    if (more.length < 8 &&
+        seed.artist.name.isNotEmpty &&
+        seed.artist.name != 'Unknown artist') {
+      try {
+        final searchRes = await _innertubeClient.search(seed.artist.name);
+        final seen = more.map((t) => t.streamId ?? t.id).toSet();
+        final extra = searchRes.songs
+            .where((t) => !seen.contains(t.streamId ?? t.id))
+            .toList();
+        more = [...more, ...extra];
+        if (more.length > 40) more = more.sublist(0, 40);
+      } on Object catch (_) {}
+    }
+
+    final seedTitle = normTitle(seed.title);
+    final titles = <String>{};
+    return more.where((t) {
+      final n = normTitle(t.title);
+      final streamId = t.streamId ?? (t.id.startsWith('yt-') ? t.id : null);
+      if (streamId == null || n == seedTitle || titles.contains(n)) {
+        return false;
+      }
+      titles.add(n);
+      return true;
+    }).toList();
+  }
+
+  List<Track> _pickRadioSeeds() {
+    if (_radioTried.length > 120) _radioTried.clear();
+    final current = state.current;
+    final cands = state.queue.where((t) {
+      final vid = t.streamId ?? (t.id.startsWith('yt-') ? t.id : null);
+      return t.id != current?.id &&
+          t.source == TrackSource.yt &&
+          vid != null &&
+          !_radioTried.contains(vid);
+    }).toList();
+    final tail = cands.length > 10 ? cands.sublist(cands.length - 10) : cands;
+    final pool = tail.length >= 3 ? tail : cands;
+    if (pool.isEmpty) return const [];
+    final shuffled = [...pool]..shuffle();
+    return shuffled.take(4).toList();
+  }
+
+  /// Refills upcoming queue with similar tracks when remaining items < 4 and
+  /// autoplay is enabled.
+  Future<void> maybeFillRadio() async {
+    if (!state.autoplay) return;
+    final current = state.current;
+    if (current == null || current.source != TrackSource.yt) return;
+    final vid =
+        current.streamId ?? (current.id.startsWith('yt-') ? current.id : null);
+    if (vid == null) return;
+
+    final remaining = state.queue.length - (state.index + 1);
+    if (remaining >= 4) return;
+
+    final tail = state.queue
+        .skip(max(0, state.index))
+        .take(4)
+        .map((t) => t.id)
+        .join(',');
+
+    if (_radioFilledFor?.id == current.id && _radioFilledFor?.tail == tail) {
+      return;
+    }
+    _radioFilledFor = (id: current.id, tail: tail);
+
+    try {
+      var more = await _genreMix(vid, current);
+      _radioTried.add(vid);
+
+      if (!ref.mounted || state.current?.id != current.id) return;
+
+      List<Track> dedupe(List<Track> candidates) {
+        final haveIds = <String>{};
+        final haveTitles = <String>{};
+        for (final t in state.queue) {
+          if (t.streamId != null) haveIds.add(t.streamId!);
+          haveIds.add(t.id);
+          haveTitles.add(normTitle(t.title));
+        }
+        final out = <Track>[];
+        for (final t in candidates) {
+          final tid = t.streamId ?? t.id;
+          final n = normTitle(t.title);
+          if ((t.streamId != null || t.id.isNotEmpty) &&
+              !haveIds.contains(tid) &&
+              !haveTitles.contains(n)) {
+            haveIds.add(tid);
+            haveTitles.add(n);
+            out.add(t);
+          }
+        }
+        return out;
+      }
+
+      var add = dedupe(more);
+
+      if (add.isEmpty) {
+        final seeds = _pickRadioSeeds();
+        for (final seed in seeds) {
+          final seedVid = seed.streamId ?? seed.id;
+          more = await _genreMix(seedVid, seed);
+          _radioTried.add(seedVid);
+          add = dedupe(more);
+          if (add.isNotEmpty) break;
+        }
+      }
+
+      if (add.isEmpty) {
+        try {
+          final picks = await _deezerClient.radio(
+            current.artist.name,
+            current.title,
+            limit: 10,
+            innertubeClient: _innertubeClient,
+          );
+          if (picks.isNotEmpty) {
+            add = dedupe(picks);
+          }
+        } on Object catch (e) {
+          Log.w('Deezer fallback in radio failed: $e');
+        }
+      }
+
+      if (add.isEmpty) {
+        _radioFilledFor = null;
+        return;
+      }
+
+      if (!ref.mounted || state.current?.id != current.id) return;
+
+      final oldLength = state.queue.length;
+      final newQueue = [...state.queue, ...add];
+
+      var deck = List<int>.from(state.shuffleDeck);
+      if (state.shuffle) {
+        final newIndices = [for (var i = oldLength; i < newQueue.length; i++) i]
+          ..shuffle();
+        deck = [...deck, ...newIndices];
+      }
+
+      state = state.copyWith(queue: newQueue, shuffleDeck: deck);
+      _audioHandler.updateCurrentQueue(
+        newQueue.map((t) => t.toMediaItem()).toList(),
+      );
+    } on Object catch (_) {
+      _radioFilledFor = null;
+    }
+  }
+
+  /// Truncates upcoming queue and populates it with a fresh radio mix seeded by
+  /// [track] (or the current track if omitted).
+  Future<void> startRadio([Track? track]) async {
+    var seed = track;
+    if (seed != null &&
+        (state.current == null || seed.id != state.current!.id)) {
+      playTrack(seed);
+    }
+    seed ??= state.current;
+    if (seed == null) return;
+    final vid = seed.streamId ?? (seed.id.startsWith('yt-') ? seed.id : null);
+
+    try {
+      var mix = <Track>[];
+      if (vid != null && seed.source == TrackSource.yt) {
+        mix = await _genreMix(vid, seed);
+      }
+      if (mix.isEmpty) {
+        try {
+          mix = await _deezerClient.radio(
+            seed.artist.name,
+            seed.title,
+            limit: 10,
+            innertubeClient: _innertubeClient,
+          );
+        } on Object catch (_) {}
+      }
+
+      if (!ref.mounted) return;
+      if (state.current?.id != seed.id) return;
+
+      if (mix.isEmpty) {
+        notify('table.radioFail');
+        return;
+      }
+
+      final head = state.queue.sublist(0, state.index + 1);
+      final newQueue = [...head, ...mix];
+      _radioFilledFor = (
+        id: seed.id,
+        tail: mix.take(4).map((t) => t.id).join(','),
+      );
+      _radioTried.clear();
+      if (vid != null) {
+        _radioTried.add(vid);
+      }
+
+      final deck = state.shuffle
+          ? shuffledIndices(newQueue.length, state.index)
+          : <int>[];
+
+      state = state.copyWith(queue: newQueue, shuffleDeck: deck);
+      _audioHandler.updateCurrentQueue(
+        newQueue.map((t) => t.toMediaItem()).toList(),
+      );
+      notify('core.radioStarted');
+    } on Object catch (_) {
+      notify('table.radioFail');
+    }
   }
 
   void _checkPrefetchAt50Percent(Duration pos) {
@@ -671,6 +915,7 @@ class PlayerController extends Notifier<PlayerState> {
       if (!ref.mounted || seq != loadSeq) return;
       autoFailStreak = 0;
       state = state.copyWith(buffering: false, isPlaying: true);
+      unawaited(maybeFillRadio());
     } on Object catch (e, st) {
       Log.e('Playback error for ${track.id}: $e', e, st);
       if (!ref.mounted || seq != loadSeq) return;

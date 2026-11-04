@@ -42,11 +42,13 @@
 
 - T-31: Prefetch (implemented next-track prefetching at 50% playback duration with playback deduping, and VisibilityDetector-free prefetchTopTracks / prefetchTracksWithResolver helper for top 3 list items; unit tests passing)
 
+- T-32: Radio/autoplay (implemented maybeFillRadio triggering when queue remaining < 4, normalized title and stream ID deduplication, pickRadioSeeds queue tail walking, DeezerClient radio fallback with Innertube match, and startRadio truncating upcoming queue with fresh genre mix and core.radioStarted notice; unit tests passing)
+
 ## In Progress
-- Phase 3: Player (T-32 Radio/autoplay)
+- Phase 3: Player (T-33 Persistence of player)
 
 ## Next
-- T-33: Persistence of player
+- T-34: Sleep timer, fade, normalisation
 
 ## Left
-- 39 tasks remaining (T-32 to T-70)
+- 38 tasks remaining (T-33 to T-70)
