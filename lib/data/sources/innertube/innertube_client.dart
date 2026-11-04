@@ -3,10 +3,14 @@ import 'dart:async';
 import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/core/util/semaphore.dart';
 import 'package:awady_music/data/models/artist_page.dart';
+import 'package:awady_music/data/models/mood_models.dart';
 import 'package:awady_music/data/models/playlist_page.dart';
+import 'package:awady_music/data/models/remote_playlist.dart';
 import 'package:awady_music/data/models/search_results.dart';
+import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/sources/http.dart';
 import 'package:awady_music/data/sources/innertube/parsers/artist_parser.dart';
+import 'package:awady_music/data/sources/innertube/parsers/browse_parser.dart';
 import 'package:awady_music/data/sources/innertube/parsers/playlist_parser.dart';
 import 'package:awady_music/data/sources/innertube/parsers/search_parser.dart';
 import 'package:dio/dio.dart';
@@ -169,6 +173,7 @@ class InnertubeClient {
   final _searchParser = const SearchParser();
   final _artistParser = const ArtistParser();
   final _playlistParser = const PlaylistParser();
+  final _browseParser = const BrowseParser();
 
   /// Searches Innertube and returns parsed [SearchResults].
   Future<SearchResults> search(String query) async {
@@ -237,5 +242,93 @@ class InnertubeClient {
     }
 
     throw lastError ?? Exception('Failed to load playlist: $cleanId');
+  }
+
+  /// Fetches home and explore feeds and returns editorial playlists/albums.
+  Future<List<RemotePlaylist>> homePlaylists() async {
+    final results = <RemotePlaylist>[];
+    final seen = <String>{};
+
+    for (final browseId in ['FEmusic_home', 'FEmusic_explore']) {
+      try {
+        final res = await post('browse', {'browseId': browseId});
+        final playlists = _browseParser.parseHomePlaylists(res);
+        for (final pl in playlists) {
+          if (seen.add(pl.id)) {
+            results.add(pl);
+          }
+        }
+      } on Exception catch (e) {
+        Log.w('Failed to fetch home playlists for $browseId: $e');
+      }
+    }
+
+    return results;
+  }
+
+  /// Fetches new releases feed.
+  Future<List<RemotePlaylist>> newReleases({int limit = 24}) async {
+    final res = await post('browse', {'browseId': 'FEmusic_new_releases'});
+    return _browseParser.parseNewReleases(res, limit: limit);
+  }
+
+  /// Fetches the regional charts and returns the top chart songs.
+  Future<List<Track>> charts() async {
+    final res = await post('browse', {'browseId': 'FEmusic_charts'});
+    final parsed = _browseParser.parseCharts(res);
+
+    for (final bid in parsed.chartPlaylistIds) {
+      try {
+        final pl = await playlist(bid);
+        if (pl.tracks.length >= 10) {
+          return pl.tracks.length > 50 ? pl.tracks.sublist(0, 50) : pl.tracks;
+        }
+      } on Exception catch (e) {
+        Log.w('Failed to fetch chart playlist $bid: $e');
+      }
+    }
+
+    return parsed.tracks.length > 50
+        ? parsed.tracks.sublist(0, 50)
+        : parsed.tracks;
+  }
+
+  /// Fetches trending songs from explore or home feed.
+  Future<List<Track>> trending() async {
+    for (final browseId in ['FEmusic_explore', 'FEmusic_home']) {
+      try {
+        final res = await post('browse', {'browseId': browseId});
+        final parsed = _browseParser.parseCharts(res);
+        if (parsed.tracks.isNotEmpty) {
+          return parsed.tracks.length > 16
+              ? parsed.tracks.sublist(0, 16)
+              : parsed.tracks;
+        }
+      } on Exception catch (e) {
+        Log.w('Failed to fetch trending from $browseId: $e');
+      }
+    }
+    return const [];
+  }
+
+  /// Fetches moods and genres directory.
+  Future<List<MoodCategory>> moods() async {
+    final res = await post('browse', {'browseId': 'FEmusic_moods_and_genres'});
+    return _browseParser.parseMoods(res);
+  }
+
+  /// Fetches an individual mood / genre category page by [params].
+  Future<MoodPageData> mood(String params) async {
+    final res = await post('browse', {
+      'browseId': 'FEmusic_moods_and_genres_category',
+      'params': params,
+    });
+    return _browseParser.parseMoodPage(res);
+  }
+
+  /// Fetches upNext / autoplay radio tracks for [videoId].
+  Future<List<Track>> upNext(String videoId, {int limit = 40}) async {
+    final res = await post('next', {'videoId': videoId});
+    return _browseParser.parseUpNext(res, limit: limit);
   }
 }

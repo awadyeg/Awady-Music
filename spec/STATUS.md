@@ -24,12 +24,13 @@
 - T-18: Innertube parsers: search & suggest (implemented SearchParser parsing top result card, song items with cleaned titles, duration, plays and album linkage, artist channels, and playlists/albums, suggestions parser; fixture unit and integration tests verified)
 - T-19: Parsers: artist (implemented ArtistParser parsing profile metadata, top songs, album/single carousels, bio, and parseMpadDiscography; InnertubeClient.artist integration; fixture tests verified)
 - T-20: Parsers: album/playlist (implemented PlaylistParser parsing albums and playlists with full metadata, artwork fallback, and track lists; InnertubeClient.album and InnertubeClient.playlist with VL-prefix strip/retry candidates; fixture and integration tests verified)
+- T-21: Parsers: home/explore/charts/new releases/moods/mood/upNext (implemented BrowseParser and Mood models handling home/explore feeds, new releases, charts playlist resolution, 34-category mood directory, category pages, and upNext playlist panel videos; tests against all fixtures verified)
 
 ## In Progress
-- T-21: Parsers: home/explore/charts/new releases/moods/mood/upNext
-
-## Next
 - T-22: Import matcher
 
+## Next
+- T-23: StreamResolver
+
 ## Left
-- 50 tasks remaining (T-21 to T-70)
+- 49 tasks remaining (T-22 to T-70)

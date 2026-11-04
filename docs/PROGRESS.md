@@ -27,7 +27,7 @@
 - [x] T-18 Innertube parsers: search & suggest
 - [x] T-19 Parsers: artist
 - [x] T-20 Parsers: album/playlist
-- [ ] T-21 Parsers: home/explore/charts/new releases/moods/mood/upNext
+- [x] T-21 Parsers: home/explore/charts/new releases/moods/mood/upNext
 - [ ] T-22 Import matcher
 - [ ] T-23 StreamResolver
 - [ ] T-24 Audius client
