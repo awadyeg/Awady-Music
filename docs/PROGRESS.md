@@ -19,7 +19,7 @@
 - **CHECKPOINT B**
 
 ## Phase 2: Data layer
-- [ ] T-13 Models
+- [x] T-13 Models
 - [ ] T-14 Validators
 - [ ] T-15 Database
 - [ ] T-16 Http core
