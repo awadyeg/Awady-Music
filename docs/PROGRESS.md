@@ -14,7 +14,7 @@
 - [x] T-08 ThemeData
 - [x] T-09 GlassSurface
 - [x] T-10 Shared widgets A
-- [ ] T-11 Shared widgets B
+- [x] T-11 Shared widgets B
 - [ ] T-12 App shell & router
 - **CHECKPOINT B**
 

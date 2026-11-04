@@ -13,12 +13,13 @@
 - T-08: ThemeData
 - T-09: GlassSurface
 - T-10: Shared widgets A (implemented ArtworkImage with multi-size & mirror fallback sequence, Skeletons, GlassToast with toastProvider, LiveBars animated jumping equalizer; unit & widget tests verified)
+- T-11: Shared widgets B (implemented TrackTile with live bars/pending/download states, MediaCard, ArtistCard, CollageCover, SectionHeader, LargeTitleScaffold, GlassSheet, GlassSlider with scrubbing; unit and golden tests verified)
 
 ## In Progress
-- T-11: Shared widgets B
-
-## Next
 - T-12: App shell & router
 
+## Next
+- CHECKPOINT B (Report & golden screenshots review)
+
 ## Left
-- 60 tasks remaining (T-11 to T-70)
+- 59 tasks remaining (T-12 to T-70)
