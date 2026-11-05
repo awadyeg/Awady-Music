@@ -70,12 +70,13 @@
 - CHECKPOINT E: Phase 4 complete (all 17 screens and overlays T-38 to T-54 verified, 324 tests green, debug APK updated at build/app/outputs/flutter-apk/app-debug.apk)
 - T-55: LRC parser + fingerprint (implemented lib/data/sources/lyrics/lrc.dart with parseLrc supporting [mm:ss.xx] timestamps, fractional seconds, multi-stamps per line, [offset:±ms] metadata shift tag, and enhanced-LRC word marker stripping; sheetFingerprint extracting tail tokens with Unicode diacritics folding; formatLrc round-trip; 8 unit tests passing)
 - T-56: YTM timed lyrics client (implemented lib/data/sources/lyrics/ytm_lyrics_client.dart with 2-hop sequence: /next resolves lyrics tab browseId MPLYt..., /browse with ANDROID_MUSIC client context retrieves timedLyricsData and cueRange start times; falls back to musicDescriptionShelfRenderer plain lyrics; fixture-backed tests verified; 4 unit tests passing)
+- T-57: Musixmatch client (implemented lib/data/sources/lyrics/musixmatch_client.dart with anonymous token retrieval, SharedPreferences persistence, 401 retry, 8s timeout, Dalvik user agent, subtitle fetch, and duration proximity selection; 3 unit tests passing)
 
 ## In Progress
-- T-57: Musixmatch client (Phase 5: Lyrics)
-
-## Next
 - T-58: LRCLIB client (Phase 5: Lyrics)
 
+## Next
+- T-59: LyricsRepository + offsets (Phase 5: Lyrics)
+
 ## Left
-- 14 tasks remaining (T-57 to T-70)
+- 13 tasks remaining (T-58 to T-70)
