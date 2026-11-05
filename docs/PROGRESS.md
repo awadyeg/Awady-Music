@@ -79,7 +79,7 @@
 - **Phase 5 done (361 tests passing)**
 
 ## Phase 6: Import, downloads, backup
-- [ ] T-61 Spotify importer
+- [x] T-61 Spotify importer
 - [ ] T-62 YT Music playlist import
 - [ ] T-63 CSV + .freebify.json parsing
 - [ ] T-64 ImportQueue

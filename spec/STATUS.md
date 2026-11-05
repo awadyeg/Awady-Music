@@ -75,12 +75,13 @@
 - T-59: LyricsRepository + offsets (implemented lib/data/repositories/lyrics_repository.dart coordinating source fallback YTM timed -> Musixmatch -> LRCLIB synced -> plain fallback -> NoLyrics, in-memory LRU cache, per-sheet fingerprint isolation, auto-offset persistence to Drift lyric_offsets table, manual pinning pinOffset, and lyricsForTrackProvider Riverpod family; 8 unit tests passing)
 - T-60: Lyrics UI in Now Playing (implemented lib/features/now_playing/lyrics_view.dart with live auto-scroll centered highlighting, tap-to-seek, long-press to sync & pin offset with 'Synced' toast, 3-shimmer-line loading state, NoLyrics empty state with npAccuracyNote footnote, and PlainLyrics fallback; wired into NowPlayingScreen with animated shrunken artwork header row and bottom utility mic toggle; 5 unit & widget tests passing)
 - Phase 5 (Lyrics) complete! (361 tests passing across T-55 to T-60)
+- T-61: Spotify importer (implemented lib/data/sources/spotify/spotify_importer.dart faithfully porting electron/spotify.cjs with anonymous embed token scraping, api-partner.spotify.com/pathfinder/v1/query with fetchPlaylist persisted query hash, 100/page pagination with concurrency 5, limited flag detection, fallback to embed tracks, and fixture tests in test/fixtures/spotify_embed.html; 10 unit tests passing, total 371 tests)
 
 ## In Progress
-- T-61: Spotify importer (Phase 6: Import, downloads, backup)
-
-## Next
 - T-62: YT Music playlist import (Phase 6: Import, downloads, backup)
 
+## Next
+- T-63: CSV + .freebify.json parsing (Phase 6: Import, downloads, backup)
+
 ## Left
-- 10 tasks remaining (T-61 to T-70)
+- 9 tasks remaining (T-62 to T-70)
