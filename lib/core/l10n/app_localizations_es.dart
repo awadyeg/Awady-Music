@@ -141,7 +141,7 @@ class L10nEs extends L10n {
   String get navHome => 'Inicio';
 
   @override
-  String get navHomeAria => 'Inicio de Freebify';
+  String get navHomeAria => 'Inicio de Awady Music';
 
   @override
   String get navLibrary => 'Biblioteca';
@@ -544,10 +544,10 @@ class L10nEs extends L10n {
       'Tu mes hasta ahora: cada reproducción, contada en este dispositivo.';
 
   @override
-  String get rewindIntroTag => 'Freebify · mensual';
+  String get rewindIntroTag => 'Awady Music · mensual';
 
   @override
-  String get rewindIntroTagPartial => 'Freebify · aún contando';
+  String get rewindIntroTagPartial => 'Awady Music · aún contando';
 
   @override
   String get rewindKeepListening => 'Seguir escuchando';
@@ -1148,7 +1148,7 @@ class L10nEs extends L10n {
 
   @override
   String get settingsAboutBody =>
-      'Música gratis y sin anuncios. Freebify es un reproductor, no un host: todo el audio y los metadatos los obtiene tu dispositivo directamente de YouTube Music y de la API pública de Audius, bajo sus propios términos. Para uso personal y no comercial. No está afiliado a Spotify, YouTube, Google ni Audius.';
+      'Música gratis y sin anuncios. Awady Music es un reproductor, no un host: todo el audio y los metadatos los obtiene tu dispositivo directamente de YouTube Music y de la API pública de Audius, bajo sus propios términos. Para uso personal y no comercial. No está afiliado a Spotify, YouTube, Google ni Audius.';
 
   @override
   String settingsAboutVersions(String electron, String chromium) {
@@ -1217,7 +1217,7 @@ class L10nEs extends L10n {
   }
 
   @override
-  String get settingsLogin => 'Abrir Freebify al iniciar sesión';
+  String get settingsLogin => 'Abrir Awady Music al iniciar sesión';
 
   @override
   String get settingsLoginSub =>
@@ -1383,7 +1383,7 @@ class L10nEs extends L10n {
 
   @override
   String get aboutAttribution =>
-      'Basado en Freebify por govu — https://github.com/govu/freebify';
+      'Basado en el diseño y concepto de código abierto de Freebify';
 
   @override
   String get retry => 'Reintentar';

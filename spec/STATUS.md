@@ -61,12 +61,13 @@
 - T-46: Playlist/Album/Liked/Local screens (implemented lib/features/playlist/playlist_screen.dart supporting local user playlists, remote playlists, albums, liked songs, and recently played tracks; header with 220 cover, title, owner, track count, total duration, Play/Shuffle/Download all/⋯ actions; local playlist edit mode with reorderable list and delete actions; rename dialog, sort sheet by title/artist/duration, export JSON, and delete confirm dialog; Save to Library for remote playlists; pending import matching progress pill; empty local state with Find songs CTA; wired routes /playlist/:id, /library/liked, /library/recent in app_router.dart; debug APK built and verified; 9 unit & widget tests passing)
 - T-47: Library screen (implemented lib/features/library/library_screen.dart with LargeTitleScaffold, import and settings header action buttons, filter chips All/Playlists/Artists/Downloads, pinned rows for Liked Songs, Downloads, and Recently played with live counts, user playlists list with CollageCover and track count, followed artists list with circular avatars, empty states, and floating glass "+ New playlist" capsule with create playlist dialog; wired into app_router.dart; 5 unit & widget tests passing)
 - T-48: Stats screen (implemented lib/features/stats/stats_screen.dart with LargeTitleScaffold, Rewind banner when available, empty state when totalPlays is 0, 4 glass stat cards for this week, total plays, tracks played, artists heard, custom 7-day bar chart with baseline and today highlight, top 5 tracks list with ranks, duration, and tap-to-play, top 5 artists list with avatars, and full RTL Arabic and Light theme support; wired into app_router.dart; 4 unit & widget tests passing)
+- T-49: Rewind stories (implemented lib/features/rewind/rewind_screen.dart with 5 full-screen stories, 5-segment animated top progress bars, tap right 70% / left 30% navigation, swipe-down dismiss, pause/resume hold gestures, dominant artwork wash radial gradient, Intro slide, Minutes slide with chips, Top Artist slide with rank 1 badge, Top 5 tracks with tap-to-play CTA, and Outro slide with summary card and Play it again / Keep listening actions; wired to /home/rewind/:month route; zero Freebify branding; 3 widget tests passing)
 
 ## In Progress
-- T-49: Rewind stories (ui.md §4.9)
-
-## Next
 - T-50: Sleep timer sheet (ui.md §4.15)
 
+## Next
+- T-51: Equalizer sheet (ui.md §4.14)
+
 ## Left
-- 22 tasks remaining (T-49 to T-70)
+- 21 tasks remaining (T-50 to T-70)

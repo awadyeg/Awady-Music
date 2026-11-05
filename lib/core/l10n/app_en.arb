@@ -185,7 +185,7 @@
   "@navHome": {
     "description": "original key: nav.home"
   },
-  "navHomeAria": "Freebify home",
+  "navHomeAria": "Awady Music home",
   "@navHomeAria": {
     "description": "original key: nav.homeAria"
   },
@@ -753,11 +753,11 @@
   "@rewindIntroLinePartial": {
     "description": "original key: rewind.introLinePartial"
   },
-  "rewindIntroTag": "Freebify · monthly",
+  "rewindIntroTag": "Awady Music · monthly",
   "@rewindIntroTag": {
     "description": "original key: rewind.introTag"
   },
-  "rewindIntroTagPartial": "Freebify · still counting",
+  "rewindIntroTagPartial": "Awady Music · still counting",
   "@rewindIntroTagPartial": {
     "description": "original key: rewind.introTagPartial"
   },
@@ -1589,7 +1589,7 @@
   "@settingsAbout": {
     "description": "original key: settings.about"
   },
-  "settingsAboutBody": "Free, ad-free music. Freebify is a player, not a host: all audio & metadata are fetched by your device, directly from YouTube Music & the Audius public API, under their own terms. For personal, non-commercial use. Not affiliated with Spotify, YouTube, Google or Audius.",
+  "settingsAboutBody": "Free, ad-free music. Awady Music is a player, not a host: all audio & metadata are fetched by your device, directly from YouTube Music & the Audius public API, under their own terms. For personal, non-commercial use. Not affiliated with Spotify, YouTube, Google or Audius.",
   "@settingsAboutBody": {
     "description": "original key: settings.aboutBody"
   },
@@ -1689,7 +1689,7 @@
       }
     }
   },
-  "settingsLogin": "Open Freebify when you sign in",
+  "settingsLogin": "Open Awady Music when you sign in",
   "@settingsLogin": {
     "description": "original key: settings.login"
   },
@@ -1907,7 +1907,7 @@
   "@legal": {
     "description": "original key: legal"
   },
-  "aboutAttribution": "Based on Freebify by govu — https://github.com/govu/freebify",
+  "aboutAttribution": "Based on the open-source Freebify design and concept",
   "@aboutAttribution": {
     "description": "original key: aboutAttribution"
   },

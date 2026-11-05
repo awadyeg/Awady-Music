@@ -61,7 +61,7 @@
 - [x] T-46 Playlist/Album/Liked/Local
 - [x] T-47 Library
 - [x] T-48 Stats
-- [ ] T-49 Rewind stories
+- [x] T-49 Rewind stories
 - [ ] T-50 Sleep timer sheet
 - [ ] T-51 Equalizer sheet
 - [ ] T-52 Settings

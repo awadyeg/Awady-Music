@@ -342,7 +342,7 @@ abstract class L10n {
   /// original key: nav.homeAria
   ///
   /// In en, this message translates to:
-  /// **'Freebify home'**
+  /// **'Awady Music home'**
   String get navHomeAria;
 
   /// original key: nav.library
@@ -1080,13 +1080,13 @@ abstract class L10n {
   /// original key: rewind.introTag
   ///
   /// In en, this message translates to:
-  /// **'Freebify · monthly'**
+  /// **'Awady Music · monthly'**
   String get rewindIntroTag;
 
   /// original key: rewind.introTagPartial
   ///
   /// In en, this message translates to:
-  /// **'Freebify · still counting'**
+  /// **'Awady Music · still counting'**
   String get rewindIntroTagPartial;
 
   /// original key: rewind.keepListening
@@ -2148,7 +2148,7 @@ abstract class L10n {
   /// original key: settings.aboutBody
   ///
   /// In en, this message translates to:
-  /// **'Free, ad-free music. Freebify is a player, not a host: all audio & metadata are fetched by your device, directly from YouTube Music & the Audius public API, under their own terms. For personal, non-commercial use. Not affiliated with Spotify, YouTube, Google or Audius.'**
+  /// **'Free, ad-free music. Awady Music is a player, not a host: all audio & metadata are fetched by your device, directly from YouTube Music & the Audius public API, under their own terms. For personal, non-commercial use. Not affiliated with Spotify, YouTube, Google or Audius.'**
   String get settingsAboutBody;
 
   /// original key: settings.aboutVersions
@@ -2274,7 +2274,7 @@ abstract class L10n {
   /// original key: settings.login
   ///
   /// In en, this message translates to:
-  /// **'Open Freebify when you sign in'**
+  /// **'Open Awady Music when you sign in'**
   String get settingsLogin;
 
   /// original key: settings.login.sub
@@ -2586,7 +2586,7 @@ abstract class L10n {
   /// original key: aboutAttribution
   ///
   /// In en, this message translates to:
-  /// **'Based on Freebify by govu — https://github.com/govu/freebify'**
+  /// **'Based on the open-source Freebify design and concept'**
   String get aboutAttribution;
 
   /// original key: retry

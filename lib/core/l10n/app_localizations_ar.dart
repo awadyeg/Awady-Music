@@ -141,7 +141,7 @@ class L10nAr extends L10n {
   String get navHome => 'الرئيسية';
 
   @override
-  String get navHomeAria => 'Freebify home';
+  String get navHomeAria => 'Awady Music الرئيسية';
 
   @override
   String get navLibrary => 'المكتبة';
@@ -542,10 +542,10 @@ class L10nAr extends L10n {
       'Your month so far: every play, counted on this device.';
 
   @override
-  String get rewindIntroTag => 'Freebify · monthly';
+  String get rewindIntroTag => 'Awady Music · monthly';
 
   @override
-  String get rewindIntroTagPartial => 'Freebify · still counting';
+  String get rewindIntroTagPartial => 'Awady Music · still counting';
 
   @override
   String get rewindKeepListening => 'Keep listening';
@@ -1139,7 +1139,7 @@ class L10nAr extends L10n {
 
   @override
   String get settingsAboutBody =>
-      'Free, ad-free music. Freebify is a player, not a host: all audio & metadata are fetched by your device, directly from YouTube Music & the Audius public API, under their own terms. For personal, non-commercial use. Not affiliated with Spotify, YouTube, Google or Audius.';
+      'Free, ad-free music. Awady Music is a player, not a host: all audio & metadata are fetched by your device, directly from YouTube Music & the Audius public API, under their own terms. For personal, non-commercial use. Not affiliated with Spotify, YouTube, Google or Audius.';
 
   @override
   String settingsAboutVersions(String electron, String chromium) {
@@ -1207,7 +1207,7 @@ class L10nAr extends L10n {
   }
 
   @override
-  String get settingsLogin => 'Open Freebify when you sign in';
+  String get settingsLogin => 'Open Awady Music when you sign in';
 
   @override
   String get settingsLoginSub =>
@@ -1372,8 +1372,7 @@ class L10nAr extends L10n {
   String get legal => 'إشعارات قانونية وتراخيص';
 
   @override
-  String get aboutAttribution =>
-      'مبني على تطبيق Freebify بواسطة govu — https://github.com/govu/freebify';
+  String get aboutAttribution => 'مبني على تصميم ومفهوم Freebify مفتوح المصدر';
 
   @override
   String get retry => 'إعادة المحاولة';

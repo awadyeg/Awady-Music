@@ -7,6 +7,7 @@ import 'package:awady_music/features/mood/mood_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/features/playlist/playlist_screen.dart';
 import 'package:awady_music/features/queue/queue_screen.dart';
+import 'package:awady_music/features/rewind/rewind_screen.dart';
 import 'package:awady_music/features/search/search_screen.dart';
 import 'package:awady_music/features/stats/stats_screen.dart';
 import 'package:awady_music/player/player_controller.dart';
@@ -112,9 +113,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'rewind/:month',
                     parentNavigatorKey: rootNavigatorKey,
-                    builder: (context, state) => PlaceholderScreen(
-                      'RewindScreen: ${state.pathParameters['month']}',
-                    ),
+                    builder: (context, state) =>
+                        RewindScreen(month: state.pathParameters['month']),
                   ),
                 ],
               ),

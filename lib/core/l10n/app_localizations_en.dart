@@ -141,7 +141,7 @@ class L10nEn extends L10n {
   String get navHome => 'Home';
 
   @override
-  String get navHomeAria => 'Freebify home';
+  String get navHomeAria => 'Awady Music home';
 
   @override
   String get navLibrary => 'Library';
@@ -544,10 +544,10 @@ class L10nEn extends L10n {
       'Your month so far: every play, counted on this device.';
 
   @override
-  String get rewindIntroTag => 'Freebify · monthly';
+  String get rewindIntroTag => 'Awady Music · monthly';
 
   @override
-  String get rewindIntroTagPartial => 'Freebify · still counting';
+  String get rewindIntroTagPartial => 'Awady Music · still counting';
 
   @override
   String get rewindKeepListening => 'Keep listening';
@@ -1141,7 +1141,7 @@ class L10nEn extends L10n {
 
   @override
   String get settingsAboutBody =>
-      'Free, ad-free music. Freebify is a player, not a host: all audio & metadata are fetched by your device, directly from YouTube Music & the Audius public API, under their own terms. For personal, non-commercial use. Not affiliated with Spotify, YouTube, Google or Audius.';
+      'Free, ad-free music. Awady Music is a player, not a host: all audio & metadata are fetched by your device, directly from YouTube Music & the Audius public API, under their own terms. For personal, non-commercial use. Not affiliated with Spotify, YouTube, Google or Audius.';
 
   @override
   String settingsAboutVersions(String electron, String chromium) {
@@ -1209,7 +1209,7 @@ class L10nEn extends L10n {
   }
 
   @override
-  String get settingsLogin => 'Open Freebify when you sign in';
+  String get settingsLogin => 'Open Awady Music when you sign in';
 
   @override
   String get settingsLoginSub =>
@@ -1375,7 +1375,7 @@ class L10nEn extends L10n {
 
   @override
   String get aboutAttribution =>
-      'Based on Freebify by govu — https://github.com/govu/freebify';
+      'Based on the open-source Freebify design and concept';
 
   @override
   String get retry => 'Retry';
