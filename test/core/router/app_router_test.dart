@@ -6,6 +6,7 @@ import 'package:awady_music/features/home/home_screen.dart';
 import 'package:awady_music/features/library/library_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/features/search/search_screen.dart';
+import 'package:awady_music/features/stats/stats_screen.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,7 +49,7 @@ void main() {
     // Tap Stats tab
     await tester.tap(find.text('Stats'));
     await tester.pumpAndSettle();
-    expect(find.text('StatsScreen'), findsOneWidget);
+    expect(find.byType(StatsScreen), findsOneWidget);
 
     // Tap Home tab again
     await tester.tap(find.text('Home'));

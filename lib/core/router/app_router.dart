@@ -8,6 +8,7 @@ import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/features/playlist/playlist_screen.dart';
 import 'package:awady_music/features/queue/queue_screen.dart';
 import 'package:awady_music/features/search/search_screen.dart';
+import 'package:awady_music/features/stats/stats_screen.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
 import 'package:awady_music/widgets/mini_player.dart';
@@ -177,8 +178,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/stats',
-                builder: (context, state) =>
-                    const PlaceholderScreen('StatsScreen'),
+                builder: (context, state) => const StatsScreen(),
               ),
             ],
           ),

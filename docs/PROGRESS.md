@@ -60,7 +60,7 @@
 - [x] T-45 Artist
 - [x] T-46 Playlist/Album/Liked/Local
 - [x] T-47 Library
-- [ ] T-48 Stats
+- [x] T-48 Stats
 - [ ] T-49 Rewind stories
 - [ ] T-50 Sleep timer sheet
 - [ ] T-51 Equalizer sheet
