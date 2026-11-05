@@ -80,7 +80,7 @@
 
 ## Phase 6: Import, downloads, backup
 - [x] T-61 Spotify importer
-- [ ] T-62 YT Music playlist import
+- [x] T-62 YT Music playlist import
 - [ ] T-63 CSV + .freebify.json parsing
 - [ ] T-64 ImportQueue
 - [ ] T-65 Import sheet UI
