@@ -77,12 +77,13 @@
 - Phase 5 (Lyrics) complete! (361 tests passing across T-55 to T-60)
 - T-61: Spotify importer (implemented lib/data/sources/spotify/spotify_importer.dart faithfully porting electron/spotify.cjs with anonymous embed token scraping, api-partner.spotify.com/pathfinder/v1/query with fetchPlaylist persisted query hash, 100/page pagination with concurrency 5, limited flag detection, fallback to embed tracks, and fixture tests in test/fixtures/spotify_embed.html; 10 unit tests passing, total 371 tests)
 - T-62: YT Music playlist import (implemented lib/data/sources/youtube/yt_playlist_importer.dart extracting list ID from music.youtube.com URLs, watch links, raw IDs, stripping VL prefixes, and fetching tracks via InnertubeClient.playlist; 8 unit tests passing, total 379 tests)
+- T-63: CSV and JSON parser (implemented lib/data/sources/importer/playlist_file_parser.dart porting csvRows character-by-character parser with quotes and commas, Spotify and loose column detection findCols, and .freebify.json / awadymusic playlist JSON reader; 12 unit tests passing, total 391 tests)
 
 ## In Progress
-- T-63: CSV + .freebify.json parsing (Phase 6: Import, downloads, backup)
-
-## Next
 - T-64: ImportQueue (Phase 6: Import, downloads, backup)
 
+## Next
+- T-65: Import sheet UI (Phase 6: Import, downloads, backup)
+
 ## Left
-- 8 tasks remaining (T-63 to T-70)
+- 7 tasks remaining (T-64 to T-70)
