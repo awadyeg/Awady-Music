@@ -65,7 +65,7 @@
 - [x] T-50 Sleep timer sheet
 - [x] T-51 Equalizer sheet
 - [x] T-52 Settings
-- [ ] T-53 Legal screen
+- [x] T-53 Legal screen
 - [ ] T-54 Offline banner + update banner + global error screen
 - **CHECKPOINT E**
 

@@ -3,6 +3,7 @@ import 'package:awady_music/core/router/app_router.dart';
 import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/features/artist/artist_screen.dart';
 import 'package:awady_music/features/home/home_screen.dart';
+import 'package:awady_music/features/legal/legal_screen.dart';
 import 'package:awady_music/features/library/library_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/features/search/search_screen.dart';
@@ -93,7 +94,7 @@ void main() {
     // Navigate to /settings/legal
     testRef.read(appRouterProvider).go('/settings/legal');
     await tester.pumpAndSettle();
-    expect(find.text('LegalScreen'), findsOneWidget);
+    expect(find.byType(LegalScreen), findsOneWidget);
   });
 
   testWidgets('SettingsProvider updates theme and locale', (tester) async {

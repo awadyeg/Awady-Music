@@ -65,12 +65,13 @@
 - T-50: Sleep timer sheet (implemented lib/widgets/sleep_timer_sheet.dart with glass bottom sheet, active readout 'in {n} min' or 'Off', checkmark indicator, preset options for 5, 15, 30, 45, 60 minutes, and End of current track duration resolver; wired to playerController and NowPlayingScreen bottom bar; 5 widget tests passing)
 - T-51: Equalizer sheet (implemented lib/widgets/equalizer_sheet.dart with glass bottom sheet, enable switch, reset button, preset chips Flat, Bass boost, Bright, Vocal boost, V-Shape, Custom, 7 vertical band sliders with Hz labels, Normalize volume switch, and Crossfade slider 0-12s; wired to playerController and NowPlayingScreen; 5 widget tests passing)
 - T-52: Settings screen (implemented lib/features/settings/settings_screen.dart with grouped inset glass lists per ui.md §4.16: Playback with Autoplay switch, Normalize volume switch, Crossfade slider 0-12s, Equalizer entry row; Appearance with Theme picker System/Light/Dark, Reduce transparency switch, Language picker dialog; Library & storage with Liked & Playlists counts, Export library & stats, Clear artwork cache with toast, Open logs with file count & total size; About section with Awady Music app title, v1.0.0 (build 1), mandatory Constitution attribution line 'Based on the open-source Freebify design and concept', GitHub contribute link, Legal & Licenses link, and Check for updates button with live toast feedback; wired to /settings route; 4 unit & widget tests passing)
+- T-53: Legal screen (implemented lib/features/legal/legal_documents.dart with bundled Disclaimer, Terms of Use, Privacy Policy, and Licenses adapted to Awady Music with zero Freebify branding outside mandatory attribution; implemented lib/features/legal/legal_screen.dart with tab chips, glass styling, lightweight zero-dependency Markdown renderer for headings, bullet points, and inline bold/italic; wired to /settings/legal; 3 unit & widget tests passing)
 
 ## In Progress
-- T-53: Legal screen (ui.md §4.16)
-
-## Next
 - T-54: Offline banner + update banner + global error screen (ui.md §5)
 
+## Next
+- CHECKPOINT E: Phase 4 review
+
 ## Left
-- 18 tasks remaining (T-53 to T-70)
+- 17 tasks remaining (T-54 to T-70)

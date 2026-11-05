@@ -2,6 +2,7 @@ import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/features/artist/artist_screen.dart';
 import 'package:awady_music/features/genre/genre_screen.dart';
 import 'package:awady_music/features/home/home_screen.dart';
+import 'package:awady_music/features/legal/legal_screen.dart';
 import 'package:awady_music/features/library/library_screen.dart';
 import 'package:awady_music/features/mood/mood_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
@@ -245,7 +246,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'legal',
             parentNavigatorKey: rootNavigatorKey,
-            builder: (context, state) => const PlaceholderScreen('LegalScreen'),
+            builder: (context, state) => const LegalScreen(),
           ),
         ],
       ),
