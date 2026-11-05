@@ -82,7 +82,7 @@
 - [x] T-61 Spotify importer
 - [x] T-62 YT Music playlist import
 - [x] T-63 CSV + .freebify.json parsing
-- [ ] T-64 ImportQueue
+- [x] T-64 ImportQueue
 - [ ] T-65 Import sheet UI
 - [ ] T-66 Downloads
 - [ ] T-67 Backup export/import

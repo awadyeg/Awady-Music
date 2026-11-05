@@ -78,12 +78,13 @@
 - T-61: Spotify importer (implemented lib/data/sources/spotify/spotify_importer.dart faithfully porting electron/spotify.cjs with anonymous embed token scraping, api-partner.spotify.com/pathfinder/v1/query with fetchPlaylist persisted query hash, 100/page pagination with concurrency 5, limited flag detection, fallback to embed tracks, and fixture tests in test/fixtures/spotify_embed.html; 10 unit tests passing, total 371 tests)
 - T-62: YT Music playlist import (implemented lib/data/sources/youtube/yt_playlist_importer.dart extracting list ID from music.youtube.com URLs, watch links, raw IDs, stripping VL prefixes, and fetching tracks via InnertubeClient.playlist; 8 unit tests passing, total 379 tests)
 - T-63: CSV and JSON parser (implemented lib/data/sources/importer/playlist_file_parser.dart porting csvRows character-by-character parser with quotes and commas, Spotify and loose column detection findCols, and .freebify.json / awadymusic playlist JSON reader; 12 unit tests passing, total 391 tests)
+- T-64: ImportQueue (implemented lib/data/repositories/import_queue.dart faithfully porting src/store/resolve.ts with pending row queue, background matching concurrency 3, SQLite song_matches database caching, tap-to-resolve out-of-band jump resolveNow, retry & drop logic, and resumePending on app open; 5 unit tests passing, total 396 tests)
 
 ## In Progress
-- T-64: ImportQueue (Phase 6: Import, downloads, backup)
-
-## Next
 - T-65: Import sheet UI (Phase 6: Import, downloads, backup)
 
+## Next
+- T-66: Downloads (Phase 6: Import, downloads, backup)
+
 ## Left
-- 7 tasks remaining (T-64 to T-70)
+- 6 tasks remaining (T-65 to T-70)
