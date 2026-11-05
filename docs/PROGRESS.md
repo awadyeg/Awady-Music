@@ -70,7 +70,7 @@
 - **CHECKPOINT E: Complete (all screens & overlays, 324 tests passing, debug APK built)**
 
 ## Phase 5: Lyrics
-- [ ] T-55 LRC parser + fingerprint
+- [x] T-55 LRC parser + fingerprint
 - [ ] T-56 YTM timed lyrics client
 - [ ] T-57 Musixmatch client
 - [ ] T-58 LRCLIB client
