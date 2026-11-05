@@ -69,12 +69,13 @@
 - T-54: Offline banner + update banner + global error screen (implemented lib/widgets/offline_banner.dart with connectivity_plus stream and thin glass strip under status bar; implemented lib/widgets/update_banner.dart with AppUpdateInfo notifier and download/dismiss actions on Home feed; implemented lib/widgets/global_error_screen.dart with GlobalErrorScreen and AppErrorBoundary; wired into AppShell and HomeScreen; debug APK built and verified; 6 unit & widget tests passing)
 - CHECKPOINT E: Phase 4 complete (all 17 screens and overlays T-38 to T-54 verified, 324 tests green, debug APK updated at build/app/outputs/flutter-apk/app-debug.apk)
 - T-55: LRC parser + fingerprint (implemented lib/data/sources/lyrics/lrc.dart with parseLrc supporting [mm:ss.xx] timestamps, fractional seconds, multi-stamps per line, [offset:±ms] metadata shift tag, and enhanced-LRC word marker stripping; sheetFingerprint extracting tail tokens with Unicode diacritics folding; formatLrc round-trip; 8 unit tests passing)
+- T-56: YTM timed lyrics client (implemented lib/data/sources/lyrics/ytm_lyrics_client.dart with 2-hop sequence: /next resolves lyrics tab browseId MPLYt..., /browse with ANDROID_MUSIC client context retrieves timedLyricsData and cueRange start times; falls back to musicDescriptionShelfRenderer plain lyrics; fixture-backed tests verified; 4 unit tests passing)
 
 ## In Progress
-- T-56: YTM timed lyrics client (Phase 5: Lyrics)
-
-## Next
 - T-57: Musixmatch client (Phase 5: Lyrics)
 
+## Next
+- T-58: LRCLIB client (Phase 5: Lyrics)
+
 ## Left
-- 15 tasks remaining (T-56 to T-70)
+- 14 tasks remaining (T-57 to T-70)

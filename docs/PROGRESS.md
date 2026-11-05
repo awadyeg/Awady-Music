@@ -71,7 +71,7 @@
 
 ## Phase 5: Lyrics
 - [x] T-55 LRC parser + fingerprint
-- [ ] T-56 YTM timed lyrics client
+- [x] T-56 YTM timed lyrics client
 - [ ] T-57 Musixmatch client
 - [ ] T-58 LRCLIB client
 - [ ] T-59 LyricsRepository + offsets
