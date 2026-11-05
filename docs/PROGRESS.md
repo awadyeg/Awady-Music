@@ -57,7 +57,7 @@
 - [x] T-42 Home
 - [x] T-43 Search
 - [x] T-44 Genre + Mood
-- [ ] T-45 Artist
+- [x] T-45 Artist
 - [ ] T-46 Playlist/Album/Liked/Local
 - [ ] T-47 Library
 - [ ] T-48 Stats

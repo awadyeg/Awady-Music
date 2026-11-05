@@ -1,6 +1,7 @@
 import 'package:awady_music/app.dart';
 import 'package:awady_music/core/router/app_router.dart';
 import 'package:awady_music/core/settings/settings_provider.dart';
+import 'package:awady_music/features/artist/artist_screen.dart';
 import 'package:awady_music/features/home/home_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/features/search/search_screen.dart';
@@ -74,7 +75,7 @@ void main() {
     // Navigate to /artist/adele-123
     testRef.read(appRouterProvider).go('/artist/adele-123');
     await tester.pumpAndSettle();
-    expect(find.text('ArtistScreen: adele-123'), findsOneWidget);
+    expect(find.byType(ArtistScreen), findsOneWidget);
 
     // Navigate to /now-playing
     testRef.read(appRouterProvider).go('/now-playing');

@@ -1,4 +1,5 @@
 import 'package:awady_music/core/theme/tokens.dart';
+import 'package:awady_music/features/artist/artist_screen.dart';
 import 'package:awady_music/features/genre/genre_screen.dart';
 import 'package:awady_music/features/home/home_screen.dart';
 import 'package:awady_music/features/mood/mood_screen.dart';
@@ -181,8 +182,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Shared routes (pushed within tabs)
       GoRoute(
         path: '/artist/:id',
-        builder: (context, state) =>
-            PlaceholderScreen('ArtistScreen: ${state.pathParameters['id']}'),
+        builder: (context, state) => ArtistScreen(
+          id: state.pathParameters['id'] ?? '',
+          nameHint: state.uri.queryParameters['n'],
+        ),
       ),
       GoRoute(
         path: '/playlist/:id',

@@ -57,12 +57,13 @@
 - T-42: Home screen (implemented lib/features/home/home_screen.dart with LargeTitleScaffold, localized greeting by hour of day, gear icon to /settings, rewind glass banner when availableRewind is present, 2x3 recently played grid with Bidi RTL support, trending tracks carousel with MediaCard, new releases carousel with RemotePlaylist cards, hot playlists carousel, CardsRowSkeleton loading state, error banner with retry button, and pull-to-refresh; 6 unit & widget tests passing)
 - T-43: Search screen (implemented lib/features/search/search_screen.dart with pinned glass search input, clear button, 250ms debounced suggestions dropdown, empty browse state with Moods & moments and Browse genres grids, submitted search with 4 segmented filter chips All/Songs/Artists/Playlists, Top result card with one-tap play, Songs list with TrackTile and expandable 'More tracks', Artists horizontal carousel, Playlists horizontal carousel, empty search results state, error state with retry, and stream prefetching for top track; 9 widget tests passing)
 - T-44: Genre + Mood screens (implemented lib/features/genre/genre_screen.dart with LargeTitleScaffold, kicker, segmented control for Top hits, Week, Month, All time, big Play button, track list with TrackTile; implemented lib/features/mood/mood_screen.dart with LargeTitleScaffold, playlists horizontal carousel, and top tracks list; wired routes /genre/:name, /mood/:params in app_router.dart; 7 unit & widget tests passing)
+- T-45: Artist screen (implemented lib/features/artist/artist_screen.dart with stretchy header, cover photo / profile avatar, verified badge, monthly listeners, Play / Shuffle / Follow buttons, Popular tracks list with TrackTile and See all toggle, Albums horizontal carousel, Singles & EPs horizontal carousel, expandable About bio card; wired route /artist/:id in app_router.dart; 4 widget tests passing)
 
 ## In Progress
-- T-45: Artist screen (ui.md §4.4)
-
-## Next
 - T-46: Playlist/Album/Liked/Local screens (ui.md §4.5)
 
+## Next
+- T-47: Library screen (ui.md §4.6)
+
 ## Left
-- 26 tasks remaining (T-45 to T-70)
+- 25 tasks remaining (T-46 to T-70)
