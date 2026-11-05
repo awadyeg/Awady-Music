@@ -18,8 +18,9 @@ final ytmLyricsClientProvider = Provider<YtmLyricsClient>((ref) {
 /// 2. `/browse` with `ANDROID_MUSIC` mobile client context retrieves
 ///    `timedLyricsData`.
 class YtmLyricsClient {
-  YtmLyricsClient({required this.innertube, Dio? dio})
-    : _dio = dio ?? createDio();
+  YtmLyricsClient({InnertubeClient? innertube, Dio? dio})
+    : innertube = innertube ?? InnertubeClient(),
+      _dio = dio ?? createDio();
 
   final InnertubeClient innertube;
   final Dio _dio;
