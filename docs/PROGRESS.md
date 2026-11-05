@@ -51,7 +51,7 @@
 
 ## Phase 4: Screens
 - [x] T-38 Mini player
-- [ ] T-39 Now Playing
+- [x] T-39 Now Playing
 - [ ] T-40 Queue sheet
 - [ ] T-41 Track menu sheet + add-to-playlist
 - [ ] T-42 Home

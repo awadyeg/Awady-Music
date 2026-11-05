@@ -1,6 +1,7 @@
 import 'package:awady_music/app.dart';
 import 'package:awady_music/core/router/app_router.dart';
 import 'package:awady_music/core/settings/settings_provider.dart';
+import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -76,7 +77,7 @@ void main() {
     // Navigate to /now-playing
     testRef.read(appRouterProvider).go('/now-playing');
     await tester.pumpAndSettle();
-    expect(find.text('NowPlayingScreen'), findsOneWidget);
+    expect(find.byType(NowPlayingScreen), findsOneWidget);
 
     // Navigate to /settings
     testRef.read(appRouterProvider).go('/settings');

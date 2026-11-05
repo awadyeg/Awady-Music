@@ -1,4 +1,5 @@
 import 'package:awady_music/core/theme/tokens.dart';
+import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
 import 'package:awady_music/widgets/mini_player.dart';
@@ -189,8 +190,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/now-playing',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) =>
-            const PlaceholderScreen('NowPlayingScreen'),
+        builder: (context, state) => const NowPlayingScreen(),
       ),
       GoRoute(
         path: '/queue',

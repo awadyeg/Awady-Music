@@ -51,12 +51,13 @@
 - T-36: Stats recorder (implemented lib/data/repositories/stats_repository.dart with StatsRepository & StatsRecorder; local dayKey and monthKey, 300 tracks & 200 artists caps with lowest-ms eviction, 120 days & 14 months caps, 15s debounced flusher, recordPlay at 30s or 50% duration; robust hydration with corrupted blob recovery; wired into PlayerController positionStream and playback state; unit tests passing)
 - T-37: Rewind builder (implemented lib/player/rewind.dart with buildRewind, latestRewind, currentRewind, availableRewind, isRewindSeen, markRewindSeen, RewindController; gating constants 10 min / 5 plays closed, 3 plays partial; localized month formatting with fallback; unit tests passing)
 - T-38: Mini player (implemented lib/widgets/mini_player.dart with 60h glass capsule, artwork 44 rounded 10, title/artist with Bidi RTL detection, play/pause and next controls, thin progress line at bottom edge clipped to capsule, tap to /now-playing, swipe next/prev with RTL awareness, and wired overlay in AppShell above GlassTabBar; unit & widget tests verified)
+- T-39: Now Playing screen (implemented lib/features/now_playing/now_playing_screen.dart with blurred artwork background wash, top bar with close chevron and album context, big artwork with animated scale on play/pause, title/artist with Bidi RTL detection, like heart wired to LibraryRepository, GlassSlider scrubber with elapsed/remaining, shuffle/prev/big play accent circle/next/repeat controls, utility bottom row, empty pick-track state; wired to /now-playing route; widget tests verified)
 
 ## In Progress
-- T-39: Now Playing screen (ui.md §4.10)
-
-## Next
 - T-40: Queue sheet (ui.md §4.11)
 
+## Next
+- T-41: Track menu sheet + add-to-playlist (ui.md §4.12)
+
 ## Left
-- 32 tasks remaining (T-39 to T-70)
+- 31 tasks remaining (T-40 to T-70)
