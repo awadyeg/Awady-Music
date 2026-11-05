@@ -62,7 +62,7 @@
 - [x] T-47 Library
 - [x] T-48 Stats
 - [x] T-49 Rewind stories
-- [ ] T-50 Sleep timer sheet
+- [x] T-50 Sleep timer sheet
 - [ ] T-51 Equalizer sheet
 - [ ] T-52 Settings
 - [ ] T-53 Legal screen

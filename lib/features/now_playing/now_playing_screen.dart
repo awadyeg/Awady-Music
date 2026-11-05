@@ -9,6 +9,7 @@ import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
 import 'package:awady_music/widgets/glass_slider.dart';
+import 'package:awady_music/widgets/sleep_timer_sheet.dart';
 import 'package:awady_music/widgets/track_menu_sheet.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide RepeatMode;
@@ -474,7 +475,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                         ),
                         tooltip: 'Sleep timer',
                         onPressed: () {
-                          // Sleep timer sheet
+                          unawaited(SleepTimerSheet.show(context));
                         },
                       ),
                       // Equalizer (Android only)

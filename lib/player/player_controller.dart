@@ -349,15 +349,24 @@ class PlayerController extends Notifier<PlayerState> {
   /// Sets or cancels the sleep timer in [mins] minutes.
   /// When it fires, playback pauses and state is flushed to persistent storage.
   void setSleepTimer(int? mins) {
+    if (mins == null || mins <= 0) {
+      setSleepTimerDuration(null);
+    } else {
+      setSleepTimerDuration(Duration(minutes: mins));
+    }
+  }
+
+  /// Sets or cancels the sleep timer with an explicit [Duration].
+  void setSleepTimerDuration(Duration? duration) {
     _sleepTimer?.cancel();
     _sleepTimer = null;
-    if (mins == null || mins <= 0) {
+    if (duration == null || duration <= Duration.zero) {
       state = state.copyWith(sleepAt: null);
       return;
     }
-    final target = DateTime.now().add(Duration(minutes: mins));
+    final target = DateTime.now().add(duration);
     state = state.copyWith(sleepAt: target);
-    _sleepTimer = Timer(Duration(minutes: mins), () async {
+    _sleepTimer = Timer(duration, () async {
       _sleepTimer = null;
       state = state.copyWith(sleepAt: null, isPlaying: false);
       await _audioHandler.pausePlayer();
