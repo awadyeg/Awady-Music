@@ -73,12 +73,14 @@
 - T-57: Musixmatch client (implemented lib/data/sources/lyrics/musixmatch_client.dart with anonymous token retrieval, SharedPreferences persistence, 401 retry, 8s timeout, Dalvik user agent, subtitle fetch, and duration proximity selection; 3 unit tests passing)
 - T-58: LRCLIB client (implemented lib/data/sources/lyrics/lrclib_client.dart with 3 parallel query shapes track_name+artist_name, q, track_name + /api/get, ±25s duration trust, modal duration trap, auto lead-in offset calculation introOffMs, pickLrc ported from NowPlaying.tsx; 9 unit tests passing)
 - T-59: LyricsRepository + offsets (implemented lib/data/repositories/lyrics_repository.dart coordinating source fallback YTM timed -> Musixmatch -> LRCLIB synced -> plain fallback -> NoLyrics, in-memory LRU cache, per-sheet fingerprint isolation, auto-offset persistence to Drift lyric_offsets table, manual pinning pinOffset, and lyricsForTrackProvider Riverpod family; 8 unit tests passing)
+- T-60: Lyrics UI in Now Playing (implemented lib/features/now_playing/lyrics_view.dart with live auto-scroll centered highlighting, tap-to-seek, long-press to sync & pin offset with 'Synced' toast, 3-shimmer-line loading state, NoLyrics empty state with npAccuracyNote footnote, and PlainLyrics fallback; wired into NowPlayingScreen with animated shrunken artwork header row and bottom utility mic toggle; 5 unit & widget tests passing)
+- Phase 5 (Lyrics) complete! (361 tests passing across T-55 to T-60)
 
 ## In Progress
-- T-60: Lyrics UI in Now Playing (Phase 5: Lyrics)
-
-## Next
 - T-61: Spotify importer (Phase 6: Import, downloads, backup)
 
+## Next
+- T-62: YT Music playlist import (Phase 6: Import, downloads, backup)
+
 ## Left
-- 11 tasks remaining (T-60 to T-70)
+- 10 tasks remaining (T-61 to T-70)

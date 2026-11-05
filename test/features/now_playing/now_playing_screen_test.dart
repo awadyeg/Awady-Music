@@ -246,5 +246,41 @@ void main() {
       expect(find.text('أم كلثوم'), findsOneWidget);
       expect(find.byIcon(LucideIcons.pause), findsOneWidget);
     });
+
+    testWidgets(
+      'lyrics toggle button toggles lyrics mode and shrunken header',
+      (tester) async {
+        final fake = FakePlayerController(
+          initial: const PlayerState(
+            queue: [sampleTrack],
+            index: 0,
+            isPlaying: true,
+            duration: Duration(seconds: 286),
+          ),
+        );
+
+        await tester.pumpWidget(
+          _buildHarness(playerController: fake, libraryRepo: libraryRepo),
+        );
+        await tester.pumpAndSettle();
+
+        // Lyrics toggle button exists
+        final toggleFinder = find.byKey(const Key('now_playing_lyrics_toggle'));
+        expect(toggleFinder, findsOneWidget);
+
+        // Tap toggle to open lyrics
+        await tester.tap(toggleFinder);
+        await tester.pumpAndSettle();
+
+        // In lyrics mode, lyrics view is present
+        expect(find.byType(NowPlayingScreen), findsOneWidget);
+
+        // Tap toggle again to return to big artwork mode
+        await tester.tap(toggleFinder);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(NowPlayingScreen), findsOneWidget);
+      },
+    );
   });
 }

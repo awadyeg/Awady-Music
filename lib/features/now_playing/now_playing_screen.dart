@@ -6,6 +6,7 @@ import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/core/util/format.dart';
 import 'package:awady_music/data/models/enums.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
+import 'package:awady_music/features/now_playing/lyrics_view.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
 import 'package:awady_music/widgets/equalizer_sheet.dart';
@@ -28,6 +29,7 @@ class NowPlayingScreen extends ConsumerStatefulWidget {
 
 class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
   double? _scrubPositionMs;
+  bool _showLyrics = false;
 
   @override
   Widget build(BuildContext context) {
@@ -203,88 +205,41 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                     ],
                   ),
                 ),
-                // Artwork with animated scale on play/pause
-                Expanded(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final size =
-                              constraints.maxWidth < constraints.maxHeight
-                              ? constraints.maxWidth
-                              : constraints.maxHeight;
-                          final artSize = size.clamp(200.0, 360.0);
-                          return AnimatedScale(
-                            scale: playerState.isPlaying ? 1.0 : 0.92,
-                            duration: const Duration(milliseconds: 280),
-                            curve: Curves.easeOutCubic,
-                            child: SizedBox(
-                              width: artSize,
-                              height: artSize,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.35,
-                                      ),
-                                      blurRadius: 28,
-                                      offset: const Offset(0, 14),
-                                    ),
-                                  ],
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(24),
-                                  child: ArtworkImage(
-                                    art: track.artwork,
-                                    size: artSize,
-                                    radius: 24,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                if (_showLyrics) ...[
+                  // Shrunken artwork header row
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 6,
                     ),
-                  ),
-                ),
-                // Track Info & Like button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              track.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textDirection:
-                                  Bidi.detectRtlDirectionality(track.title)
-                                  ? TextDirection.rtl
-                                  : TextDirection.ltr,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                color: tokens.textPrimary,
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: ArtworkImage(art: track.artwork, size: 52),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                track.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textDirection:
+                                    Bidi.detectRtlDirectionality(track.title)
+                                    ? TextDirection.rtl
+                                    : TextDirection.ltr,
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: tokens.textPrimary,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                if (track.artist.id.isNotEmpty) {
-                                  unawaited(
-                                    context.push('/artist/${track.artist.id}'),
-                                  );
-                                }
-                              },
-                              child: Text(
+                              const SizedBox(height: 2),
+                              Text(
                                 track.artist.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -295,30 +250,166 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                                     ? TextDirection.rtl
                                     : TextDirection.ltr,
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                   color: tokens.textDim,
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          isLiked ? LucideIcons.heart : LucideIcons.heart,
-                          color: isLiked ? Colors.redAccent : tokens.textDim,
-                          size: 26,
+                        IconButton(
+                          icon: Icon(
+                            isLiked ? LucideIcons.heart : LucideIcons.heart,
+                            color: isLiked ? Colors.redAccent : tokens.textDim,
+                            size: 24,
+                          ),
+                          tooltip: isLiked
+                              ? l10n.playerUnlike
+                              : l10n.playerLike,
+                          onPressed: () {
+                            ref
+                                .read(libraryRepositoryProvider)
+                                .toggleLike(track);
+                            setState(() {});
+                          },
                         ),
-                        tooltip: isLiked ? l10n.playerUnlike : l10n.playerLike,
-                        onPressed: () {
-                          ref.read(libraryRepositoryProvider).toggleLike(track);
-                          setState(() {});
-                        },
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                  // Lyrics View
+                  Expanded(
+                    child: LyricsView(
+                      track: track,
+                      currentTime: playerState.currentTime,
+                      onSeek: (pos) =>
+                          ref.read(playerControllerProvider.notifier).seek(pos),
+                    ),
+                  ),
+                ] else ...[
+                  // Artwork with animated scale on play/pause
+                  Expanded(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final size =
+                                constraints.maxWidth < constraints.maxHeight
+                                ? constraints.maxWidth
+                                : constraints.maxHeight;
+                            final artSize = size.clamp(200.0, 360.0);
+                            return AnimatedScale(
+                              scale: playerState.isPlaying ? 1.0 : 0.92,
+                              duration: const Duration(milliseconds: 280),
+                              curve: Curves.easeOutCubic,
+                              child: SizedBox(
+                                width: artSize,
+                                height: artSize,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(24),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.35,
+                                        ),
+                                        blurRadius: 28,
+                                        offset: const Offset(0, 14),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(24),
+                                    child: ArtworkImage(
+                                      art: track.artwork,
+                                      size: artSize,
+                                      radius: 24,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Track Info & Like button
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                track.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textDirection:
+                                    Bidi.detectRtlDirectionality(track.title)
+                                    ? TextDirection.rtl
+                                    : TextDirection.ltr,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: tokens.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  if (track.artist.id.isNotEmpty) {
+                                    unawaited(
+                                      context.push(
+                                        '/artist/${track.artist.id}',
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  track.artist.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textDirection:
+                                      Bidi.detectRtlDirectionality(
+                                        track.artist.name,
+                                      )
+                                      ? TextDirection.rtl
+                                      : TextDirection.ltr,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: tokens.textDim,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            isLiked ? LucideIcons.heart : LucideIcons.heart,
+                            color: isLiked ? Colors.redAccent : tokens.textDim,
+                            size: 26,
+                          ),
+                          tooltip: isLiked
+                              ? l10n.playerUnlike
+                              : l10n.playerLike,
+                          onPressed: () {
+                            ref
+                                .read(libraryRepositoryProvider)
+                                .toggleLike(track);
+                            setState(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 // Scrubber (GlassSlider)
                 Padding(
@@ -455,14 +546,17 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                     children: [
                       // Lyrics toggle
                       IconButton(
+                        key: const Key('now_playing_lyrics_toggle'),
                         icon: Icon(
                           LucideIcons.mic,
-                          color: tokens.textDim,
+                          color: _showLyrics ? tokens.accent : tokens.textDim,
                           size: 22,
                         ),
-                        tooltip: 'Lyrics',
+                        tooltip: l10n.npLyrics,
                         onPressed: () {
-                          // Phase 5 lyrics
+                          setState(() {
+                            _showLyrics = !_showLyrics;
+                          });
                         },
                       ),
                       // Sleep timer sheet

@@ -75,9 +75,8 @@
 - [x] T-57 Musixmatch client
 - [x] T-58 LRCLIB client
 - [x] T-59 LyricsRepository + offsets
-- [ ] T-60 Lyrics UI
-- [ ] T-60 Lyrics UI
-- **Phase 5 done**
+- [x] T-60 Lyrics UI
+- **Phase 5 done (361 tests passing)**
 
 ## Phase 6: Import, downloads, backup
 - [ ] T-61 Spotify importer
