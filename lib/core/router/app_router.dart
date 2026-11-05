@@ -11,6 +11,7 @@ import 'package:awady_music/features/rewind/rewind_screen.dart';
 import 'package:awady_music/features/search/search_screen.dart';
 import 'package:awady_music/features/stats/stats_screen.dart';
 import 'package:awady_music/player/player_controller.dart';
+import 'package:awady_music/widgets/equalizer_sheet.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
 import 'package:awady_music/widgets/mini_player.dart';
 import 'package:flutter/material.dart';
@@ -238,7 +239,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: 'eq',
             parentNavigatorKey: rootNavigatorKey,
             builder: (context, state) =>
-                const PlaceholderScreen('EqualizerScreen'),
+                const Scaffold(body: SafeArea(child: EqualizerSheet())),
           ),
           GoRoute(
             path: 'legal',

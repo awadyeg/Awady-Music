@@ -8,6 +8,7 @@ import 'package:awady_music/data/models/enums.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
+import 'package:awady_music/widgets/equalizer_sheet.dart';
 import 'package:awady_music/widgets/glass_slider.dart';
 import 'package:awady_music/widgets/sleep_timer_sheet.dart';
 import 'package:awady_music/widgets/track_menu_sheet.dart';
@@ -483,11 +484,15 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                         IconButton(
                           icon: Icon(
                             LucideIcons.sliders,
-                            color: tokens.textDim,
+                            color: playerState.eq.any((g) => g != 0)
+                                ? tokens.accent
+                                : tokens.textDim,
                             size: 22,
                           ),
                           tooltip: 'Equalizer',
-                          onPressed: () => context.push('/settings/eq'),
+                          onPressed: () {
+                            unawaited(EqualizerSheet.show(context));
+                          },
                         ),
                       // Queue sheet
                       IconButton(
