@@ -55,7 +55,7 @@
 - [x] T-40 Queue sheet
 - [x] T-41 Track menu sheet + add-to-playlist
 - [x] T-42 Home
-- [ ] T-43 Search
+- [x] T-43 Search
 - [ ] T-44 Genre + Mood
 - [ ] T-45 Artist
 - [ ] T-46 Playlist/Album/Liked/Local

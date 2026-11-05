@@ -3,6 +3,7 @@ import 'package:awady_music/core/router/app_router.dart';
 import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/features/home/home_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
+import 'package:awady_music/features/search/search_screen.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,7 +36,7 @@ void main() {
     // Tap Search tab
     await tester.tap(find.text('Search'));
     await tester.pumpAndSettle();
-    expect(find.text('SearchScreen'), findsOneWidget);
+    expect(find.byType(SearchScreen), findsOneWidget);
 
     // Tap Library tab
     await tester.tap(find.text('Library'));

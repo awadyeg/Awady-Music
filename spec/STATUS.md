@@ -55,12 +55,13 @@
 - T-40: Queue sheet (implemented lib/features/queue/queue_screen.dart with Now Playing row, reorderable Next up list with Dismissible swipe-to-remove and jump-to-track, Autoplay toggle row wired to PlayerController.setAutoplay, Save queue as playlist wired to LibraryRepository, Clear queue with confirmation dialog wired to PlayerController.clearQueue; widget tests verified)
 - T-41: Track menu sheet + add-to-playlist (implemented lib/widgets/track_menu_sheet.dart with track header info, Like/Unlike toggle, Add to playlist sub-sheet with user playlists and New playlist dialog, Add to queue, Play next, Start radio, Go to artist, Go to album, Share link via SharePlus & clipboard, and Remove from playlist for local playlists; wired into NowPlayingScreen and TrackTile; widget tests verified)
 - T-42: Home screen (implemented lib/features/home/home_screen.dart with LargeTitleScaffold, localized greeting by hour of day, gear icon to /settings, rewind glass banner when availableRewind is present, 2x3 recently played grid with Bidi RTL support, trending tracks carousel with MediaCard, new releases carousel with RemotePlaylist cards, hot playlists carousel, CardsRowSkeleton loading state, error banner with retry button, and pull-to-refresh; 6 unit & widget tests passing)
+- T-43: Search screen (implemented lib/features/search/search_screen.dart with pinned glass search input, clear button, 250ms debounced suggestions dropdown, empty browse state with Moods & moments and Browse genres grids, submitted search with 4 segmented filter chips All/Songs/Artists/Playlists, Top result card with one-tap play, Songs list with TrackTile and expandable 'More tracks', Artists horizontal carousel, Playlists horizontal carousel, empty search results state, error state with retry, and stream prefetching for top track; 9 widget tests passing)
 
 ## In Progress
-- T-43: Search screen (ui.md §4.2)
-
-## Next
 - T-44: Genre + Mood screens (ui.md §4.3)
 
+## Next
+- T-45: Artist screen (ui.md §4.4)
+
 ## Left
-- 28 tasks remaining (T-43 to T-70)
+- 27 tasks remaining (T-44 to T-70)
