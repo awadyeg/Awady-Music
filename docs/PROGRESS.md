@@ -45,7 +45,7 @@
 - [x] T-33 Persistence of player
 - [x] T-34 Sleep timer, fade, normalisation
 - [x] T-35 Android EQ
-- [ ] T-36 Stats recorder
+- [x] T-36 Stats recorder
 - [ ] T-37 Rewind builder
 - **CHECKPOINT D**
 

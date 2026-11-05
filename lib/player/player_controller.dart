@@ -10,6 +10,7 @@ import 'package:awady_music/data/db/app_database.dart';
 import 'package:awady_music/data/models/enums.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/models/track_validator.dart';
+import 'package:awady_music/data/repositories/stats_repository.dart';
 import 'package:awady_music/data/sources/audius/audius_client.dart';
 import 'package:awady_music/data/sources/deezer/deezer_client.dart';
 import 'package:awady_music/data/sources/innertube/innertube_client.dart';
@@ -77,6 +78,7 @@ class PlayerController extends Notifier<PlayerState> {
   InnertubeClient get _innertubeClient => ref.read(innertubeClientProvider);
   DeezerClient get _deezerClient => ref.read(deezerClientProvider);
   AppDatabase get _db => ref.read(appDatabaseProvider);
+  late StatsRepository _statsRepo;
 
   final List<StreamSubscription<dynamic>> _subscriptions = [];
   Timer? _noticeTimer;
@@ -97,9 +99,14 @@ class PlayerController extends Notifier<PlayerState> {
   late final EqualizerController _eqController;
   EqualizerController get eqController => _eqController;
 
+  late final StatsRecorder _statsRecorder;
+  StatsRecorder get statsRecorder => _statsRecorder;
+
   @override
   PlayerState build() {
+    _statsRepo = ref.read(statsRepositoryProvider);
     _eqController = EqualizerController(equalizer: _audioHandler.equalizer);
+    _statsRecorder = StatsRecorder(repository: _statsRepo);
     _prefetchedForTrackId = null;
     ref.onDispose(() {
       for (final s in _subscriptions) {
@@ -110,6 +117,7 @@ class PlayerController extends Notifier<PlayerState> {
       _saveQueueDebounceTimer?.cancel();
       _sleepTimer?.cancel();
       _lifecycleListener?.dispose();
+      _statsRepo.flush();
     });
 
     _setupAudioHandlerHooks();
@@ -456,6 +464,7 @@ class PlayerController extends Notifier<PlayerState> {
     _subscriptions
       ..add(
         _audioHandler.playbackState.listen((ps) {
+          final wasPlaying = state.isPlaying;
           state = state.copyWith(
             isPlaying: ps.playing,
             buffering:
@@ -465,6 +474,13 @@ class PlayerController extends Notifier<PlayerState> {
                 ? state.currentTime
                 : ps.position,
           );
+          if (wasPlaying && !ps.playing) {
+            _statsRecorder.onTick(
+              currentTrack: state.current,
+              currentTimeSeconds: state.currentTime.inMilliseconds / 1000.0,
+              isPlaying: false,
+            );
+          }
         }),
       )
       ..add(
@@ -474,6 +490,11 @@ class PlayerController extends Notifier<PlayerState> {
                   AudioProcessingState.idle) {
             state = state.copyWith(currentTime: pos);
             _checkPrefetchAt50Percent(pos);
+            _statsRecorder.onTick(
+              currentTrack: state.current,
+              currentTimeSeconds: pos.inMilliseconds / 1000.0,
+              isPlaying: state.isPlaying,
+            );
           }
         }),
       )
