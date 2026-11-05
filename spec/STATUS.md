@@ -54,12 +54,13 @@
 - T-39: Now Playing screen (implemented lib/features/now_playing/now_playing_screen.dart with blurred artwork background wash, top bar with close chevron and album context, big artwork with animated scale on play/pause, title/artist with Bidi RTL detection, like heart wired to LibraryRepository, GlassSlider scrubber with elapsed/remaining, shuffle/prev/big play accent circle/next/repeat controls, utility bottom row, empty pick-track state; wired to /now-playing route; widget tests verified)
 - T-40: Queue sheet (implemented lib/features/queue/queue_screen.dart with Now Playing row, reorderable Next up list with Dismissible swipe-to-remove and jump-to-track, Autoplay toggle row wired to PlayerController.setAutoplay, Save queue as playlist wired to LibraryRepository, Clear queue with confirmation dialog wired to PlayerController.clearQueue; widget tests verified)
 - T-41: Track menu sheet + add-to-playlist (implemented lib/widgets/track_menu_sheet.dart with track header info, Like/Unlike toggle, Add to playlist sub-sheet with user playlists and New playlist dialog, Add to queue, Play next, Start radio, Go to artist, Go to album, Share link via SharePlus & clipboard, and Remove from playlist for local playlists; wired into NowPlayingScreen and TrackTile; widget tests verified)
+- T-42: Home screen (implemented lib/features/home/home_screen.dart with LargeTitleScaffold, localized greeting by hour of day, gear icon to /settings, rewind glass banner when availableRewind is present, 2x3 recently played grid with Bidi RTL support, trending tracks carousel with MediaCard, new releases carousel with RemotePlaylist cards, hot playlists carousel, CardsRowSkeleton loading state, error banner with retry button, and pull-to-refresh; 6 unit & widget tests passing)
 
 ## In Progress
-- T-42: Home screen (ui.md §4.1)
-
-## Next
 - T-43: Search screen (ui.md §4.2)
 
+## Next
+- T-44: Genre + Mood screens (ui.md §4.3)
+
 ## Left
-- 29 tasks remaining (T-42 to T-70)
+- 28 tasks remaining (T-43 to T-70)

@@ -1,6 +1,7 @@
 import 'package:awady_music/app.dart';
 import 'package:awady_music/core/router/app_router.dart';
 import 'package:awady_music/core/settings/settings_provider.dart';
+import 'package:awady_music/features/home/home_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: AwadyMusicApp()));
     await tester.pumpAndSettle();
 
-    expect(find.text('HomeScreen'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byType(GlassTabBar), findsOneWidget);
   });
 
@@ -29,7 +30,7 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: AwadyMusicApp()));
     await tester.pumpAndSettle();
 
-    expect(find.text('HomeScreen'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
 
     // Tap Search tab
     await tester.tap(find.text('Search'));
@@ -49,7 +50,7 @@ void main() {
     // Tap Home tab again
     await tester.tap(find.text('Home'));
     await tester.pumpAndSettle();
-    expect(find.text('HomeScreen'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 
   testWidgets('Navigating to modal and shared routes displays placeholders', (

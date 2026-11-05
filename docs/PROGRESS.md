@@ -54,7 +54,7 @@
 - [x] T-39 Now Playing
 - [x] T-40 Queue sheet
 - [x] T-41 Track menu sheet + add-to-playlist
-- [ ] T-42 Home
+- [x] T-42 Home
 - [ ] T-43 Search
 - [ ] T-44 Genre + Mood
 - [ ] T-45 Artist

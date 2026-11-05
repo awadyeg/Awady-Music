@@ -1,4 +1,5 @@
 import 'package:awady_music/core/theme/tokens.dart';
+import 'package:awady_music/features/home/home_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/features/queue/queue_screen.dart';
 import 'package:awady_music/player/player_controller.dart';
@@ -99,8 +100,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/home',
-                builder: (context, state) =>
-                    const PlaceholderScreen('HomeScreen'),
+                builder: (context, state) => const HomeScreen(),
                 routes: [
                   GoRoute(
                     path: 'rewind/:month',
