@@ -17,7 +17,10 @@ import 'package:awady_music/data/sources/innertube/matcher.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_impl.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_provider.dart';
 import 'package:awady_music/player/audio_handler.dart';
+import 'package:awady_music/player/eq.dart';
+import 'package:awady_music/player/loudness.dart';
 import 'package:awady_music/player/player_state.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart' hide PlayerState;
@@ -89,9 +92,14 @@ class PlayerController extends Notifier<PlayerState> {
 
   final Set<String> _radioTried = {};
   ({String id, String tail})? _radioFilledFor;
+  double? _currentLoudnessDb;
+
+  late final EqualizerController _eqController;
+  EqualizerController get eqController => _eqController;
 
   @override
   PlayerState build() {
+    _eqController = EqualizerController(equalizer: _audioHandler.equalizer);
     _prefetchedForTrackId = null;
     ref.onDispose(() {
       for (final s in _subscriptions) {
@@ -138,6 +146,15 @@ class PlayerController extends Notifier<PlayerState> {
       final autoplay = prefs.getBool('player_autoplay') ?? true;
       final normOn = prefs.getBool('player_norm_on') ?? true;
       final fadeSecs = prefs.getInt('player_fade_secs') ?? 4;
+      final eqStrings = prefs.getStringList('player_eq');
+      var eq = state.eq;
+      if (eqStrings != null && eqStrings.length == 7) {
+        final parsed = eqStrings.map(double.tryParse).toList();
+        if (parsed.every((v) => v != null)) {
+          eq = parsed.cast<double>();
+        }
+      }
+      unawaited(_eqController.applyGains(eq));
 
       final rawJson = await _db.getQueueState();
       var queue = <Track>[];
@@ -196,6 +213,7 @@ class PlayerController extends Notifier<PlayerState> {
           autoplay: autoplay,
           normOn: normOn,
           fadeSecs: fadeSecs,
+          eq: eq,
         );
         return;
       }
@@ -209,6 +227,7 @@ class PlayerController extends Notifier<PlayerState> {
           autoplay: autoplay,
           normOn: normOn,
           fadeSecs: fadeSecs,
+          eq: eq,
         );
         return;
       }
@@ -225,6 +244,7 @@ class PlayerController extends Notifier<PlayerState> {
         autoplay: autoplay,
         normOn: normOn,
         fadeSecs: fadeSecs,
+        eq: eq,
         queue: queue,
         index: index,
         currentTime: pos,
@@ -340,12 +360,58 @@ class PlayerController extends Notifier<PlayerState> {
   void setNormOn({required bool value}) {
     state = state.copyWith(normOn: value);
     unawaited(_savePrefBool('player_norm_on', value));
+    if (defaultTargetPlatform == TargetPlatform.android &&
+        _audioHandler.loudnessEnhancer != null) {
+      try {
+        final gainDb = computeLoudnessGainDb(_currentLoudnessDb, normOn: value);
+        unawaited(_audioHandler.loudnessEnhancer!.setEnabled(gainDb != 0));
+        unawaited(_audioHandler.loudnessEnhancer!.setTargetGain(gainDb));
+      } on Object catch (_) {}
+    }
   }
 
   void setFadeSecs(int secs) {
     final clamped = secs.clamp(0, 12);
     state = state.copyWith(fadeSecs: clamped);
     unawaited(_savePrefInt('player_fade_secs', clamped));
+  }
+
+  void setEqBand(int index, double gainDb) {
+    if (index < 0 || index >= 7) return;
+    final newEq = List<double>.from(state.eq);
+    newEq[index] = gainDb.clamp(eqMinGain, eqMaxGain);
+    state = state.copyWith(eq: newEq);
+    unawaited(_eqController.applyGains(newEq));
+    unawaited(_savePrefEq(newEq));
+  }
+
+  void setEq(List<double> gains) {
+    final newEq = List<double>.from(gains);
+    while (newEq.length < 7) {
+      newEq.add(0);
+    }
+    final truncated = newEq
+        .take(7)
+        .map((g) => g.clamp(eqMinGain, eqMaxGain))
+        .toList();
+    state = state.copyWith(eq: truncated);
+    unawaited(_eqController.applyGains(truncated));
+    unawaited(_savePrefEq(truncated));
+  }
+
+  void setEqPreset(String presetKey) {
+    final presetGains = eqPresets[presetKey] ?? eqPresets['flat']!;
+    setEq(presetGains);
+  }
+
+  Future<void> _savePrefEq(List<double> eq) async {
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      await prefs?.setStringList(
+        'player_eq',
+        eq.map((g) => g.toString()).toList(),
+      );
+    } on Object catch (_) {}
   }
 
   /// Ramps volume smoothly between [from] and [to] over [duration].
@@ -1154,12 +1220,14 @@ class PlayerController extends Notifier<PlayerState> {
     if (!ref.mounted || seq != loadSeq) return;
 
     // 2. Resolve stream URL if not downloaded
+    double? loudnessDb;
     if (source == null) {
       if (track.source == TrackSource.yt) {
         final videoId = track.streamId ?? track.id;
         try {
           final info = await _streamResolver.resolve(videoId);
           source = AudioSource.uri(info.url);
+          loudnessDb = info.loudnessDb;
         } on Object catch (e, st) {
           Log.w('Stream resolve failed for $videoId: $e', e, st);
           if (streamRetries == 0) {
@@ -1171,6 +1239,7 @@ class PlayerController extends Notifier<PlayerState> {
                 forceFresh: true,
               );
               source = AudioSource.uri(freshInfo.url);
+              loudnessDb = freshInfo.loudnessDb;
             } on Object catch (e2, st2) {
               Log.w('Stream retry failed for $videoId: $e2', e2, st2);
             }
@@ -1225,6 +1294,20 @@ class PlayerController extends Notifier<PlayerState> {
 
       await _audioHandler.setAudioSource(source, initialPosition: startPos);
       if (!ref.mounted || seq != loadSeq) return;
+
+      _currentLoudnessDb = loudnessDb;
+      if (defaultTargetPlatform == TargetPlatform.android &&
+          _audioHandler.loudnessEnhancer != null) {
+        try {
+          final gainDb = computeLoudnessGainDb(
+            loudnessDb,
+            normOn: state.normOn,
+          );
+          await _audioHandler.loudnessEnhancer!.setEnabled(gainDb != 0);
+          await _audioHandler.loudnessEnhancer!.setTargetGain(gainDb);
+        } on Object catch (_) {}
+      }
+
       await _audioHandler.playPlayer();
       if (!ref.mounted || seq != loadSeq) return;
 

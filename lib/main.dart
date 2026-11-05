@@ -18,7 +18,7 @@ Future<void> main() async {
   AwadyAudioHandler audioHandler;
   try {
     audioHandler = await AudioService.init(
-      builder: AwadyAudioHandler.new,
+      builder: AwadyAudioHandler.create,
       config: const AudioServiceConfig(
         androidNotificationChannelId: 'com.awady.awady_music.channel.audio',
         androidNotificationChannelName: 'Playback',
@@ -27,7 +27,7 @@ Future<void> main() async {
     );
   } on Object catch (e, st) {
     Log.w('AudioService.init fallback: $e', e, st);
-    audioHandler = AwadyAudioHandler();
+    audioHandler = AwadyAudioHandler.create();
   }
 
   runApp(

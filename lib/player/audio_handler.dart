@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:awady_music/core/util/log.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -14,11 +15,35 @@ final audioHandlerProvider = Provider<AwadyAudioHandler>((ref) {
 /// Background audio handler integrating `just_audio` with `audio_service`.
 class AwadyAudioHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
-  AwadyAudioHandler({AudioPlayer? player}) : _player = player ?? AudioPlayer() {
+  AwadyAudioHandler({
+    AudioPlayer? player,
+    this.equalizer,
+    this.loudnessEnhancer,
+  }) : _player = player ?? AudioPlayer() {
     _init();
   }
 
+  /// Factory creating [AwadyAudioHandler] with Android audio effects
+  /// pipeline on Android.
+  factory AwadyAudioHandler.create() {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final eq = AndroidEqualizer();
+      final le = AndroidLoudnessEnhancer();
+      final player = AudioPlayer(
+        audioPipeline: AudioPipeline(androidAudioEffects: [eq, le]),
+      );
+      return AwadyAudioHandler(
+        player: player,
+        equalizer: eq,
+        loudnessEnhancer: le,
+      );
+    }
+    return AwadyAudioHandler();
+  }
+
   final AudioPlayer _player;
+  final AndroidEqualizer? equalizer;
+  final AndroidLoudnessEnhancer? loudnessEnhancer;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
 
   // Hooks for PlayerController coordination

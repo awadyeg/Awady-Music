@@ -47,12 +47,13 @@
 - T-33: Persistence of player (persisting sanitized queue list, index, and playback position to Drift queue_state table with 2s debounce and immediate flush on pause/background; cold boot restoration with paused state; volume, muted, shuffle, repeat, and autoplay persisted to SharedPreferences; unit tests passing)
 
 - T-34: Sleep timer, fade, normalisation (implemented setSleepTimer with auto-pause and persistence flush verified with fake_async clock; rampVolume equal-power fade over fadeSecs/2; computeLoudnessGainDb clamping [-6, +6] dB and linear multiplier calculation; setNormOn & setFadeSecs with SharedPreferences persistence; unit tests passing)
+- T-35: Android EQ (implemented lib/player/eq.dart with desktop 7-band frequencies [60, 250, 500, 1000, 4000, 8000, 14000] Hz, EqPopover.tsx presets [flat, bass, vocal, bright, vshape], mapDeviceBandToDesktopIndex nearest centre frequency mapping, detectEqPreset, platform guard safe no-op on non-Android, setEqBand, setEq, setEqPreset wired to PlayerController with SharedPreferences persistence; unit tests passing)
 
 ## In Progress
-- Phase 3: Player (T-35 Android EQ)
+- Phase 3: Player (T-36 Stats recorder)
 
 ## Next
-- T-36: Stats recorder
+- T-37: Rewind builder
 
 ## Left
-- 36 tasks remaining (T-35 to T-70)
+- 35 tasks remaining (T-36 to T-70)
