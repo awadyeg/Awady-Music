@@ -56,7 +56,7 @@
 - [x] T-41 Track menu sheet + add-to-playlist
 - [x] T-42 Home
 - [x] T-43 Search
-- [ ] T-44 Genre + Mood
+- [x] T-44 Genre + Mood
 - [ ] T-45 Artist
 - [ ] T-46 Playlist/Album/Liked/Local
 - [ ] T-47 Library

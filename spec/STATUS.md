@@ -56,12 +56,13 @@
 - T-41: Track menu sheet + add-to-playlist (implemented lib/widgets/track_menu_sheet.dart with track header info, Like/Unlike toggle, Add to playlist sub-sheet with user playlists and New playlist dialog, Add to queue, Play next, Start radio, Go to artist, Go to album, Share link via SharePlus & clipboard, and Remove from playlist for local playlists; wired into NowPlayingScreen and TrackTile; widget tests verified)
 - T-42: Home screen (implemented lib/features/home/home_screen.dart with LargeTitleScaffold, localized greeting by hour of day, gear icon to /settings, rewind glass banner when availableRewind is present, 2x3 recently played grid with Bidi RTL support, trending tracks carousel with MediaCard, new releases carousel with RemotePlaylist cards, hot playlists carousel, CardsRowSkeleton loading state, error banner with retry button, and pull-to-refresh; 6 unit & widget tests passing)
 - T-43: Search screen (implemented lib/features/search/search_screen.dart with pinned glass search input, clear button, 250ms debounced suggestions dropdown, empty browse state with Moods & moments and Browse genres grids, submitted search with 4 segmented filter chips All/Songs/Artists/Playlists, Top result card with one-tap play, Songs list with TrackTile and expandable 'More tracks', Artists horizontal carousel, Playlists horizontal carousel, empty search results state, error state with retry, and stream prefetching for top track; 9 widget tests passing)
+- T-44: Genre + Mood screens (implemented lib/features/genre/genre_screen.dart with LargeTitleScaffold, kicker, segmented control for Top hits, Week, Month, All time, big Play button, track list with TrackTile; implemented lib/features/mood/mood_screen.dart with LargeTitleScaffold, playlists horizontal carousel, and top tracks list; wired routes /genre/:name, /mood/:params in app_router.dart; 7 unit & widget tests passing)
 
 ## In Progress
-- T-44: Genre + Mood screens (ui.md §4.3)
-
-## Next
 - T-45: Artist screen (ui.md §4.4)
 
+## Next
+- T-46: Playlist/Album/Liked/Local screens (ui.md §4.5)
+
 ## Left
-- 27 tasks remaining (T-44 to T-70)
+- 26 tasks remaining (T-45 to T-70)

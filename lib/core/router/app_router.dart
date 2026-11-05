@@ -1,5 +1,7 @@
 import 'package:awady_music/core/theme/tokens.dart';
+import 'package:awady_music/features/genre/genre_screen.dart';
 import 'package:awady_music/features/home/home_screen.dart';
+import 'package:awady_music/features/mood/mood_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/features/queue/queue_screen.dart';
 import 'package:awady_music/features/search/search_screen.dart';
@@ -123,14 +125,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: 'genre/:name',
-                    builder: (context, state) => PlaceholderScreen(
-                      'GenreScreen: ${state.pathParameters['name']}',
-                    ),
+                    builder: (context, state) =>
+                        GenreScreen(name: state.pathParameters['name'] ?? ''),
                   ),
                   GoRoute(
                     path: 'mood/:params',
-                    builder: (context, state) => PlaceholderScreen(
-                      'MoodScreen: ${state.pathParameters['params']}',
+                    builder: (context, state) => MoodScreen(
+                      params: state.pathParameters['params'] ?? '',
+                      name: state.extra as String?,
                     ),
                   ),
                 ],
@@ -186,6 +188,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/playlist/:id',
         builder: (context, state) =>
             PlaceholderScreen('PlaylistScreen: ${state.pathParameters['id']}'),
+      ),
+      GoRoute(
+        path: '/genre/:name',
+        builder: (context, state) =>
+            GenreScreen(name: state.pathParameters['name'] ?? ''),
+      ),
+      GoRoute(
+        path: '/mood/:params',
+        builder: (context, state) => MoodScreen(
+          params: state.pathParameters['params'] ?? '',
+          name: state.extra as String?,
+        ),
       ),
       // Root-level modal routes
       GoRoute(
