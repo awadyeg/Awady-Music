@@ -4,6 +4,7 @@ import 'package:awady_music/features/genre/genre_screen.dart';
 import 'package:awady_music/features/home/home_screen.dart';
 import 'package:awady_music/features/mood/mood_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
+import 'package:awady_music/features/playlist/playlist_screen.dart';
 import 'package:awady_music/features/queue/queue_screen.dart';
 import 'package:awady_music/features/search/search_screen.dart';
 import 'package:awady_music/player/player_controller.dart';
@@ -150,8 +151,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: 'liked',
-                    builder: (context, state) =>
-                        const PlaceholderScreen('PlaylistScreen(kind: liked)'),
+                    builder: (context, state) => const PlaylistScreen(
+                      id: 'liked',
+                      kind: PlaylistKind.liked,
+                    ),
                   ),
                   GoRoute(
                     path: 'downloads',
@@ -160,8 +163,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   ),
                   GoRoute(
                     path: 'recent',
-                    builder: (context, state) =>
-                        const PlaceholderScreen('RecentScreen'),
+                    builder: (context, state) => const PlaylistScreen(
+                      id: 'recent',
+                      kind: PlaylistKind.recent,
+                    ),
                   ),
                 ],
               ),
@@ -189,8 +194,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/playlist/:id',
-        builder: (context, state) =>
-            PlaceholderScreen('PlaylistScreen: ${state.pathParameters['id']}'),
+        builder: (context, state) => PlaylistScreen(
+          id: state.pathParameters['id'] ?? '',
+          kind: state.extra as PlaylistKind?,
+        ),
       ),
       GoRoute(
         path: '/genre/:name',
