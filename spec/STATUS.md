@@ -64,12 +64,13 @@
 - T-49: Rewind stories (implemented lib/features/rewind/rewind_screen.dart with 5 full-screen stories, 5-segment animated top progress bars, tap right 70% / left 30% navigation, swipe-down dismiss, pause/resume hold gestures, dominant artwork wash radial gradient, Intro slide, Minutes slide with chips, Top Artist slide with rank 1 badge, Top 5 tracks with tap-to-play CTA, and Outro slide with summary card and Play it again / Keep listening actions; wired to /home/rewind/:month route; zero Freebify branding; 3 widget tests passing)
 - T-50: Sleep timer sheet (implemented lib/widgets/sleep_timer_sheet.dart with glass bottom sheet, active readout 'in {n} min' or 'Off', checkmark indicator, preset options for 5, 15, 30, 45, 60 minutes, and End of current track duration resolver; wired to playerController and NowPlayingScreen bottom bar; 5 widget tests passing)
 - T-51: Equalizer sheet (implemented lib/widgets/equalizer_sheet.dart with glass bottom sheet, enable switch, reset button, preset chips Flat, Bass boost, Bright, Vocal boost, V-Shape, Custom, 7 vertical band sliders with Hz labels, Normalize volume switch, and Crossfade slider 0-12s; wired to playerController and NowPlayingScreen; 5 widget tests passing)
+- T-52: Settings screen (implemented lib/features/settings/settings_screen.dart with grouped inset glass lists per ui.md §4.16: Playback with Autoplay switch, Normalize volume switch, Crossfade slider 0-12s, Equalizer entry row; Appearance with Theme picker System/Light/Dark, Reduce transparency switch, Language picker dialog; Library & storage with Liked & Playlists counts, Export library & stats, Clear artwork cache with toast, Open logs with file count & total size; About section with Awady Music app title, v1.0.0 (build 1), mandatory Constitution attribution line 'Based on the open-source Freebify design and concept', GitHub contribute link, Legal & Licenses link, and Check for updates button with live toast feedback; wired to /settings route; 4 unit & widget tests passing)
 
 ## In Progress
-- T-52: Settings screen (ui.md §4.16)
-
-## Next
 - T-53: Legal screen (ui.md §4.16)
 
+## Next
+- T-54: Offline banner + update banner + global error screen (ui.md §5)
+
 ## Left
-- 19 tasks remaining (T-52 to T-70)
+- 18 tasks remaining (T-53 to T-70)

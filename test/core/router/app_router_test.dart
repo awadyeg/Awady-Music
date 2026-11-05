@@ -6,6 +6,7 @@ import 'package:awady_music/features/home/home_screen.dart';
 import 'package:awady_music/features/library/library_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/features/search/search_screen.dart';
+import 'package:awady_music/features/settings/settings_screen.dart';
 import 'package:awady_music/features/stats/stats_screen.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
 import 'package:flutter/material.dart';
@@ -87,7 +88,7 @@ void main() {
     // Navigate to /settings
     testRef.read(appRouterProvider).go('/settings');
     await tester.pumpAndSettle();
-    expect(find.text('SettingsScreen'), findsOneWidget);
+    expect(find.byType(SettingsScreen), findsOneWidget);
 
     // Navigate to /settings/legal
     testRef.read(appRouterProvider).go('/settings/legal');
