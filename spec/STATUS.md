@@ -52,12 +52,13 @@
 - T-37: Rewind builder (implemented lib/player/rewind.dart with buildRewind, latestRewind, currentRewind, availableRewind, isRewindSeen, markRewindSeen, RewindController; gating constants 10 min / 5 plays closed, 3 plays partial; localized month formatting with fallback; unit tests passing)
 - T-38: Mini player (implemented lib/widgets/mini_player.dart with 60h glass capsule, artwork 44 rounded 10, title/artist with Bidi RTL detection, play/pause and next controls, thin progress line at bottom edge clipped to capsule, tap to /now-playing, swipe next/prev with RTL awareness, and wired overlay in AppShell above GlassTabBar; unit & widget tests verified)
 - T-39: Now Playing screen (implemented lib/features/now_playing/now_playing_screen.dart with blurred artwork background wash, top bar with close chevron and album context, big artwork with animated scale on play/pause, title/artist with Bidi RTL detection, like heart wired to LibraryRepository, GlassSlider scrubber with elapsed/remaining, shuffle/prev/big play accent circle/next/repeat controls, utility bottom row, empty pick-track state; wired to /now-playing route; widget tests verified)
+- T-40: Queue sheet (implemented lib/features/queue/queue_screen.dart with Now Playing row, reorderable Next up list with Dismissible swipe-to-remove and jump-to-track, Autoplay toggle row wired to PlayerController.setAutoplay, Save queue as playlist wired to LibraryRepository, Clear queue with confirmation dialog wired to PlayerController.clearQueue; widget tests verified)
 
 ## In Progress
-- T-40: Queue sheet (ui.md §4.11)
-
-## Next
 - T-41: Track menu sheet + add-to-playlist (ui.md §4.12)
 
+## Next
+- T-42: Home screen (ui.md §4.1)
+
 ## Left
-- 31 tasks remaining (T-40 to T-70)
+- 30 tasks remaining (T-41 to T-70)
