@@ -71,12 +71,13 @@
 - T-55: LRC parser + fingerprint (implemented lib/data/sources/lyrics/lrc.dart with parseLrc supporting [mm:ss.xx] timestamps, fractional seconds, multi-stamps per line, [offset:±ms] metadata shift tag, and enhanced-LRC word marker stripping; sheetFingerprint extracting tail tokens with Unicode diacritics folding; formatLrc round-trip; 8 unit tests passing)
 - T-56: YTM timed lyrics client (implemented lib/data/sources/lyrics/ytm_lyrics_client.dart with 2-hop sequence: /next resolves lyrics tab browseId MPLYt..., /browse with ANDROID_MUSIC client context retrieves timedLyricsData and cueRange start times; falls back to musicDescriptionShelfRenderer plain lyrics; fixture-backed tests verified; 4 unit tests passing)
 - T-57: Musixmatch client (implemented lib/data/sources/lyrics/musixmatch_client.dart with anonymous token retrieval, SharedPreferences persistence, 401 retry, 8s timeout, Dalvik user agent, subtitle fetch, and duration proximity selection; 3 unit tests passing)
+- T-58: LRCLIB client (implemented lib/data/sources/lyrics/lrclib_client.dart with 3 parallel query shapes track_name+artist_name, q, track_name + /api/get, ±25s duration trust, modal duration trap, auto lead-in offset calculation introOffMs, pickLrc ported from NowPlaying.tsx; 9 unit tests passing)
 
 ## In Progress
-- T-58: LRCLIB client (Phase 5: Lyrics)
-
-## Next
 - T-59: LyricsRepository + offsets (Phase 5: Lyrics)
 
+## Next
+- T-60: Lyrics UI in Now Playing (Phase 5: Lyrics)
+
 ## Left
-- 13 tasks remaining (T-58 to T-70)
+- 12 tasks remaining (T-59 to T-70)

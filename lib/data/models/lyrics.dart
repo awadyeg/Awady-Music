@@ -21,17 +21,20 @@ class SyncedLyrics extends Lyrics {
     required this.lines,
     required this.source,
     required this.fingerprint,
+    this.autoOffsetMs = 0,
   });
 
   final List<LyricLine> lines;
   final String source;
   final String fingerprint;
+  final int autoOffsetMs;
 }
 
 class PlainLyrics extends Lyrics {
-  const PlainLyrics({required this.text});
+  const PlainLyrics({required this.text, this.source = ''});
 
   final String text;
+  final String source;
 }
 
 class NoLyrics extends Lyrics {
