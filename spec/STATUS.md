@@ -66,12 +66,15 @@
 - T-51: Equalizer sheet (implemented lib/widgets/equalizer_sheet.dart with glass bottom sheet, enable switch, reset button, preset chips Flat, Bass boost, Bright, Vocal boost, V-Shape, Custom, 7 vertical band sliders with Hz labels, Normalize volume switch, and Crossfade slider 0-12s; wired to playerController and NowPlayingScreen; 5 widget tests passing)
 - T-52: Settings screen (implemented lib/features/settings/settings_screen.dart with grouped inset glass lists per ui.md §4.16: Playback with Autoplay switch, Normalize volume switch, Crossfade slider 0-12s, Equalizer entry row; Appearance with Theme picker System/Light/Dark, Reduce transparency switch, Language picker dialog; Library & storage with Liked & Playlists counts, Export library & stats, Clear artwork cache with toast, Open logs with file count & total size; About section with Awady Music app title, v1.0.0 (build 1), mandatory Constitution attribution line 'Based on the open-source Freebify design and concept', GitHub contribute link, Legal & Licenses link, and Check for updates button with live toast feedback; wired to /settings route; 4 unit & widget tests passing)
 - T-53: Legal screen (implemented lib/features/legal/legal_documents.dart with bundled Disclaimer, Terms of Use, Privacy Policy, and Licenses adapted to Awady Music with zero Freebify branding outside mandatory attribution; implemented lib/features/legal/legal_screen.dart with tab chips, glass styling, lightweight zero-dependency Markdown renderer for headings, bullet points, and inline bold/italic; wired to /settings/legal; 3 unit & widget tests passing)
+- T-54: Offline banner + update banner + global error screen (implemented lib/widgets/offline_banner.dart with connectivity_plus stream and thin glass strip under status bar; implemented lib/widgets/update_banner.dart with AppUpdateInfo notifier and download/dismiss actions on Home feed; implemented lib/widgets/global_error_screen.dart with GlobalErrorScreen and AppErrorBoundary; wired into AppShell and HomeScreen; debug APK built and verified; 6 unit & widget tests passing)
+
+- CHECKPOINT E: Phase 4 complete (all 17 screens and overlays T-38 to T-54 verified, 324 tests green, debug APK updated at build/app/outputs/flutter-apk/app-debug.apk)
 
 ## In Progress
-- T-54: Offline banner + update banner + global error screen (ui.md §5)
+- T-55: LRC parser + fingerprint (Phase 5: Lyrics)
 
 ## Next
-- CHECKPOINT E: Phase 4 review
+- T-56: YTM timed lyrics client (Phase 5)
 
 ## Left
-- 17 tasks remaining (T-54 to T-70)
+- 16 tasks remaining (T-55 to T-70)

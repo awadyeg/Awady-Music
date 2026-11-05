@@ -16,6 +16,7 @@ import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/equalizer_sheet.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
 import 'package:awady_music/widgets/mini_player.dart';
+import 'package:awady_music/widgets/offline_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -61,6 +62,7 @@ class AppShell extends ConsumerWidget {
       body: Stack(
         children: [
           Positioned.fill(child: navigationShell),
+          const Positioned(left: 0, right: 0, top: 0, child: OfflineBanner()),
           Positioned(
             left: 0,
             right: 0,

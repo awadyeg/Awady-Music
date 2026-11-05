@@ -16,6 +16,7 @@ import 'package:awady_music/widgets/large_title_scaffold.dart';
 import 'package:awady_music/widgets/media_card.dart';
 import 'package:awady_music/widgets/section_header.dart';
 import 'package:awady_music/widgets/skeletons.dart';
+import 'package:awady_music/widgets/update_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -75,6 +76,9 @@ class HomeScreen extends ConsumerWidget {
             ..invalidate(homePlaylistsProvider);
         },
         slivers: [
+          // Update banner (Android)
+          const SliverToBoxAdapter(child: UpdateBanner()),
+
           // 1. Rewind banner glass card if available
           if (rewind != null) ...[
             SliverToBoxAdapter(

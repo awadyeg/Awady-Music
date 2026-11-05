@@ -66,8 +66,8 @@
 - [x] T-51 Equalizer sheet
 - [x] T-52 Settings
 - [x] T-53 Legal screen
-- [ ] T-54 Offline banner + update banner + global error screen
-- **CHECKPOINT E**
+- [x] T-54 Offline banner + update banner + global error screen
+- **CHECKPOINT E: Complete (all screens & overlays, 324 tests passing, debug APK built)**
 
 ## Phase 5: Lyrics
 - [ ] T-55 LRC parser + fingerprint
