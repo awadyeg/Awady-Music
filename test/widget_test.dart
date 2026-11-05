@@ -10,6 +10,7 @@ void main() {
 
   testWidgets('renders AwadyMusicApp', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: AwadyMusicApp()));
+    await tester.pumpAndSettle();
     expect(find.byType(AwadyMusicApp), findsOneWidget);
   });
 }

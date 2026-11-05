@@ -8,9 +8,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
 /// Provider holding the initialized [AwadyAudioHandler].
+/// In production, this is overridden with the result of
+/// [AudioService.init].
+/// In tests, it defaults to a [NoopAudioHandler] so widget tests
+/// can run without platform audio setup.
 final audioHandlerProvider = Provider<AwadyAudioHandler>((ref) {
-  throw UnimplementedError('audioHandlerProvider must be overridden');
+  return NoopAudioHandler();
 });
+
+/// Fallback audio handler for tests or pre-initialization environments.
+class NoopAudioHandler extends AwadyAudioHandler {
+  NoopAudioHandler({super.player});
+
+  @override
+  Future<void> setVolume(double volume) async {}
+
+  @override
+  Future<Duration?> setAudioSource(
+    AudioSource source, {
+    Duration? initialPosition,
+    bool preload = true,
+  }) async {
+    return const Duration(seconds: 180);
+  }
+
+  @override
+  Future<void> playPlayer() async {}
+
+  @override
+  Future<void> pausePlayer() async {}
+}
 
 /// Background audio handler integrating `just_audio` with `audio_service`.
 class AwadyAudioHandler extends BaseAudioHandler

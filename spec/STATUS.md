@@ -50,12 +50,13 @@
 - T-35: Android EQ (implemented lib/player/eq.dart with desktop 7-band frequencies [60, 250, 500, 1000, 4000, 8000, 14000] Hz, EqPopover.tsx presets [flat, bass, vocal, bright, vshape], mapDeviceBandToDesktopIndex nearest centre frequency mapping, detectEqPreset, platform guard safe no-op on non-Android, setEqBand, setEq, setEqPreset wired to PlayerController with SharedPreferences persistence; unit tests passing)
 - T-36: Stats recorder (implemented lib/data/repositories/stats_repository.dart with StatsRepository & StatsRecorder; local dayKey and monthKey, 300 tracks & 200 artists caps with lowest-ms eviction, 120 days & 14 months caps, 15s debounced flusher, recordPlay at 30s or 50% duration; robust hydration with corrupted blob recovery; wired into PlayerController positionStream and playback state; unit tests passing)
 - T-37: Rewind builder (implemented lib/player/rewind.dart with buildRewind, latestRewind, currentRewind, availableRewind, isRewindSeen, markRewindSeen, RewindController; gating constants 10 min / 5 plays closed, 3 plays partial; localized month formatting with fallback; unit tests passing)
+- T-38: Mini player (implemented lib/widgets/mini_player.dart with 60h glass capsule, artwork 44 rounded 10, title/artist with Bidi RTL detection, play/pause and next controls, thin progress line at bottom edge clipped to capsule, tap to /now-playing, swipe next/prev with RTL awareness, and wired overlay in AppShell above GlassTabBar; unit & widget tests verified)
 
 ## In Progress
-- CHECKPOINT D: Phase 3 review & device verification report
+- T-39: Now Playing screen (ui.md §4.10)
 
 ## Next
-- Phase 4: Screens (T-38 Mini player)
+- T-40: Queue sheet (ui.md §4.11)
 
 ## Left
-- 33 tasks remaining (T-38 to T-70)
+- 32 tasks remaining (T-39 to T-70)

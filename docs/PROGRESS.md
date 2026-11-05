@@ -50,7 +50,7 @@
 - **CHECKPOINT D: Complete (Phase 3 Player fully verified, 227 tests green)**
 
 ## Phase 4: Screens
-- [ ] T-38 Mini player
+- [x] T-38 Mini player
 - [ ] T-39 Now Playing
 - [ ] T-40 Queue sheet
 - [ ] T-41 Track menu sheet + add-to-playlist

@@ -1,5 +1,7 @@
 import 'package:awady_music/core/theme/tokens.dart';
+import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
+import 'package:awady_music/widgets/mini_player.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,13 +31,17 @@ class PlaceholderScreen extends StatelessWidget {
   }
 }
 
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasTrack = ref.watch(
+      playerControllerProvider.select((s) => s.current != null),
+    );
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(
@@ -45,14 +51,23 @@ class AppShell extends StatelessWidget {
             left: 0,
             right: 0,
             bottom: 0,
-            child: GlassTabBar(
-              currentIndex: navigationShell.currentIndex,
-              onTap: (index) {
-                navigationShell.goBranch(
-                  index,
-                  initialLocation: index == navigationShell.currentIndex,
-                );
-              },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasTrack) ...[
+                  const MiniPlayer(),
+                  const SizedBox(height: 8),
+                ],
+                GlassTabBar(
+                  currentIndex: navigationShell.currentIndex,
+                  onTap: (index) {
+                    navigationShell.goBranch(
+                      index,
+                      initialLocation: index == navigationShell.currentIndex,
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ],
