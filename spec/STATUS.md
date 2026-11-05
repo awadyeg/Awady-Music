@@ -53,12 +53,13 @@
 - T-38: Mini player (implemented lib/widgets/mini_player.dart with 60h glass capsule, artwork 44 rounded 10, title/artist with Bidi RTL detection, play/pause and next controls, thin progress line at bottom edge clipped to capsule, tap to /now-playing, swipe next/prev with RTL awareness, and wired overlay in AppShell above GlassTabBar; unit & widget tests verified)
 - T-39: Now Playing screen (implemented lib/features/now_playing/now_playing_screen.dart with blurred artwork background wash, top bar with close chevron and album context, big artwork with animated scale on play/pause, title/artist with Bidi RTL detection, like heart wired to LibraryRepository, GlassSlider scrubber with elapsed/remaining, shuffle/prev/big play accent circle/next/repeat controls, utility bottom row, empty pick-track state; wired to /now-playing route; widget tests verified)
 - T-40: Queue sheet (implemented lib/features/queue/queue_screen.dart with Now Playing row, reorderable Next up list with Dismissible swipe-to-remove and jump-to-track, Autoplay toggle row wired to PlayerController.setAutoplay, Save queue as playlist wired to LibraryRepository, Clear queue with confirmation dialog wired to PlayerController.clearQueue; widget tests verified)
+- T-41: Track menu sheet + add-to-playlist (implemented lib/widgets/track_menu_sheet.dart with track header info, Like/Unlike toggle, Add to playlist sub-sheet with user playlists and New playlist dialog, Add to queue, Play next, Start radio, Go to artist, Go to album, Share link via SharePlus & clipboard, and Remove from playlist for local playlists; wired into NowPlayingScreen and TrackTile; widget tests verified)
 
 ## In Progress
-- T-41: Track menu sheet + add-to-playlist (ui.md §4.12)
-
-## Next
 - T-42: Home screen (ui.md §4.1)
 
+## Next
+- T-43: Search screen (ui.md §4.2)
+
 ## Left
-- 30 tasks remaining (T-41 to T-70)
+- 29 tasks remaining (T-42 to T-70)

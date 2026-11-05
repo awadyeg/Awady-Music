@@ -9,6 +9,7 @@ import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
 import 'package:awady_music/widgets/glass_slider.dart';
+import 'package:awady_music/widgets/track_menu_sheet.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -192,7 +193,9 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                         ),
                         tooltip: 'More options',
                         onPressed: () {
-                          // Opens track menu sheet
+                          unawaited(
+                            showTrackMenuSheet(context: context, track: track),
+                          );
                         },
                       ),
                     ],

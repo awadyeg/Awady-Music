@@ -53,7 +53,7 @@
 - [x] T-38 Mini player
 - [x] T-39 Now Playing
 - [x] T-40 Queue sheet
-- [ ] T-41 Track menu sheet + add-to-playlist
+- [x] T-41 Track menu sheet + add-to-playlist
 - [ ] T-42 Home
 - [ ] T-43 Search
 - [ ] T-44 Genre + Mood
