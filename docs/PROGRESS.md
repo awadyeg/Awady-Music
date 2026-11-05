@@ -46,8 +46,8 @@
 - [x] T-34 Sleep timer, fade, normalisation
 - [x] T-35 Android EQ
 - [x] T-36 Stats recorder
-- [ ] T-37 Rewind builder
-- **CHECKPOINT D**
+- [x] T-37 Rewind builder
+- **CHECKPOINT D: Complete (Phase 3 Player fully verified, 227 tests green)**
 
 ## Phase 4: Screens
 - [ ] T-38 Mini player

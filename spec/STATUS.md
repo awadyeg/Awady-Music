@@ -49,12 +49,13 @@
 - T-34: Sleep timer, fade, normalisation (implemented setSleepTimer with auto-pause and persistence flush verified with fake_async clock; rampVolume equal-power fade over fadeSecs/2; computeLoudnessGainDb clamping [-6, +6] dB and linear multiplier calculation; setNormOn & setFadeSecs with SharedPreferences persistence; unit tests passing)
 - T-35: Android EQ (implemented lib/player/eq.dart with desktop 7-band frequencies [60, 250, 500, 1000, 4000, 8000, 14000] Hz, EqPopover.tsx presets [flat, bass, vocal, bright, vshape], mapDeviceBandToDesktopIndex nearest centre frequency mapping, detectEqPreset, platform guard safe no-op on non-Android, setEqBand, setEq, setEqPreset wired to PlayerController with SharedPreferences persistence; unit tests passing)
 - T-36: Stats recorder (implemented lib/data/repositories/stats_repository.dart with StatsRepository & StatsRecorder; local dayKey and monthKey, 300 tracks & 200 artists caps with lowest-ms eviction, 120 days & 14 months caps, 15s debounced flusher, recordPlay at 30s or 50% duration; robust hydration with corrupted blob recovery; wired into PlayerController positionStream and playback state; unit tests passing)
+- T-37: Rewind builder (implemented lib/player/rewind.dart with buildRewind, latestRewind, currentRewind, availableRewind, isRewindSeen, markRewindSeen, RewindController; gating constants 10 min / 5 plays closed, 3 plays partial; localized month formatting with fallback; unit tests passing)
 
 ## In Progress
-- Phase 3: Player (T-37 Rewind builder)
+- CHECKPOINT D: Phase 3 review & device verification report
 
 ## Next
-- CHECKPOINT D
+- Phase 4: Screens (T-38 Mini player)
 
 ## Left
-- 34 tasks remaining (T-37 to T-70)
+- 33 tasks remaining (T-38 to T-70)
