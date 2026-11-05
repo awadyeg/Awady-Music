@@ -2,6 +2,7 @@ import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/features/artist/artist_screen.dart';
 import 'package:awady_music/features/genre/genre_screen.dart';
 import 'package:awady_music/features/home/home_screen.dart';
+import 'package:awady_music/features/library/library_screen.dart';
 import 'package:awady_music/features/mood/mood_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/features/playlist/playlist_screen.dart';
@@ -146,8 +147,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/library',
-                builder: (context, state) =>
-                    const PlaceholderScreen('LibraryScreen'),
+                builder: (context, state) => const LibraryScreen(),
                 routes: [
                   GoRoute(
                     path: 'liked',

@@ -59,12 +59,13 @@
 - T-44: Genre + Mood screens (implemented lib/features/genre/genre_screen.dart with LargeTitleScaffold, kicker, segmented control for Top hits, Week, Month, All time, big Play button, track list with TrackTile; implemented lib/features/mood/mood_screen.dart with LargeTitleScaffold, playlists horizontal carousel, and top tracks list; wired routes /genre/:name, /mood/:params in app_router.dart; 7 unit & widget tests passing)
 - T-45: Artist screen (implemented lib/features/artist/artist_screen.dart with stretchy header, cover photo / profile avatar, verified badge, monthly listeners, Play / Shuffle / Follow buttons, Popular tracks list with TrackTile and See all toggle, Albums horizontal carousel, Singles & EPs horizontal carousel, expandable About bio card; wired route /artist/:id in app_router.dart; 4 widget tests passing)
 - T-46: Playlist/Album/Liked/Local screens (implemented lib/features/playlist/playlist_screen.dart supporting local user playlists, remote playlists, albums, liked songs, and recently played tracks; header with 220 cover, title, owner, track count, total duration, Play/Shuffle/Download all/⋯ actions; local playlist edit mode with reorderable list and delete actions; rename dialog, sort sheet by title/artist/duration, export JSON, and delete confirm dialog; Save to Library for remote playlists; pending import matching progress pill; empty local state with Find songs CTA; wired routes /playlist/:id, /library/liked, /library/recent in app_router.dart; debug APK built and verified; 9 unit & widget tests passing)
+- T-47: Library screen (implemented lib/features/library/library_screen.dart with LargeTitleScaffold, import and settings header action buttons, filter chips All/Playlists/Artists/Downloads, pinned rows for Liked Songs, Downloads, and Recently played with live counts, user playlists list with CollageCover and track count, followed artists list with circular avatars, empty states, and floating glass "+ New playlist" capsule with create playlist dialog; wired into app_router.dart; 5 unit & widget tests passing)
 
 ## In Progress
-- T-47: Library screen (ui.md §4.6)
-
-## Next
 - T-48: Stats screen (ui.md §4.8)
 
+## Next
+- T-49: Rewind stories (ui.md §4.9)
+
 ## Left
-- 24 tasks remaining (T-47 to T-70)
+- 23 tasks remaining (T-48 to T-70)

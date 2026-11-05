@@ -14,6 +14,7 @@ class LargeTitleScaffold extends StatelessWidget {
     this.onRefresh,
     this.bottom,
     this.floatingActionButton,
+    this.floatingActionButtonLocation,
     this.expandedHeight = 110.0,
   }) : assert(
          slivers != null || body != null,
@@ -28,6 +29,7 @@ class LargeTitleScaffold extends StatelessWidget {
   final Future<void> Function()? onRefresh;
   final PreferredSizeWidget? bottom;
   final Widget? floatingActionButton;
+  final FloatingActionButtonLocation? floatingActionButtonLocation;
   final double expandedHeight;
 
   TextDirection _detectDirection(String text) {
@@ -146,6 +148,7 @@ class LargeTitleScaffold extends StatelessWidget {
       backgroundColor: tokens.bg,
       body: scrollView,
       floatingActionButton: floatingActionButton,
+      floatingActionButtonLocation: floatingActionButtonLocation,
     );
   }
 }

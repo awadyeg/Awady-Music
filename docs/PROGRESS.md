@@ -59,7 +59,7 @@
 - [x] T-44 Genre + Mood
 - [x] T-45 Artist
 - [x] T-46 Playlist/Album/Liked/Local
-- [ ] T-47 Library
+- [x] T-47 Library
 - [ ] T-48 Stats
 - [ ] T-49 Rewind stories
 - [ ] T-50 Sleep timer sheet
