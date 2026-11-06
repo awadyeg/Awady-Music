@@ -6,10 +6,13 @@ import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/core/util/semaphore.dart';
 import 'package:awady_music/data/db/app_database.dart';
+import 'package:awady_music/data/models/artwork.dart';
 import 'package:awady_music/data/models/track.dart';
+import 'package:awady_music/data/repositories/lyrics_repository.dart';
 import 'package:awady_music/data/sources/ytstream/client_constants.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_impl.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_provider.dart';
+import 'package:awady_music/widgets/artwork_image.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -204,8 +207,50 @@ class DownloadsRepository {
         partFile.renameSync(finalPath);
       }
 
+      // Download companion artwork if available
+      var savedTrack = track;
+      try {
+        final candidates = ArtworkImage.buildCandidates(track.artwork);
+        final artUrl = candidates.firstWhere(
+          (u) => u.startsWith('http://') || u.startsWith('https://'),
+          orElse: () => '',
+        );
+        if (artUrl.isNotEmpty) {
+          final artFinalPath = p.join(dir.path, '$filename.jpg');
+          await _dio.download(artUrl, artFinalPath);
+          if (File(artFinalPath).existsSync()) {
+            savedTrack = track.copyWith(
+              artwork: Artwork(
+                s1000: artFinalPath,
+                s480: artFinalPath,
+                s150: artFinalPath,
+                fallback:
+                    track.artwork?.s1000 ??
+                    track.artwork?.s480 ??
+                    track.artwork?.fallback ??
+                    artFinalPath,
+              ),
+            );
+          }
+        }
+      } on Object catch (e) {
+        Log.w('Artwork download failed for ${track.id}: $e');
+      }
+
+      // Prefetch and cache lyrics for offline playback
+      try {
+        if (ref != null) {
+          unawaited(ref!.read(lyricsRepositoryProvider).get(track));
+        }
+      } on Object catch (e) {
+        Log.w('Lyrics prefetch failed for ${track.id}: $e');
+      }
+
       // Save track metadata and download record to DB
-      await db.libraryDao.upsertTrack(track.id, jsonEncode(track.toJson()));
+      await db.libraryDao.upsertTrack(
+        track.id,
+        jsonEncode(savedTrack.toJson()),
+      );
       await db.downloadsDao.insertDownload(track.id, finalPath, DateTime.now());
 
       _updateProgress(track.id, DownloadStatus.completed);
@@ -258,6 +303,17 @@ class DownloadsRepository {
       if (file.existsSync()) {
         try {
           file.deleteSync();
+        } on Object catch (_) {}
+      }
+      final artFile = File(
+        p.join(
+          p.dirname(entry.filePath),
+          '${p.basenameWithoutExtension(entry.filePath)}.jpg',
+        ),
+      );
+      if (artFile.existsSync()) {
+        try {
+          artFile.deleteSync();
         } on Object catch (_) {}
       }
       await db.downloadsDao.deleteDownload(trackId);

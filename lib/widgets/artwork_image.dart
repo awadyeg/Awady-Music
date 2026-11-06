@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:awady_music/core/theme/glass.dart';
 import 'package:awady_music/core/theme/tokens.dart';
@@ -29,7 +30,17 @@ class ArtworkImage extends StatefulWidget {
   final BoxFit fit;
   final ImageProviderFactory? imageProviderFactory;
 
+  static bool isLocalPath(String u) {
+    if (u.startsWith('file://') ||
+        u.startsWith('/') ||
+        RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(u)) {
+      return true;
+    }
+    return false;
+  }
+
   static String stripSigned(String u) {
+    if (isLocalPath(u)) return u;
     return u.replaceAllMapped(
       RegExp(r'(ytimg\.com/[^?]+)\?.*$'),
       (match) => match.group(1) ?? u,
@@ -37,7 +48,7 @@ class ArtworkImage extends StatefulWidget {
   }
 
   static String upscaleUrl(String url, {int size = 1080}) {
-    if (url.isEmpty) return url;
+    if (url.isEmpty || isLocalPath(url)) return url;
     if (url.contains('googleusercontent.com') ||
         url.contains('yt3.ggpht.com') ||
         url.contains('ggpht.com')) {
@@ -51,53 +62,72 @@ class ArtworkImage extends StatefulWidget {
 
   static List<String> buildCandidates(Artwork? art, [String? directUrl]) {
     if (directUrl != null && directUrl.isNotEmpty) {
+      if (isLocalPath(directUrl)) {
+        return [directUrl];
+      }
       final upscaled = upscaleUrl(directUrl);
       return [stripSigned(upscaled)];
     }
     if (art == null) return const [];
 
-    final primary = art.s480 ?? art.s1000 ?? art.s150 ?? art.fallback;
-    if (primary == null) return const [];
-
-    var path = '';
-    try {
-      path = Uri.parse(primary).path;
-    } on Object {
-      path = '';
+    final raw = <String>[];
+    for (final s in [art.s1000, art.s480, art.s150, art.fallback]) {
+      if (s != null && s.isNotEmpty && isLocalPath(s)) {
+        if (!raw.contains(s)) raw.add(s);
+      }
     }
 
-    final candidates = <String>[stripSigned(primary)];
+    final primary = art.s480 ?? art.s1000 ?? art.s150 ?? art.fallback;
+    if (primary != null && primary.isNotEmpty) {
+      final cleanPrimary = isLocalPath(primary)
+          ? primary
+          : stripSigned(primary);
+      if (!raw.contains(cleanPrimary)) raw.add(cleanPrimary);
 
-    if (path.isNotEmpty) {
-      for (final m in art.mirrors) {
-        candidates.add('$m$path');
+      var path = '';
+      try {
+        path = Uri.parse(primary).path;
+      } on Object {
+        path = '';
+      }
+
+      if (path.isNotEmpty) {
+        for (final m in art.mirrors) {
+          raw.add('$m$path');
+        }
       }
     }
 
     for (final s in [art.s1000, art.s480, art.s150]) {
       if (s != null && s.isNotEmpty) {
-        final clean = stripSigned(s);
-        if (!candidates.contains(clean)) candidates.add(clean);
+        final clean = isLocalPath(s) ? s : stripSigned(s);
+        if (!raw.contains(clean)) raw.add(clean);
       }
     }
 
     if (art.fallback != null && art.fallback!.isNotEmpty) {
-      final cleanFb = stripSigned(art.fallback!);
-      if (!candidates.contains(cleanFb)) candidates.add(cleanFb);
+      final cleanFb = isLocalPath(art.fallback!)
+          ? art.fallback!
+          : stripSigned(art.fallback!);
+      if (!raw.contains(cleanFb)) raw.add(cleanFb);
     }
 
-    final result = <String>[];
-    for (final c in candidates) {
-      final up = upscaleUrl(c);
-      if (up != c && !result.contains(up)) {
-        result.add(up);
-      }
-      if (!result.contains(c)) {
-        result.add(c);
+    final localCandidates = <String>[];
+    final remoteCandidates = <String>[];
+
+    for (final c in raw) {
+      if (isLocalPath(c)) {
+        if (!localCandidates.contains(c)) localCandidates.add(c);
+      } else {
+        final up = upscaleUrl(c);
+        if (up != c && !remoteCandidates.contains(up)) {
+          remoteCandidates.add(up);
+        }
+        if (!remoteCandidates.contains(c)) remoteCandidates.add(c);
       }
     }
 
-    return result;
+    return [...localCandidates, ...remoteCandidates];
   }
 
   @override
@@ -150,6 +180,31 @@ class _ArtworkImageState extends State<ArtworkImage> {
 
     final currentUrl = _candidates[_candidateIndex];
 
+    if (ArtworkImage.isLocalPath(currentUrl)) {
+      final localPath = currentUrl.startsWith('file://')
+          ? currentUrl.substring(7)
+          : currentUrl;
+      final file = File(localPath);
+      if (file.existsSync()) {
+        return ClipRRect(
+          borderRadius: borderRadius,
+          child: Image.file(
+            file,
+            key: ValueKey(currentUrl),
+            width: widget.size,
+            height: widget.size,
+            fit: widget.fit,
+            errorBuilder: (_, _, _) {
+              scheduleMicrotask(_onImageError);
+              return _buildPlaceholder(borderRadius);
+            },
+          ),
+        );
+      }
+      scheduleMicrotask(_onImageError);
+      return _buildPlaceholder(borderRadius);
+    }
+
     if (widget.imageProviderFactory != null) {
       return ClipRRect(
         borderRadius: borderRadius,
@@ -167,8 +222,9 @@ class _ArtworkImageState extends State<ArtworkImage> {
       );
     }
 
+    final safeSize = widget.size.isFinite ? widget.size : 600.0;
     final cachePixelSize =
-        (widget.size * (MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0))
+        (safeSize * (MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0))
             .round()
             .clamp(64, 1024);
 

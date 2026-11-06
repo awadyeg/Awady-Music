@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/data/db/app_database.dart';
@@ -70,6 +71,20 @@ class LyricsRepository {
       return _memoryCache[track.id]!;
     }
 
+    if (!forceFresh) {
+      try {
+        final cachedJson = await cacheDao.getSongMatch('lyrics:${track.id}');
+        if (cachedJson != null && cachedJson.isNotEmpty) {
+          final map = jsonDecode(cachedJson) as Map<String, dynamic>;
+          final cached = Lyrics.fromJson(map);
+          if (cached is! NoLyrics) {
+            _memoryCache[track.id] = cached;
+            return cached;
+          }
+        }
+      } on Object catch (_) {}
+    }
+
     PlainLyrics? fallbackPlain;
 
     // 1. YouTube Music timed lyrics
@@ -78,6 +93,12 @@ class LyricsRepository {
       if (ytmRes is SyncedLyrics) {
         final withOffset = await _resolveOffset(track.id, ytmRes);
         _memoryCache[track.id] = withOffset;
+        unawaited(
+          cacheDao.putSongMatch(
+            'lyrics:${track.id}',
+            jsonEncode(withOffset.toJson()),
+          ),
+        );
         return withOffset;
       } else if (ytmRes is PlainLyrics) {
         fallbackPlain ??= ytmRes;
@@ -96,6 +117,12 @@ class LyricsRepository {
       if (mxmRes is SyncedLyrics) {
         final withOffset = await _resolveOffset(track.id, mxmRes);
         _memoryCache[track.id] = withOffset;
+        unawaited(
+          cacheDao.putSongMatch(
+            'lyrics:${track.id}',
+            jsonEncode(withOffset.toJson()),
+          ),
+        );
         return withOffset;
       }
     } on Object catch (e) {
@@ -112,6 +139,12 @@ class LyricsRepository {
       if (lrcRes is SyncedLyrics) {
         final withOffset = await _resolveOffset(track.id, lrcRes);
         _memoryCache[track.id] = withOffset;
+        unawaited(
+          cacheDao.putSongMatch(
+            'lyrics:${track.id}',
+            jsonEncode(withOffset.toJson()),
+          ),
+        );
         return withOffset;
       } else if (lrcRes is PlainLyrics) {
         fallbackPlain ??= lrcRes;
@@ -123,8 +156,27 @@ class LyricsRepository {
     // 4. Any plain lyrics fallback
     if (fallbackPlain != null) {
       _memoryCache[track.id] = fallbackPlain;
+      unawaited(
+        cacheDao.putSongMatch(
+          'lyrics:${track.id}',
+          jsonEncode(fallbackPlain.toJson()),
+        ),
+      );
       return fallbackPlain;
     }
+
+    // 5. Offline fallback check if network failed
+    try {
+      final cachedJson = await cacheDao.getSongMatch('lyrics:${track.id}');
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final map = jsonDecode(cachedJson) as Map<String, dynamic>;
+        final cached = Lyrics.fromJson(map);
+        if (cached is! NoLyrics) {
+          _memoryCache[track.id] = cached;
+          return cached;
+        }
+      }
+    } on Object catch (_) {}
 
     const noLyrics = NoLyrics();
     _memoryCache[track.id] = noLyrics;

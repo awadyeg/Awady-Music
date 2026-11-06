@@ -12,9 +12,11 @@ import 'package:awady_music/data/repositories/downloads_repository.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/data/repositories/lyrics_repository.dart';
 import 'package:awady_music/features/now_playing/lyrics_view.dart';
+import 'package:awady_music/player/cast_service.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/animated_favorite_button.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
+import 'package:awady_music/widgets/cast_sheet.dart';
 import 'package:awady_music/widgets/equalizer_sheet.dart';
 import 'package:awady_music/widgets/glass_slider.dart';
 import 'package:awady_music/widgets/glass_toast.dart';
@@ -165,6 +167,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
 
     final artworkUrl =
         track.artwork?.s1000 ?? track.artwork?.s480 ?? track.artwork?.fallback;
+    final isCasting = ref.watch(castProvider.select((s) => s.isCasting));
 
     return Scaffold(
       backgroundColor: tokens.bg,
@@ -277,6 +280,18 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                                 ],
                               ],
                             ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              LucideIcons.cast,
+                              color: isCasting
+                                  ? tokens.accent
+                                  : tokens.textPrimary,
+                            ),
+                            tooltip: 'Cast',
+                            onPressed: () {
+                              unawaited(showCastSheet(context));
+                            },
                           ),
                           IconButton(
                             icon: Icon(
@@ -428,6 +443,13 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                           ),
                         ),
                       ),
+                      // 3-Row live lyrics preview between art and song label
+                      _InlineLyricsPreview(
+                        track: track,
+                        currentTime: playerState.currentTime,
+                        onTap: () => setState(() => _showLyrics = true),
+                      ),
+                      const SizedBox(height: 8),
                       // Track Info & Action buttons (Download + Favorite)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -512,12 +534,6 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                             ),
                           ],
                         ),
-                      ),
-                      // 3-Row live lyrics preview
-                      _InlineLyricsPreview(
-                        track: track,
-                        currentTime: playerState.currentTime,
-                        onTap: () => setState(() => _showLyrics = true),
                       ),
                     ],
                     const SizedBox(height: 12),

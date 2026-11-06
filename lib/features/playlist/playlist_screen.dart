@@ -804,7 +804,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: tokens.accent,
-                          foregroundColor: Colors.black,
+                          foregroundColor: tokens.onAccent,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 12,

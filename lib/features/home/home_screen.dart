@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:awady_music/core/l10n/l10n.dart';
+import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/theme/glass.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/data/models/remote_playlist.dart';
@@ -9,9 +10,11 @@ import 'package:awady_music/data/repositories/catalog_providers.dart';
 import 'package:awady_music/data/repositories/catalog_repository.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/data/repositories/stats_repository.dart';
+import 'package:awady_music/player/cast_service.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/player/rewind.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
+import 'package:awady_music/widgets/cast_sheet.dart';
 import 'package:awady_music/widgets/large_title_scaffold.dart';
 import 'package:awady_music/widgets/media_card.dart';
 import 'package:awady_music/widgets/section_header.dart';
@@ -26,24 +29,31 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  static String computeGreeting(L10n l10n, [DateTime? time]) {
+  static String computeGreeting(L10n l10n, [DateTime? time, String? userName]) {
     final hour = (time ?? DateTime.now()).hour;
+    final String base;
     if (hour >= 5 && hour < 12) {
-      return l10n.homeGreetingMorning;
+      base = l10n.homeGreetingMorning;
     } else if (hour >= 12 && hour < 17) {
-      return l10n.homeGreetingAfternoon;
+      base = l10n.homeGreetingAfternoon;
     } else if (hour >= 17 && hour < 22) {
-      return l10n.homeGreetingEvening;
+      base = l10n.homeGreetingEvening;
     } else {
-      return l10n.homeGreetingLate;
+      base = l10n.homeGreetingLate;
     }
+
+    if (userName != null && userName.trim().isNotEmpty) {
+      return '$base, ${userName.trim()}';
+    }
+    return base;
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).glass;
     final l10n = context.l10n;
-    final greeting = computeGreeting(l10n);
+    final userName = ref.watch(settingsProvider.select((s) => s.userName));
+    final greeting = computeGreeting(l10n, null, userName);
 
     final statsRepo = ref.watch(statsRepositoryProvider);
     final rewind = availableRewind(
@@ -70,11 +80,21 @@ class HomeScreen extends ConsumerWidget {
     final newReleasesAsync = ref.watch(newReleasesProvider);
     final homePlaylistsAsync = ref.watch(homePlaylistsProvider);
 
+    final isCasting = ref.watch(castProvider.select((s) => s.isCasting));
+
     return Scaffold(
       backgroundColor: tokens.bg,
       body: LargeTitleScaffold(
         title: greeting,
         actions: [
+          IconButton(
+            icon: Icon(
+              LucideIcons.cast,
+              color: isCasting ? tokens.accent : tokens.textPrimary,
+            ),
+            tooltip: 'Cast',
+            onPressed: () => unawaited(showCastSheet(context)),
+          ),
           IconButton(
             icon: Icon(LucideIcons.settings, color: tokens.textPrimary),
             tooltip: 'Settings',

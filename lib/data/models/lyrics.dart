@@ -14,6 +14,29 @@ abstract class LyricLine with _$LyricLine {
 
 sealed class Lyrics {
   const Lyrics();
+
+  Map<String, dynamic> toJson();
+
+  static Lyrics fromJson(Map<String, dynamic> json) {
+    final type = json['type'] as String?;
+    return switch (type) {
+      'synced' => SyncedLyrics(
+        lines:
+            (json['lines'] as List<dynamic>?)
+                ?.map((e) => LyricLine.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            const [],
+        source: json['source'] as String? ?? '',
+        fingerprint: json['fingerprint'] as String? ?? '',
+        autoOffsetMs: (json['autoOffsetMs'] as num?)?.toInt() ?? 0,
+      ),
+      'plain' => PlainLyrics(
+        text: json['text'] as String? ?? '',
+        source: json['source'] as String? ?? '',
+      ),
+      _ => const NoLyrics(),
+    };
+  }
 }
 
 class SyncedLyrics extends Lyrics {
@@ -28,6 +51,15 @@ class SyncedLyrics extends Lyrics {
   final String source;
   final String fingerprint;
   final int autoOffsetMs;
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': 'synced',
+    'lines': lines.map((l) => l.toJson()).toList(),
+    'source': source,
+    'fingerprint': fingerprint,
+    'autoOffsetMs': autoOffsetMs,
+  };
 }
 
 class PlainLyrics extends Lyrics {
@@ -35,8 +67,18 @@ class PlainLyrics extends Lyrics {
 
   final String text;
   final String source;
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': 'plain',
+    'text': text,
+    'source': source,
+  };
 }
 
 class NoLyrics extends Lyrics {
   const NoLyrics();
+
+  @override
+  Map<String, dynamic> toJson() => {'type': 'none'};
 }

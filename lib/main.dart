@@ -22,8 +22,8 @@ Future<void> main() async {
       config: const AudioServiceConfig(
         androidNotificationChannelId: 'com.awady.awady_music.channel.audio',
         androidNotificationChannelName: 'Playback',
+        androidNotificationOngoing: true,
         androidShowNotificationBadge: true,
-        preloadArtwork: true,
       ),
     );
   } on Object catch (e, st) {

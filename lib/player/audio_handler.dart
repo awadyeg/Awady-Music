@@ -115,9 +115,16 @@ class AwadyAudioHandler extends BaseAudioHandler
 
     _subscriptions.add(
       _player.playerStateStream.listen((state) {
+        _broadcastState();
         if (state.processingState == ProcessingState.completed) {
           onPlaybackCompleted?.call();
         }
+      }),
+    );
+
+    _subscriptions.add(
+      _player.playingStream.listen((_) {
+        _broadcastState();
       }),
     );
 
@@ -169,9 +176,15 @@ class AwadyAudioHandler extends BaseAudioHandler
     );
   }
 
-  Future<void> playPlayer() => _player.play();
+  Future<void> playPlayer() async {
+    unawaited(_player.play());
+    _broadcastState();
+  }
 
-  Future<void> pausePlayer() => _player.pause();
+  Future<void> pausePlayer() async {
+    await _player.pause();
+    _broadcastState();
+  }
 
   @override
   Future<void> play() async {

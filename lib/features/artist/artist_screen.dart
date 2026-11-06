@@ -87,9 +87,10 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     ArtistPage data,
   ) {
     final artist = data.artist;
-    final isFollowed = ref.watch(
-      libraryRepositoryProvider.select((repo) => repo.isFollowing(artist.id)),
-    );
+    final followedAsync = ref.watch(followedArtistsStreamProvider);
+    final isFollowed =
+        followedAsync.asData?.value.any((a) => a.id == artist.id) ??
+        ref.read(libraryRepositoryProvider).isFollowing(artist.id);
 
     final listenersText = artist.id.startsWith('yt-')
         ? l10n.artistMonthlyListeners(_formatNumber(artist.followerCount))
@@ -141,6 +142,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                     art: artist.profilePicture,
                     url: artist.coverPhoto,
                     radius: 0,
+                    size: 600,
                   )
                 else
                   Container(color: tokens.bgElevated),
@@ -261,7 +263,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: tokens.accent,
-                      foregroundColor: Colors.white,
+                      foregroundColor: tokens.onAccent,
                       shape: const StadiumBorder(),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 22,
@@ -273,10 +275,10 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                           .read(playerControllerProvider.notifier)
                           .playTrack(data.topSongs.first, data.topSongs);
                     },
-                    icon: const Icon(
+                    icon: Icon(
                       LucideIcons.play,
                       size: 16,
-                      color: Colors.white,
+                      color: tokens.onAccent,
                     ),
                     label: Text(
                       l10n.artistPlay,
@@ -339,6 +341,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                   ),
                   onPressed: () {
                     ref.read(libraryRepositoryProvider).toggleFollow(artist);
+                    setState(() {});
                   },
                   icon: Icon(
                     isFollowed ? LucideIcons.userCheck : LucideIcons.userPlus,

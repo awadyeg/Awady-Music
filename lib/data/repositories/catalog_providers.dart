@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/data/models/artist.dart';
 import 'package:awady_music/data/models/artist_page.dart';
 import 'package:awady_music/data/models/mood_models.dart';
@@ -111,9 +112,90 @@ final newReleasesProvider = FutureProvider<CatalogList<RemotePlaylist>>((ref) {
 });
 
 /// Future provider for mood categories directory.
-final moodCategoriesProvider = FutureProvider<List<MoodCategory>>((ref) {
+final moodCategoriesProvider = FutureProvider<List<MoodCategory>>((ref) async {
   ref.keepAlive5Min();
-  return ref.watch(catalogRepositoryProvider).moods();
+  final countryCode = ref.watch(settingsProvider.select((s) => s.countryCode));
+  final likedAsync = ref.watch(likedTracksStreamProvider);
+  final likes = likedAsync.asData?.value ?? const [];
+  final country = findMusicCountry(countryCode);
+
+  final personalized = <MoodCategory>[];
+  if (likes.isNotEmpty) {
+    personalized.addAll(const [
+      MoodCategory(
+        name: 'My Likes Vibe',
+        params: 'custom:My Likes Vibe|best liked songs mix',
+      ),
+      MoodCategory(
+        name: 'Chill from Likes',
+        params: 'custom:Chill from Likes|chill acoustic relaxing hits',
+      ),
+      MoodCategory(
+        name: 'Upbeat Likes Mix',
+        params: 'custom:Upbeat Likes Mix|upbeat workout dance party hits',
+      ),
+    ]);
+  }
+
+  final countryName = country.nameEn;
+  personalized.add(
+    MoodCategory(
+      name: '${country.flag} $countryName Hits',
+      params: 'custom:${country.flag} $countryName Hits|top music $countryName',
+    ),
+  );
+
+  final isArabic = [
+    'EG',
+    'SA',
+    'AE',
+    'MA',
+    'DZ',
+    'IQ',
+    'KW',
+    'QA',
+    'LB',
+    'JO',
+    'TN',
+    'OM',
+    'BH',
+    'YE',
+    'SY',
+    'SD',
+    'LY',
+    'PS',
+  ].contains(countryCode.toUpperCase());
+
+  if (isArabic) {
+    personalized.addAll(const [
+      MoodCategory(
+        name: 'Arabic Tarab & Classics',
+        params: 'custom:Arabic Tarab & Classics|arabic classic tarab songs',
+      ),
+      MoodCategory(
+        name: 'Arabic Chill & Oud',
+        params: 'custom:Arabic Chill & Oud|arabic chill acoustic oud relaxing',
+      ),
+      MoodCategory(
+        name: 'Shaabi & Party Vibes',
+        params: 'custom:Shaabi & Party Vibes|egyptian shaabi dance party hits',
+      ),
+    ]);
+  }
+
+  final remoteMoods = await ref.watch(catalogRepositoryProvider).moods();
+
+  final seenNames = <String>{};
+  final combined = <MoodCategory>[];
+
+  for (final m in [...personalized, ...remoteMoods]) {
+    final lower = m.name.toLowerCase().trim();
+    if (seenNames.add(lower)) {
+      combined.add(m);
+    }
+  }
+
+  return combined;
 });
 
 /// Future provider family for individual mood page data.

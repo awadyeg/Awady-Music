@@ -2,8 +2,10 @@ import 'package:awady_music/core/l10n/l10n.dart';
 import 'package:awady_music/core/theme/app_theme.dart';
 import 'package:awady_music/data/models/artist.dart';
 import 'package:awady_music/data/models/enums.dart';
+import 'package:awady_music/data/models/lyrics.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
+import 'package:awady_music/data/repositories/lyrics_repository.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/player/player_state.dart';
@@ -87,6 +89,9 @@ Widget _buildHarness({
     overrides: [
       playerControllerProvider.overrideWith(() => playerController),
       libraryRepositoryProvider.overrideWithValue(libraryRepo),
+      lyricsForTrackProvider.overrideWith(
+        (ref, track) async => const NoLyrics(),
+      ),
     ],
     child: MaterialApp(
       theme: theme ?? AppTheme.dark(),

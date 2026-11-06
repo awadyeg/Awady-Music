@@ -85,6 +85,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // 0. Profile Section
+                const SectionHeader(title: 'Profile'),
+                _buildCard(
+                  tokens: tokens,
+                  children: [
+                    _buildNavTile(
+                      icon: LucideIcons.user,
+                      title: 'Your Name',
+                      subtitle: settings.userName.isNotEmpty
+                          ? settings.userName
+                          : 'Set your name for personalized greetings',
+                      tokens: tokens,
+                      onTap: () {
+                        unawaited(_editUserName(context, settings.userName));
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
                 // 1. Playback Section
                 SectionHeader(title: l10n.settingsPlayback),
                 _buildCard(
@@ -193,6 +213,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ref
                               .read(settingsProvider.notifier)
                               .setWifiOnlyDownloads(wifiOnly: val),
+                        );
+                      },
+                    ),
+                    _buildDivider(tokens),
+                    // Auto-download liked songs
+                    _buildSwitchTile(
+                      title: 'Auto-download liked songs',
+                      subtitle: 'Save favorite tracks offline automatically',
+                      value: settings.autoDownloadLikes,
+                      tokens: tokens,
+                      onChanged: (val) {
+                        unawaited(
+                          ref
+                              .read(settingsProvider.notifier)
+                              .setAutoDownloadLikes(enabled: val),
                         );
                       },
                     ),
@@ -576,6 +611,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       'es' => 'Mediante enlace o archivo CSV / YourLibrary.json',
       _ => 'Via Spotify link or Exportify CSV / YourLibrary.json',
     };
+  }
+
+  Future<void> _editUserName(BuildContext context, String currentName) async {
+    final controller = TextEditingController(text: currentName);
+    final saved = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final tokens = Theme.of(ctx).glass;
+        return AlertDialog(
+          backgroundColor: tokens.bgElevated,
+          title: Text('Your Name', style: TextStyle(color: tokens.textPrimary)),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            style: TextStyle(color: tokens.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Enter your name',
+              hintStyle: TextStyle(color: tokens.textDim),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text('Cancel', style: TextStyle(color: tokens.textDim)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: tokens.accent,
+                foregroundColor: tokens.onAccent,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(controller.text),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    if (saved != null) {
+      unawaited(ref.read(settingsProvider.notifier).setUserName(saved));
+    }
   }
 
   void _showCountryDialog(BuildContext context) {

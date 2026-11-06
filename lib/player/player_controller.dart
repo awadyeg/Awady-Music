@@ -33,16 +33,24 @@ extension TrackMediaItemX on Track {
   MediaItem toMediaItem() {
     final rawArtUrl =
         artwork?.s1000 ?? artwork?.s480 ?? artwork?.s150 ?? artwork?.fallback;
-    final artUrl = rawArtUrl != null
-        ? ArtworkImage.upscaleUrl(rawArtUrl)
-        : null;
+    Uri? artUri;
+    if (rawArtUrl != null && rawArtUrl.isNotEmpty) {
+      if (ArtworkImage.isLocalPath(rawArtUrl)) {
+        final cleanPath = rawArtUrl.startsWith('file://')
+            ? rawArtUrl.substring(7)
+            : rawArtUrl;
+        artUri = Uri.file(cleanPath);
+      } else {
+        artUri = Uri.tryParse(ArtworkImage.upscaleUrl(rawArtUrl));
+      }
+    }
     return MediaItem(
       id: id,
       title: title,
       artist: artist.name,
       album: album?.name,
       duration: duration > 0 ? Duration(seconds: duration) : null,
-      artUri: artUrl != null ? Uri.tryParse(artUrl) : null,
+      artUri: artUri,
     );
   }
 }
@@ -96,6 +104,7 @@ class PlayerController extends Notifier<PlayerState> {
   int autoFailStreak = 0;
   int streamRetries = 0;
   String? _prefetchedForTrackId;
+  String? _autoCrossfadedForTrackId;
 
   final Set<String> _radioTried = {};
   ({String id, String tail})? _radioFilledFor;
@@ -113,6 +122,7 @@ class PlayerController extends Notifier<PlayerState> {
     _eqController = EqualizerController(equalizer: _audioHandler.equalizer);
     _statsRecorder = StatsRecorder(repository: _statsRepo);
     _prefetchedForTrackId = null;
+    _autoCrossfadedForTrackId = null;
     ref.onDispose(() {
       for (final s in _subscriptions) {
         unawaited(s.cancel());
@@ -504,6 +514,17 @@ class PlayerController extends Notifier<PlayerState> {
                   AudioProcessingState.idle) {
             state = state.copyWith(currentTime: pos);
             _checkPrefetchAt50Percent(pos);
+            final dur = state.duration;
+            final cur = state.current;
+            if (cur != null &&
+                state.fadeSecs > 0 &&
+                state.isPlaying &&
+                dur > Duration(seconds: state.fadeSecs + 4) &&
+                pos >= dur - Duration(seconds: (state.fadeSecs / 2).ceil()) &&
+                _autoCrossfadedForTrackId != cur.id) {
+              _autoCrossfadedForTrackId = cur.id;
+              next(auto: true);
+            }
             _statsRecorder.onTick(
               currentTrack: state.current,
               currentTimeSeconds: pos.inMilliseconds / 1000.0,
@@ -598,7 +619,7 @@ class PlayerController extends Notifier<PlayerState> {
     } else {
       final ps = _audioHandler.playbackState.value.processingState;
       if (ps == AudioProcessingState.idle) {
-        await loadAt(state.index, state.currentTime);
+        await loadAt(state.index, startPos: state.currentTime);
       } else {
         state = state.copyWith(isPlaying: true);
         await _audioHandler.playPlayer();
@@ -664,7 +685,7 @@ class PlayerController extends Notifier<PlayerState> {
 
     state = state.copyWith(history: newHistory, shuffleDeck: deck);
 
-    unawaited(loadAt(nextIndex));
+    unawaited(loadAt(nextIndex, crossfade: auto));
   }
 
   void prev() {
@@ -1220,13 +1241,18 @@ class PlayerController extends Notifier<PlayerState> {
 
   /// Loads and plays track at [index] using resolver, downloaded file, or
   /// Audius fallback.
-  Future<void> loadAt(int index, [Duration? startPos]) async {
+  Future<void> loadAt(
+    int index, {
+    Duration? startPos,
+    bool crossfade = false,
+  }) async {
     if (index < 0 || index >= state.queue.length) return;
     final track = state.queue[index];
 
     final seq = ++loadSeq;
     streamRetries = 0;
     _prefetchedForTrackId = null;
+    _autoCrossfadedForTrackId = null;
 
     state = state.copyWith(
       index: index,
@@ -1328,6 +1354,7 @@ class PlayerController extends Notifier<PlayerState> {
 
     try {
       final shouldFade =
+          crossfade &&
           state.fadeSecs > 0 &&
           state.isPlaying &&
           _audioHandler.playbackState.value.playing;
@@ -1338,6 +1365,8 @@ class PlayerController extends Notifier<PlayerState> {
       if (shouldFade) {
         await rampVolume(from: state.volume, to: 0, duration: halfFade);
         if (!ref.mounted || seq != loadSeq) return;
+      } else {
+        unawaited(_audioHandler.setVolume(state.muted ? 0.0 : state.volume));
       }
 
       await _audioHandler.setAudioSource(source, initialPosition: startPos);

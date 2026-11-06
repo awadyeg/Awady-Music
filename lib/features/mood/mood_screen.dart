@@ -7,6 +7,7 @@ import 'package:awady_music/data/repositories/catalog_providers.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/large_title_scaffold.dart';
 import 'package:awady_music/widgets/media_card.dart';
+import 'package:awady_music/widgets/mood_visual_style.dart';
 import 'package:awady_music/widgets/section_header.dart';
 import 'package:awady_music/widgets/skeletons.dart';
 import 'package:awady_music/widgets/track_menu_sheet.dart';
@@ -61,8 +62,74 @@ class MoodScreen extends ConsumerWidget {
               );
             }
 
+            final style = MoodVisualStyle.forTitle(title);
             return SliverMainAxisGroup(
               slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        height: 96,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: style.colors,
+                          ),
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              right: -10,
+                              bottom: -15,
+                              child: Opacity(
+                                opacity: 0.22,
+                                child: Icon(
+                                  style.icon,
+                                  size: 100,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    style.icon,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    title,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      shadows: [
+                                        Shadow(
+                                          blurRadius: 4,
+                                          color: Color(0x66000000),
+                                        ),
+                                      ],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 // 1. Playlists carousel
                 if (hasPlaylists) ...[
                   SliverToBoxAdapter(

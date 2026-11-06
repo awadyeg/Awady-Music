@@ -14,11 +14,13 @@ import 'package:awady_music/widgets/artist_card.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
 import 'package:awady_music/widgets/large_title_scaffold.dart';
 import 'package:awady_music/widgets/media_card.dart';
+import 'package:awady_music/widgets/mood_visual_style.dart';
 import 'package:awady_music/widgets/section_header.dart';
 import 'package:awady_music/widgets/skeletons.dart';
 import 'package:awady_music/widgets/track_menu_sheet.dart';
 import 'package:awady_music/widgets/track_tile.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' as intl;
@@ -26,6 +28,20 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Active filter category for search results.
 enum SearchFilter { all, songs, artists, playlists }
+
+/// Notifier that triggers focusing the search field from the bottom bar.
+class SearchFocusNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void trigger() {
+    state++;
+  }
+}
+
+final searchFocusTriggerProvider = NotifierProvider<SearchFocusNotifier, int>(
+  SearchFocusNotifier.new,
+);
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -119,8 +135,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     });
   }
 
+  void _focusSearchField() {
+    _focusNode.requestFocus();
+    unawaited(SystemChannels.textInput.invokeMethod<void>('TextInput.show'));
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen<int>(searchFocusTriggerProvider, (previous, next) {
+      if (next > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _focusSearchField();
+          }
+        });
+      }
+    });
+
     final l10n = context.l10n;
     final tokens = Theme.of(context).glass;
 
@@ -130,46 +161,54 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         preferredSize: const Size.fromHeight(64),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: GlassSurface(
-            radius: 24,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-            child: Row(
-              children: [
-                Icon(LucideIcons.search, size: 20, color: tokens.textDim),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    textDirection: _detectDirection(_controller.text),
-                    textInputAction: TextInputAction.search,
-                    onSubmitted: _submitSearch,
-                    onChanged: _onQueryChanged,
-                    style: TextStyle(
-                      color: tokens.textPrimary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: l10n.searchPlaceholder,
-                      hintStyle: TextStyle(
-                        color: tokens.textDim.withValues(alpha: 0.7),
+          child: GestureDetector(
+            onDoubleTap: _focusSearchField,
+            behavior: HitTestBehavior.translucent,
+            child: GlassSurface(
+              radius: 24,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+              child: Row(
+                children: [
+                  Icon(LucideIcons.search, size: 20, color: tokens.textDim),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      textDirection: _detectDirection(_controller.text),
+                      textInputAction: TextInputAction.search,
+                      onSubmitted: _submitSearch,
+                      onChanged: _onQueryChanged,
+                      style: TextStyle(
+                        color: tokens.textPrimary,
                         fontSize: 15,
-                        fontWeight: FontWeight.normal,
+                        fontWeight: FontWeight.w500,
                       ),
-                      border: InputBorder.none,
-                      isDense: true,
+                      decoration: InputDecoration(
+                        hintText: l10n.searchPlaceholder,
+                        hintStyle: TextStyle(
+                          color: tokens.textDim.withValues(alpha: 0.7),
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                        border: InputBorder.none,
+                        isDense: true,
+                      ),
                     ),
                   ),
-                ),
-                if (_controller.text.isNotEmpty)
-                  IconButton(
-                    icon: Icon(LucideIcons.x, size: 18, color: tokens.textDim),
-                    tooltip: l10n.searchClear,
-                    splashRadius: 18,
-                    onPressed: _clearSearch,
-                  ),
-              ],
+                  if (_controller.text.isNotEmpty)
+                    IconButton(
+                      icon: Icon(
+                        LucideIcons.x,
+                        size: 18,
+                        color: tokens.textDim,
+                      ),
+                      tooltip: l10n.searchClear,
+                      splashRadius: 18,
+                      onPressed: _clearSearch,
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -277,7 +316,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   title: mood.name,
                   onTap: () {
                     final enc = Uri.encodeComponent(mood.params);
-                    unawaited(context.push('/search/mood/$enc'));
+                    unawaited(
+                      context.push('/search/mood/$enc', extra: mood.name),
+                    );
                   },
                 );
               }, childCount: items.length),
@@ -777,45 +818,67 @@ class _BrowseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = Theme.of(context).glass;
+    final style = MoodVisualStyle.forTitle(title);
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
-      child: GlassSurface(
-        radius: 16,
-        padding: const EdgeInsets.all(12),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -6,
-              bottom: -6,
-              child: Opacity(
-                opacity: 0.15,
-                child: Transform.rotate(
-                  angle: 0.35,
-                  child: Icon(
-                    LucideIcons.music,
-                    size: 48,
-                    color: tokens.textPrimary,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: style.colors,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -12,
+                top: -12,
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: style.accentCircleColor,
                   ),
                 ),
               ),
-            ),
-            Align(
-              alignment: Alignment.topLeft,
-              child: Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: tokens.textPrimary,
+              Positioned(
+                right: -4,
+                bottom: -8,
+                child: Opacity(
+                  opacity: 0.22,
+                  child: Transform.rotate(
+                    angle: 0.25,
+                    child: Icon(style.icon, size: 52, color: Colors.white),
+                  ),
                 ),
               ),
-            ),
-          ],
+              Align(
+                alignment: Alignment.topLeft,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(blurRadius: 4, color: Color(0x66000000)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

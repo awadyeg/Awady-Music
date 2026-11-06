@@ -691,13 +691,13 @@ Artwork? parseArtwork(dynamic thumbContainer, {String? fallback}) {
   var s480 = urls.length > 1 ? urls[urls.length ~/ 2] : urls.last;
   var s1000 = urls.last;
 
-  s480 = _upscaleGoogleThumb(s480, 544);
-  s1000 = _upscaleGoogleThumb(s1000, 1080);
+  s480 = upscaleGoogleThumb(s480, 544);
+  s1000 = upscaleGoogleThumb(s1000, 1080);
 
   return Artwork(s150: s150, s480: s480, s1000: s1000, fallback: fallback);
 }
 
-String _upscaleGoogleThumb(String url, int size) {
+String upscaleGoogleThumb(String url, int size) {
   if (url.contains('googleusercontent.com') ||
       url.contains('yt3.ggpht.com') ||
       url.contains('ggpht.com')) {

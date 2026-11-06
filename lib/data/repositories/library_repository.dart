@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/data/db/app_database.dart';
 import 'package:awady_music/data/models/artist.dart';
@@ -9,6 +10,7 @@ import 'package:awady_music/data/models/local_playlist.dart';
 import 'package:awady_music/data/models/playlist_export.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/models/track_validator.dart';
+import 'package:awady_music/data/repositories/downloads_repository.dart';
 import 'package:awady_music/data/sources/innertube/matcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -92,9 +94,10 @@ abstract interface class LibraryRepository {
 
 /// In-memory and SQLite-backed implementation of [LibraryRepository].
 class LibraryRepositoryImpl implements LibraryRepository {
-  LibraryRepositoryImpl({this.db});
+  LibraryRepositoryImpl({this.db, this.ref});
 
   final AppDatabase? db;
+  final Ref? ref;
 
   final Map<String, Track> _liked = {};
   final List<String> _likedOrder = [];
@@ -168,6 +171,18 @@ class LibraryRepositoryImpl implements LibraryRepository {
         }
       }
       _likedController.add(likedTracks);
+
+      if (ref != null) {
+        try {
+          final autoDl = ref!.read(settingsProvider).autoDownloadLikes;
+          if (autoDl) {
+            final dlRepo = ref!.read(downloadsRepositoryProvider);
+            for (final track in _liked.values) {
+              unawaited(dlRepo.enqueueDownload(track));
+            }
+          }
+        } on Object catch (_) {}
+      }
 
       final recentIds = await db!.libraryDao.getRecentTrackIds(50);
       for (final id in recentIds) {
@@ -254,8 +269,21 @@ class LibraryRepositoryImpl implements LibraryRepository {
         );
         unawaited(db!.libraryDao.likeTrack(track.id, now));
       }
+      _maybeAutoDownload(repaired);
     }
     _likedController.add(likedTracks);
+  }
+
+  void _maybeAutoDownload(Track track) {
+    if (ref == null) return;
+    try {
+      final autoDl = ref!.read(settingsProvider).autoDownloadLikes;
+      if (autoDl) {
+        unawaited(
+          ref!.read(downloadsRepositoryProvider).enqueueDownload(track),
+        );
+      }
+    } on Object catch (_) {}
   }
 
   @override
@@ -628,7 +656,7 @@ class LibraryRepositoryImpl implements LibraryRepository {
 /// Provider for [LibraryRepository].
 final libraryRepositoryProvider = Provider<LibraryRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
-  final repo = LibraryRepositoryImpl(db: db);
+  final repo = LibraryRepositoryImpl(db: db, ref: ref);
   unawaited(repo.init());
   return repo;
 });

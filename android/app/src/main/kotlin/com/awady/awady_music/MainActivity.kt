@@ -57,5 +57,32 @@ class MainActivity : AudioServiceActivity() {
                     result.notImplemented()
                 }
             }
+
+        val castChannel = "com.awady.awady_music/cast"
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, castChannel)
+            .setMethodCallHandler { call, result ->
+                if (call.method == "openCastSettings") {
+                    try {
+                        val intent = Intent("com.android.settings.panel.action.MEDIA_OUTPUT").apply {
+                            putExtra("com.android.settings.panel.extra.PACKAGE_NAME", packageName)
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        try {
+                            val fallbackIntent = Intent(android.provider.Settings.ACTION_CAST_SETTINGS).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            startActivity(fallbackIntent)
+                            result.success(true)
+                        } catch (e2: Exception) {
+                            result.error("CAST_SETTINGS_ERROR", e2.localizedMessage, null)
+                        }
+                    }
+                } else {
+                    result.notImplemented()
+                }
+            }
     }
 }

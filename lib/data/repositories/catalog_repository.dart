@@ -390,7 +390,42 @@ class CatalogRepositoryImpl implements CatalogRepository {
   Future<List<MoodCategory>> moods() => innertubeClient.moods();
 
   @override
-  Future<MoodPageData> mood(String params) => innertubeClient.mood(params);
+  Future<MoodPageData> mood(String params) async {
+    if (params.startsWith('custom:')) {
+      final rest = params.substring('custom:'.length);
+      final parts = rest.split('|');
+      final title = parts.first;
+      final query = parts.length > 1 ? parts[1] : title;
+      try {
+        final res = await search(query);
+        return MoodPageData(
+          name: title,
+          playlists: res.playlists,
+          tracks: res.songs,
+        );
+      } on Object {
+        return MoodPageData(name: title);
+      }
+    }
+
+    final data = await innertubeClient.mood(params);
+    if (data.tracks.isEmpty && data.playlists.isNotEmpty) {
+      try {
+        final query = data.name.isNotEmpty ? data.name : 'mood music';
+        final res = await search(query);
+        if (res.songs.isNotEmpty) {
+          return MoodPageData(
+            name: data.name,
+            playlists: data.playlists,
+            tracks: res.songs,
+          );
+        }
+      } on Object {
+        // Fall back to original data
+      }
+    }
+    return data;
+  }
 
   @override
   Future<List<Track>> upNext(String videoId, {int limit = 40}) =>

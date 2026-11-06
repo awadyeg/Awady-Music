@@ -79,10 +79,18 @@ class AppShell extends ConsumerWidget {
                 GlassTabBar(
                   currentIndex: navigationShell.currentIndex,
                   onTap: (index) {
+                    if (index == 1 && navigationShell.currentIndex == 1) {
+                      ref.read(searchFocusTriggerProvider.notifier).trigger();
+                    }
                     navigationShell.goBranch(
                       index,
                       initialLocation: index == navigationShell.currentIndex,
                     );
+                  },
+                  onDoubleTap: (index) {
+                    if (index == 1) {
+                      ref.read(searchFocusTriggerProvider.notifier).trigger();
+                    }
                   },
                 ),
               ],

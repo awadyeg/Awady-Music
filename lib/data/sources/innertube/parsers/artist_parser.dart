@@ -78,14 +78,19 @@ class ArtistParser {
     final avatarUrls = fgUrls.isNotEmpty ? fgUrls : bannerUrls;
     final coverUrls = bannerUrls.isNotEmpty ? bannerUrls : fgUrls;
 
-    final coverPhotoUrl = coverUrls.isNotEmpty ? coverUrls.last : null;
+    final coverPhotoUrl = coverUrls.isNotEmpty
+        ? upscaleGoogleThumb(coverUrls.last, 1400)
+        : null;
     final avatarArtwork = avatarUrls.isNotEmpty
         ? Artwork(
             s150: avatarUrls.first,
-            s480: avatarUrls.length > 1
-                ? avatarUrls[avatarUrls.length ~/ 2]
-                : avatarUrls.last,
-            s1000: avatarUrls.last,
+            s480: upscaleGoogleThumb(
+              avatarUrls.length > 1
+                  ? avatarUrls[avatarUrls.length ~/ 2]
+                  : avatarUrls.last,
+              544,
+            ),
+            s1000: upscaleGoogleThumb(avatarUrls.last, 1080),
           )
         : null;
 

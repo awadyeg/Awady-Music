@@ -4,15 +4,42 @@ import 'package:awady_music/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-class GlassTabBar extends StatelessWidget {
+/// Floating capsule tab bar with frosted glass styling and instant responsive
+/// taps.
+class GlassTabBar extends StatefulWidget {
   const GlassTabBar({
     required this.currentIndex,
     required this.onTap,
+    this.onDoubleTap,
     super.key,
   });
 
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final ValueChanged<int>? onDoubleTap;
+
+  @override
+  State<GlassTabBar> createState() => _GlassTabBarState();
+}
+
+class _GlassTabBarState extends State<GlassTabBar> {
+  int? _lastTappedIndex;
+  DateTime? _lastTapTime;
+
+  void _handleTap(int index) {
+    final now = DateTime.now();
+    final isDouble =
+        _lastTappedIndex == index &&
+        _lastTapTime != null &&
+        now.difference(_lastTapTime!) < const Duration(milliseconds: 350);
+    _lastTappedIndex = index;
+    _lastTapTime = now;
+
+    widget.onTap(index);
+    if (isDouble && widget.onDoubleTap != null) {
+      widget.onDoubleTap!(index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +76,8 @@ class GlassTabBar extends StatelessWidget {
                     child: _TabItem(
                       icon: items[i].icon,
                       label: items[i].label,
-                      isSelected: currentIndex == i,
-                      onTap: () => onTap(i),
+                      isSelected: widget.currentIndex == i,
+                      onTap: () => _handleTap(i),
                       tokens: tokens,
                     ),
                   ),
