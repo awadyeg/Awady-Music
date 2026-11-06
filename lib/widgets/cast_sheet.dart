@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/player/cast_service.dart';
+import 'package:awady_music/player/connect_client.dart';
 import 'package:awady_music/widgets/glass_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,6 +37,8 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
     final tokens = Theme.of(context).glass;
     final castState = ref.watch(castProvider);
     final castNotifier = ref.read(castProvider.notifier);
+    final connectState = ref.watch(connectClientProvider);
+    final connectNotifier = ref.read(connectClientProvider.notifier);
     final connected = castState.connectedDevice;
 
     return Padding(
@@ -103,9 +106,11 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
-                        const Text(
-                          'Connected',
-                          style: TextStyle(
+                        Text(
+                          connectState.isConnected
+                              ? 'Awady Connect • Playing on TV'
+                              : 'Connected',
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF10B981),
                             fontWeight: FontWeight.w600,
@@ -115,7 +120,10 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
                     ),
                   ),
                   TextButton(
-                    onPressed: castNotifier.disconnect,
+                    onPressed: () {
+                      castNotifier.disconnect();
+                      connectNotifier.disconnect();
+                    },
                     child: const Text('Disconnect'),
                   ),
                 ],
@@ -137,8 +145,10 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(
-                  LucideIcons.tv,
-                  color: tokens.textPrimary,
+                  device.model == 'Awady TV Receiver'
+                      ? LucideIcons.tv
+                      : LucideIcons.cast,
+                  color: tokens.accent,
                   size: 20,
                 ),
                 title: Text(
@@ -150,7 +160,7 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
                   ),
                 ),
                 subtitle: Text(
-                  device.host,
+                  '${device.host} • ${device.model}',
                   style: TextStyle(fontSize: 12, color: tokens.textDim),
                 ),
                 trailing: connected?.id == device.id
@@ -162,6 +172,9 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
                     : null,
                 onTap: () {
                   castNotifier.connect(device);
+                  if (device.model == 'Awady TV Receiver') {
+                    unawaited(connectNotifier.connectTo(device));
+                  }
                   Navigator.of(context).pop();
                 },
               ),

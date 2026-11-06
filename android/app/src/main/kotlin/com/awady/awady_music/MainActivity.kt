@@ -1,8 +1,11 @@
 package com.awady.awady_music
 
 import android.Manifest
+import android.app.UiModeManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.core.content.FileProvider
@@ -87,6 +90,20 @@ class MainActivity : AudioServiceActivity() {
                             result.error("CAST_SETTINGS_ERROR", e2.localizedMessage, null)
                         }
                     }
+                } else {
+                    result.notImplemented()
+                }
+            }
+
+        val tvChannel = "com.awady.awady_music/tv"
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, tvChannel)
+            .setMethodCallHandler { call, result ->
+                if (call.method == "isTelevision") {
+                    val uiModeManager = getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
+                    val isTv = uiModeManager?.currentModeType ==
+                            Configuration.UI_MODE_TYPE_TELEVISION ||
+                            packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+                    result.success(isTv)
                 } else {
                     result.notImplemented()
                 }

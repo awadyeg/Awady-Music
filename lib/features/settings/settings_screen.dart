@@ -17,6 +17,7 @@ import 'package:awady_music/widgets/update_banner.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Settings screen organizing user preferences into Playback, Appearance,
@@ -325,6 +326,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       tokens: tokens,
                       onTap: () => _showCountryDialog(context),
                     ),
+                    _buildDivider(tokens),
+
+                    // TV Mode launcher & settings
+                    _buildNavTile(
+                      icon: LucideIcons.tv,
+                      title: 'Android TV Mode',
+                      subtitle: switch (settings.tvMode) {
+                        'on' => 'Always on (TV UI)',
+                        'off' => 'Disabled',
+                        _ => 'Auto-detect big screens',
+                      },
+                      tokens: tokens,
+                      onTap: () => _showTvModeDialog(context, settings),
+                    ),
+                    _buildDivider(tokens),
+
+                    // Connect receiver switch
+                    _buildSwitchTile(
+                      title: 'Awady Connect Receiver',
+                      subtitle:
+                          'Accept Cast & remote control from phones on Wi-Fi',
+                      value: settings.enableConnectReceiver,
+                      tokens: tokens,
+                      onChanged: (val) {
+                        unawaited(
+                          ref
+                              .read(settingsProvider.notifier)
+                              .setEnableConnectReceiver(enabled: val),
+                        );
+                      },
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -531,7 +563,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'v1.0.2 (build 2)',
+                                  'v1.0.3 (build 3)',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: tokens.textDim,
@@ -738,6 +770,66 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onSelect: () {
                     unawaited(settingsNotifier.setLocale(const Locale('ar')));
                     Navigator.of(ctx).pop();
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showTvModeDialog(BuildContext context, AppSettings settings) {
+    final settingsNotifier = ref.read(settingsProvider.notifier);
+    unawaited(
+      showDialog(
+        context: context,
+        builder: (ctx) {
+          final tokens = Theme.of(ctx).glass;
+          return AlertDialog(
+            title: const Text('Android TV Mode'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildLangOption(
+                  ctx,
+                  label: 'Auto-detect (Recommended)',
+                  isSelected: settings.tvMode == 'auto',
+                  onSelect: () {
+                    unawaited(settingsNotifier.setTvMode('auto'));
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                _buildLangOption(
+                  ctx,
+                  label: 'Always On (TV UI)',
+                  isSelected: settings.tvMode == 'on',
+                  onSelect: () {
+                    unawaited(settingsNotifier.setTvMode('on'));
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                _buildLangOption(
+                  ctx,
+                  label: 'Disabled (Phone UI)',
+                  isSelected: settings.tvMode == 'off',
+                  onSelect: () {
+                    unawaited(settingsNotifier.setTvMode('off'));
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: tokens.accent,
+                    foregroundColor: tokens.onAccent,
+                  ),
+                  icon: const Icon(LucideIcons.tv, size: 18),
+                  label: const Text('Launch TV Mode Now'),
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    unawaited(context.push('/tv'));
                   },
                 ),
               ],

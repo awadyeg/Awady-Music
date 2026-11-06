@@ -273,6 +273,9 @@ class AppSettings {
     this.wifiOnlyDownloads = false,
     this.autoDownloadLikes = true,
     this.userName = '',
+    this.tvMode = 'auto',
+    this.enableConnectReceiver = true,
+    this.tvDeviceName = '',
   });
 
   final ThemeMode themeMode;
@@ -283,6 +286,9 @@ class AppSettings {
   final bool wifiOnlyDownloads;
   final bool autoDownloadLikes;
   final String userName;
+  final String tvMode;
+  final bool enableConnectReceiver;
+  final String tvDeviceName;
 
   AppSettings copyWith({
     ThemeMode? themeMode,
@@ -293,6 +299,9 @@ class AppSettings {
     bool? wifiOnlyDownloads,
     bool? autoDownloadLikes,
     String? userName,
+    String? tvMode,
+    bool? enableConnectReceiver,
+    String? tvDeviceName,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -303,6 +312,10 @@ class AppSettings {
       wifiOnlyDownloads: wifiOnlyDownloads ?? this.wifiOnlyDownloads,
       autoDownloadLikes: autoDownloadLikes ?? this.autoDownloadLikes,
       userName: userName ?? this.userName,
+      tvMode: tvMode ?? this.tvMode,
+      enableConnectReceiver:
+          enableConnectReceiver ?? this.enableConnectReceiver,
+      tvDeviceName: tvDeviceName ?? this.tvDeviceName,
     );
   }
 }
@@ -318,6 +331,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _keyWifiOnlyDownloads = 'settings_wifi_only_downloads';
   static const _keyAutoDownloadLikes = 'settings_auto_download_likes';
   static const _keyUserName = 'settings_user_name';
+  static const _keyTvMode = 'settings_tv_mode';
+  static const _keyEnableConnectReceiver = 'settings_enable_connect_receiver';
+  static const _keyTvDeviceName = 'settings_tv_device_name';
 
   @override
   AppSettings build() {
@@ -360,6 +376,10 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final wifiOnlyDownloads = prefs.getBool(_keyWifiOnlyDownloads) ?? false;
     final autoDownloadLikes = prefs.getBool(_keyAutoDownloadLikes) ?? true;
     final userName = prefs.getString(_keyUserName) ?? '';
+    final tvMode = prefs.getString(_keyTvMode) ?? 'auto';
+    final enableConnectReceiver =
+        prefs.getBool(_keyEnableConnectReceiver) ?? true;
+    final tvDeviceName = prefs.getString(_keyTvDeviceName) ?? '';
 
     return AppSettings(
       themeMode: themeMode,
@@ -370,6 +390,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
       wifiOnlyDownloads: wifiOnlyDownloads,
       autoDownloadLikes: autoDownloadLikes,
       userName: userName,
+      tvMode: tvMode,
+      enableConnectReceiver: enableConnectReceiver,
+      tvDeviceName: tvDeviceName,
     );
   }
 
@@ -441,6 +464,31 @@ class SettingsNotifier extends Notifier<AppSettings> {
         ref.read(sharedPreferencesProvider) ??
         await SharedPreferences.getInstance();
     await prefs.setString(_keyUserName, trimmed);
+  }
+
+  Future<void> setTvMode(String mode) async {
+    state = state.copyWith(tvMode: mode);
+    final prefs =
+        ref.read(sharedPreferencesProvider) ??
+        await SharedPreferences.getInstance();
+    await prefs.setString(_keyTvMode, mode);
+  }
+
+  Future<void> setEnableConnectReceiver({required bool enabled}) async {
+    state = state.copyWith(enableConnectReceiver: enabled);
+    final prefs =
+        ref.read(sharedPreferencesProvider) ??
+        await SharedPreferences.getInstance();
+    await prefs.setBool(_keyEnableConnectReceiver, enabled);
+  }
+
+  Future<void> setTvDeviceName(String name) async {
+    final trimmed = name.trim();
+    state = state.copyWith(tvDeviceName: trimmed);
+    final prefs =
+        ref.read(sharedPreferencesProvider) ??
+        await SharedPreferences.getInstance();
+    await prefs.setString(_keyTvDeviceName, trimmed);
   }
 }
 

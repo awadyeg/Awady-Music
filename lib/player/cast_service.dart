@@ -119,6 +119,10 @@ class CastNotifier extends Notifier<CastState> {
         'ST: ssdp:all\r\n\r\n',
       );
       _socket?.send(ssdpSearch, multicast, 1900);
+
+      // Awady Connect LAN discovery broadcast
+      final awadyPing = utf8.encode('AWADY_DISCOVER');
+      _socket?.send(awadyPing, InternetAddress('255.255.255.255'), 8655);
     } on Object catch (e) {
       Log.w('SSDP discovery bind error: $e');
     }
@@ -131,6 +135,29 @@ class CastNotifier extends Notifier<CastState> {
     try {
       final msg = utf8.decode(datagram.data, allowMalformed: true);
       final host = datagram.address.address;
+
+      if (msg.startsWith('AWADY_OFFER:')) {
+        try {
+          final jsonStr = msg.substring('AWADY_OFFER:'.length);
+          final data = jsonDecode(jsonStr);
+          if (data is Map<String, dynamic>) {
+            final device = CastDevice(
+              id: data['id']?.toString() ?? host,
+              name: data['name']?.toString() ?? 'Awady TV',
+              host: host,
+              port: data['port'] as int? ?? 8654,
+              model: 'Awady TV Receiver',
+            );
+            if (!state.devices.any(
+              (d) => d.host == host && d.port == device.port,
+            )) {
+              state = state.copyWith(devices: [...state.devices, device]);
+            }
+          }
+        } on Object catch (_) {}
+        return;
+      }
+
       String? location;
       String? st;
       for (final line in msg.split('\r\n')) {

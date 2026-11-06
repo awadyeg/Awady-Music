@@ -1,4 +1,8 @@
+import 'dart:async';
+
+import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/theme/tokens.dart';
+import 'package:awady_music/core/util/tv_detector.dart';
 import 'package:awady_music/features/artist/artist_screen.dart';
 import 'package:awady_music/features/downloads/downloads_screen.dart';
 import 'package:awady_music/features/genre/genre_screen.dart';
@@ -13,6 +17,8 @@ import 'package:awady_music/features/rewind/rewind_screen.dart';
 import 'package:awady_music/features/search/search_screen.dart';
 import 'package:awady_music/features/settings/settings_screen.dart';
 import 'package:awady_music/features/stats/stats_screen.dart';
+import 'package:awady_music/features/tv/tv_home_screen.dart';
+import 'package:awady_music/player/connect_receiver.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/equalizer_sheet.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
@@ -55,6 +61,26 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(settingsProvider.select((s) => s.enableConnectReceiver), (
+      prev,
+      next,
+    ) {
+      if (next) {
+        unawaited(ref.read(connectReceiverProvider.notifier).start());
+      } else {
+        ref.read(connectReceiverProvider.notifier).stop();
+      }
+    });
+
+    final isTv = ref.watch(isTvModeProvider);
+    if (isTv) {
+      return TvHomeScreen(
+        onExitTvMode: () {
+          unawaited(ref.read(settingsProvider.notifier).setTvMode('off'));
+        },
+      );
+    }
+
     final hasTrack = ref.watch(
       playerControllerProvider.select((s) => s.current != null),
     );
@@ -223,6 +249,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => MoodScreen(
           params: state.pathParameters['params'] ?? '',
           name: state.extra as String?,
+        ),
+      ),
+      GoRoute(
+        path: '/tv',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => TvHomeScreen(
+          onExitTvMode: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
+          },
         ),
       ),
       // Root-level modal routes
