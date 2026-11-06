@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/core/util/semaphore.dart';
 import 'package:awady_music/data/models/artist.dart';
@@ -59,12 +60,13 @@ T? digAs<T>(dynamic source, List<dynamic> path) {
 
 /// Client for interacting with the raw YouTube Music Innertube API.
 class InnertubeClient {
-  InnertubeClient({Dio? dio, Semaphore? limiter})
+  InnertubeClient({Dio? dio, Semaphore? limiter, this.countryCode = 'US'})
     : _dio = dio ?? createDio(),
       _limiter = limiter ?? Semaphore(4);
 
   final Dio _dio;
   final Semaphore _limiter;
+  final String countryCode;
 
   /// Current session credentials. Can be set directly for testing.
   InnertubeSession? session;
@@ -145,7 +147,7 @@ class InnertubeClient {
           'clientVersion': session.clientVersion,
           if (session.visitorData != null) 'visitorData': session.visitorData,
           'hl': 'en',
-          'gl': 'US',
+          'gl': countryCode,
         },
       },
       ...body,
@@ -402,11 +404,95 @@ class InnertubeClient {
         cleanId.startsWith('OLAK')) {
       return await playlist(cleanId);
     }
-    final res = await post('browse', {'browseId': cleanId});
-    return _playlistParser.parseAlbum(res, cleanId);
+
+    Map<String, dynamic>? raw;
+    PlaylistPage? page;
+    Exception? browseError;
+    try {
+      raw = await post('browse', {'browseId': cleanId});
+      page = _playlistParser.parseAlbum(raw, cleanId);
+      if (page.tracks.isNotEmpty) {
+        return page;
+      }
+    } on Exception catch (e) {
+      browseError = e;
+      Log.w('Innertube album browse failed for $cleanId: $e');
+    }
+
+    if (raw != null) {
+      final nestedIds = _playlistParser.findNestedPlaylistIds(raw);
+      for (final pid in nestedIds) {
+        final strippedPid = pid.replaceFirst(RegExp('^VL'), '');
+        try {
+          final plRes = await post('browse', {'browseId': 'VL$strippedPid'});
+          final plPage = _playlistParser.parsePlaylist(plRes, strippedPid);
+          if (plPage.tracks.isNotEmpty) {
+            return PlaylistPage(
+              playlist: (page?.playlist ?? plPage.playlist).copyWith(
+                trackCount: plPage.tracks.length,
+                artwork: page?.playlist.artwork ?? plPage.playlist.artwork,
+              ),
+              tracks: plPage.tracks,
+            );
+          }
+        } on Exception catch (_) {}
+
+        try {
+          final nextRes = await post('next', {'playlistId': strippedPid});
+          final nextTracks = _browseParser.parseUpNext(nextRes, limit: 100);
+          if (nextTracks.isNotEmpty) {
+            return PlaylistPage(
+              playlist:
+                  (page?.playlist ??
+                          RemotePlaylist(
+                            id: 'ytalb-$cleanId',
+                            name: 'Album',
+                            isAlbum: true,
+                            artwork: nextTracks.first.artwork,
+                            owner: nextTracks.first.artist,
+                          ))
+                      .copyWith(
+                        trackCount: nextTracks.length,
+                        artwork:
+                            page?.playlist.artwork ?? nextTracks.first.artwork,
+                      ),
+              tracks: nextTracks,
+            );
+          }
+        } on Exception catch (_) {}
+      }
+    }
+
+    if (page != null &&
+        page.playlist.name.isNotEmpty &&
+        page.playlist.name != 'Album') {
+      try {
+        final ownerName = page.playlist.owner.name != 'Various Artists'
+            ? page.playlist.owner.name
+            : '';
+        final searchRes = await search(
+          '${page.playlist.name} $ownerName'.trim(),
+        );
+        if (searchRes.songs.isNotEmpty) {
+          return PlaylistPage(
+            playlist: page.playlist.copyWith(
+              trackCount: searchRes.songs.length,
+              artwork: page.playlist.artwork ?? searchRes.songs.first.artwork,
+            ),
+            tracks: searchRes.songs,
+          );
+        }
+      } on Exception catch (_) {}
+    }
+
+    if (page != null) {
+      return page;
+    }
+    throw browseError ?? Exception('Failed to load album: $cleanId');
   }
 
-  /// Fetches a playlist by its browseId with VL-prefix strip/retry.
+  /// Fetches a playlist by its browseId with VL-prefix strip/retry and
+  /// `/next` watchPlaylist fallback.
   Future<PlaylistPage> playlist(String browseId) async {
     final cleanId = browseId.replaceFirst(RegExp('^(ytpl-|ytalb-|yt-)'), '');
     if (cleanId.startsWith('MPRE')) {
@@ -423,20 +509,87 @@ class InnertubeClient {
       ],
     }.toList();
 
+    PlaylistPage? bestPage;
+    Map<String, dynamic>? bestRaw;
     Exception? lastError;
+
     for (final candidate in candidates) {
       try {
         final res = await post('browse', {'browseId': candidate});
         final page = _playlistParser.parsePlaylist(res, cleanId);
-        if (page.tracks.isNotEmpty || candidate == candidates.last) {
+        if (page.tracks.isNotEmpty) {
           return page;
         }
+        bestPage ??= page;
+        bestRaw ??= res;
       } on Exception catch (e) {
         lastError = e;
-        if (candidate == candidates.last) {
-          rethrow;
-        }
       }
+    }
+
+    // Fallback 1: try /next endpoint with playlistId (handles RD... mixes,
+    // OLAK... album playlists, and PL... playlists whose /browse shelf is empty)
+    final nextCandidates = <String>{
+      stripped,
+      if (bestRaw != null)
+        ..._playlistParser
+            .findNestedPlaylistIds(bestRaw)
+            .map((id) => id.replaceFirst(RegExp('^VL'), '')),
+    };
+
+    for (final pid in nextCandidates) {
+      if (pid.isEmpty) continue;
+      try {
+        final nextRes = await post('next', {'playlistId': pid});
+        final nextTracks = _browseParser.parseUpNext(nextRes, limit: 100);
+        if (nextTracks.isNotEmpty) {
+          final basePlaylist =
+              bestPage?.playlist ??
+              RemotePlaylist(
+                id: 'ytpl-$cleanId',
+                name: 'Playlist',
+                artwork: nextTracks.first.artwork,
+                owner: const Artist(
+                  id: 'yt-va',
+                  name: 'YouTube Music',
+                  handle: 'YouTube Music',
+                ),
+              );
+          return PlaylistPage(
+            playlist: basePlaylist.copyWith(
+              trackCount: nextTracks.length,
+              artwork: basePlaylist.artwork ?? nextTracks.first.artwork,
+            ),
+            tracks: nextTracks,
+          );
+        }
+      } on Exception catch (e) {
+        lastError ??= e;
+      }
+    }
+
+    // Fallback 2: if browse returned a valid playlist header name but 0 tracks,
+    // rescue tracks via search
+    if (bestPage != null &&
+        bestPage.playlist.name.isNotEmpty &&
+        bestPage.playlist.name != 'Playlist') {
+      try {
+        final searchRes = await search(bestPage.playlist.name);
+        if (searchRes.songs.isNotEmpty) {
+          return PlaylistPage(
+            playlist: bestPage.playlist.copyWith(
+              trackCount: searchRes.songs.length,
+              artwork:
+                  bestPage.playlist.artwork ?? searchRes.songs.first.artwork,
+            ),
+            tracks: searchRes.songs,
+          );
+        }
+      } on Exception catch (_) {}
+    }
+
+    if (bestPage != null) {
+      return bestPage;
     }
 
     throw lastError ?? Exception('Failed to load playlist: $cleanId');
@@ -446,6 +599,20 @@ class InnertubeClient {
   Future<List<RemotePlaylist>> homePlaylists() async {
     final results = <RemotePlaylist>[];
     final seen = <String>{};
+
+    if (countryCode.toUpperCase() != 'US') {
+      try {
+        final country = findMusicCountry(countryCode);
+        final regional = await search('${country.nameEn} top hits playlist');
+        for (final pl in regional.playlists) {
+          if (seen.add(pl.id)) {
+            results.add(pl);
+          }
+        }
+      } on Exception catch (e) {
+        Log.w('Failed to fetch regional playlists for $countryCode: $e');
+      }
+    }
 
     for (final browseId in ['FEmusic_home', 'FEmusic_explore']) {
       try {
@@ -466,8 +633,34 @@ class InnertubeClient {
 
   /// Fetches new releases feed.
   Future<List<RemotePlaylist>> newReleases({int limit = 24}) async {
-    final res = await post('browse', {'browseId': 'FEmusic_new_releases'});
-    return _browseParser.parseNewReleases(res, limit: limit);
+    final results = <RemotePlaylist>[];
+    final seen = <String>{};
+
+    if (countryCode.toUpperCase() != 'US') {
+      try {
+        final country = findMusicCountry(countryCode);
+        final regional = await search('${country.nameEn} new music albums');
+        for (final pl in regional.playlists) {
+          if (seen.add(pl.id)) {
+            results.add(pl);
+          }
+        }
+      } on Exception catch (_) {}
+    }
+
+    try {
+      final res = await post('browse', {'browseId': 'FEmusic_new_releases'});
+      final parsed = _browseParser.parseNewReleases(res, limit: limit);
+      for (final pl in parsed) {
+        if (seen.add(pl.id)) {
+          results.add(pl);
+        }
+      }
+    } on Exception catch (e) {
+      Log.w('Failed to fetch FEmusic_new_releases: $e');
+    }
+
+    return results.length > limit ? results.sublist(0, limit) : results;
   }
 
   /// Fetches the regional charts and returns the top chart songs.
@@ -491,22 +684,47 @@ class InnertubeClient {
         : parsed.tracks;
   }
 
-  /// Fetches trending songs from explore or home feed.
+  /// Fetches trending songs from regional charts, explore, or home feed.
   Future<List<Track>> trending() async {
-    for (final browseId in ['FEmusic_explore', 'FEmusic_home']) {
+    final tracks = <Track>[];
+    final seen = <String>{};
+
+    if (countryCode.toUpperCase() != 'US') {
+      try {
+        final country = findMusicCountry(countryCode);
+        final regional = await search('${country.nameEn} trending songs');
+        for (final t in regional.songs) {
+          if (seen.add(t.id)) {
+            tracks.add(t);
+          }
+          if (tracks.length >= 10) break;
+        }
+      } on Exception catch (e) {
+        Log.w('Failed to fetch regional trending for $countryCode: $e');
+      }
+    }
+
+    for (final browseId in [
+      'FEmusic_charts',
+      'FEmusic_explore',
+      'FEmusic_home',
+    ]) {
       try {
         final res = await post('browse', {'browseId': browseId});
         final parsed = _browseParser.parseCharts(res);
-        if (parsed.tracks.isNotEmpty) {
-          return parsed.tracks.length > 16
-              ? parsed.tracks.sublist(0, 16)
-              : parsed.tracks;
+        for (final t in parsed.tracks) {
+          if (seen.add(t.id)) {
+            tracks.add(t);
+          }
+          if (tracks.length >= 20) {
+            return tracks;
+          }
         }
       } on Exception catch (e) {
         Log.w('Failed to fetch trending from $browseId: $e');
       }
     }
-    return const [];
+    return tracks;
   }
 
   /// Fetches moods and genres directory.
@@ -557,5 +775,6 @@ class InnertubeClient {
 
 /// Provider for [InnertubeClient].
 final innertubeClientProvider = Provider<InnertubeClient>((ref) {
-  return InnertubeClient();
+  final countryCode = ref.watch(settingsProvider.select((s) => s.countryCode));
+  return InnertubeClient(countryCode: countryCode);
 });

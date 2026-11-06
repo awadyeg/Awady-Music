@@ -91,6 +91,12 @@ class _FakeInnertubeClient extends InnertubeClient {
   @override
   Future<List<Track?>> match(List<MatchQuery> items) async =>
       items.map((_) => null).toList();
+
+  @override
+  Future<List<Track>> upNext(String videoId, {int limit = 40}) async {
+    if (shouldThrow) throw Exception('YTM upNext down');
+    return trendingData;
+  }
 }
 
 class _FakeAudiusClient implements AudiusClient {
@@ -396,6 +402,47 @@ void main() {
       );
       expect(artistWithHint.fromFallback, isFalse);
       expect(artistWithHint.artist.name, equals('YT Artist'));
+    });
+
+    test('recommendedFromLikes combines upNext and artist searches', () async {
+      fakeYt
+        ..trendingData = const [
+          Track(
+            id: 'yt-rec-1',
+            title: 'Recommended Hit 1',
+            artist: Artist(id: 'y1', name: 'Amr Diab'),
+          ),
+          Track(
+            id: 'yt-liked-1',
+            title: 'Already Liked Song',
+            artist: Artist(id: 'y1', name: 'Amr Diab'),
+          ),
+        ]
+        ..searchResults = const SearchResults(
+          songs: [
+            Track(
+              id: 'yt-rec-2',
+              title: 'Recommended Hit 2',
+              artist: Artist(id: 'y2', name: 'Tamer Hosny'),
+            ),
+          ],
+        );
+
+      final res = await repo.recommendedFromLikes(
+        const [
+          Track(
+            id: 'yt-liked-1',
+            title: 'Already Liked Song',
+            artist: Artist(id: 'y1', name: 'Amr Diab'),
+          ),
+        ],
+        followedArtists: const [Artist(id: 'y2', name: 'Tamer Hosny')],
+      );
+
+      expect(res.fromFallback, isFalse);
+      expect(res.length, greaterThanOrEqualTo(2));
+      expect(res.first.id, equals('yt-rec-1'));
+      expect(res.any((t) => t.id == 'yt-rec-2'), isTrue);
     });
   });
 }

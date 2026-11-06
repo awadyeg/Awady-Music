@@ -550,3 +550,27 @@ final libraryRepositoryProvider = Provider<LibraryRepository>((ref) {
   unawaited(repo.init());
   return repo;
 });
+
+/// Reactive stream provider for liked tracks.
+final likedTracksStreamProvider = StreamProvider<List<Track>>((ref) async* {
+  final repo = ref.watch(libraryRepositoryProvider);
+  try {
+    yield repo.likedTracks;
+    yield* repo.watchLikedTracks();
+  } on Object catch (_) {
+    yield const [];
+  }
+});
+
+/// Reactive stream provider for followed artists.
+final followedArtistsStreamProvider = StreamProvider<List<Artist>>((
+  ref,
+) async* {
+  final repo = ref.watch(libraryRepositoryProvider);
+  try {
+    yield repo.followedArtists;
+    yield* repo.watchFollowedArtists();
+  } on Object catch (_) {
+    yield const [];
+  }
+});

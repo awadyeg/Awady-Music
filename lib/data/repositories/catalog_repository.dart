@@ -61,6 +61,12 @@ abstract interface class CatalogRepository {
   Future<List<Track>> upNext(String videoId, {int limit = 40});
 
   Future<List<Track?>> match(List<MatchQuery> items);
+
+  Future<CatalogList<Track>> recommendedFromLikes(
+    List<Track> likedTracks, {
+    List<Artist> followedArtists = const [],
+    List<Track> recentTracks = const [],
+  });
 }
 
 /// Implementation of [CatalogRepository] with automatic Audius fallback.
@@ -385,4 +391,105 @@ class CatalogRepositoryImpl implements CatalogRepository {
   @override
   Future<List<Track?>> match(List<MatchQuery> items) =>
       innertubeClient.match(items);
+
+  @override
+  Future<CatalogList<Track>> recommendedFromLikes(
+    List<Track> likedTracks, {
+    List<Artist> followedArtists = const [],
+    List<Track> recentTracks = const [],
+  }) async {
+    final seedTracks = <Track>[
+      ...likedTracks.take(3),
+      if (likedTracks.length < 2) ...recentTracks.take(2),
+    ];
+
+    final artistCounts = <String, ({Artist artist, int score})>{};
+    for (final a in followedArtists) {
+      final key = a.name.trim().toLowerCase();
+      if (key.isEmpty || key == 'unknown artist') continue;
+      final prev = artistCounts[key];
+      artistCounts[key] = (artist: a, score: (prev?.score ?? 0) + 3);
+    }
+    for (final t in likedTracks) {
+      final key = t.artist.name.trim().toLowerCase();
+      if (key.isEmpty || key == 'unknown artist') continue;
+      final prev = artistCounts[key];
+      artistCounts[key] = (artist: t.artist, score: (prev?.score ?? 0) + 2);
+    }
+    for (final t in recentTracks.take(5)) {
+      final key = t.artist.name.trim().toLowerCase();
+      if (key.isEmpty || key == 'unknown artist') continue;
+      final prev = artistCounts[key];
+      artistCounts[key] = (artist: t.artist, score: (prev?.score ?? 0) + 1);
+    }
+
+    final sortedArtists = artistCounts.values.toList()
+      ..sort((a, b) => b.score.compareTo(a.score));
+    final topArtists = sortedArtists.take(3).map((e) => e.artist).toList();
+
+    final buckets = <List<Track>>[];
+    final futures = <Future<List<Track>>>[];
+
+    var ytSeedCount = 0;
+    for (final seed in seedTracks) {
+      final vid =
+          seed.streamId ??
+          (seed.id.startsWith('yt-') ? seed.id.substring(3) : '');
+      if (vid.isNotEmpty && ytSeedCount < 2) {
+        ytSeedCount++;
+        futures.add(
+          upNext(vid, limit: 12).catchError((Object _) => const <Track>[]),
+        );
+      }
+    }
+
+    for (final artist in topArtists.take(2)) {
+      futures.add(
+        search(artist.name)
+            .then((res) => res.songs)
+            .catchError((Object _) => const <Track>[]),
+      );
+    }
+
+    if (futures.isEmpty) {
+      return CatalogList(const []);
+    }
+
+    final resolved = await Future.wait(futures);
+    for (final list in resolved) {
+      if (list.isNotEmpty) {
+        buckets.add(list);
+      }
+    }
+
+    final likedIds = likedTracks.map((t) => t.id).toSet();
+    final fresh = <Track>[];
+    final familiar = <Track>[];
+    final seen = <String>{};
+
+    var maxLen = 0;
+    for (final b in buckets) {
+      if (b.length > maxLen) maxLen = b.length;
+    }
+
+    for (var i = 0; i < maxLen; i++) {
+      for (final b in buckets) {
+        if (i < b.length) {
+          final track = b[i];
+          if (seen.add(track.id)) {
+            if (likedIds.contains(track.id)) {
+              familiar.add(track);
+            } else {
+              fresh.add(track);
+            }
+          }
+        }
+      }
+    }
+
+    final combined = [...fresh, ...familiar];
+    return CatalogList(
+      combined.length > 24 ? combined.sublist(0, 24) : combined,
+    );
+  }
 }

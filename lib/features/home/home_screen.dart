@@ -53,6 +53,17 @@ class HomeScreen extends ConsumerWidget {
 
     final libraryRepo = ref.watch(libraryRepositoryProvider);
     final recents = libraryRepo.recents;
+    var hasLikesOrFollows = false;
+    try {
+      hasLikesOrFollows =
+          libraryRepo.likedTracks.isNotEmpty ||
+          libraryRepo.followedArtists.isNotEmpty;
+    } on Object catch (_) {}
+
+    final recommendedAsync = ref.watch(recommendedForYouProvider);
+    final showRecommended =
+        hasLikesOrFollows ||
+        (recommendedAsync.asData?.value.items.isNotEmpty ?? false);
 
     final trendingAsync = ref.watch(trendingTracksProvider);
     final newReleasesAsync = ref.watch(newReleasesProvider);
@@ -71,6 +82,7 @@ class HomeScreen extends ConsumerWidget {
         ],
         onRefresh: () async {
           ref
+            ..invalidate(recommendedForYouProvider)
             ..invalidate(trendingTracksProvider)
             ..invalidate(newReleasesProvider)
             ..invalidate(homePlaylistsProvider);
@@ -213,6 +225,25 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
           ],
+          // 2b. Carousels: Recommended based on likes
+          if (showRecommended)
+            SliverToBoxAdapter(
+              child: _CarouselSection<Track>(
+                title: l10n.homeNewForYou,
+                asyncValue: recommendedAsync,
+                onRetry: () => ref.refresh(recommendedForYouProvider),
+                itemBuilder: (track) => MediaCard(
+                  title: track.title,
+                  subtitle: track.artist.name,
+                  artwork: track.artwork,
+                  onTap: () {
+                    ref
+                        .read(playerControllerProvider.notifier)
+                        .playTrack(track, recommendedAsync.asData?.value.items);
+                  },
+                ),
+              ),
+            ),
           // 3. Carousels: Trending this week
           SliverToBoxAdapter(
             child: _CarouselSection<Track>(

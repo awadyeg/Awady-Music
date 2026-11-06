@@ -60,6 +60,7 @@ class FakeSettingsNotifier extends Notifier<AppSettings>
   bool? lastReduceTransparency;
   bool? lastAutoplay;
   Locale? lastLocale;
+  String? lastCountryCode;
 
   @override
   AppSettings build() => _initial;
@@ -82,6 +83,11 @@ class FakeSettingsNotifier extends Notifier<AppSettings>
   @override
   Future<void> setLocale(Locale? locale) async {
     lastLocale = locale;
+  }
+
+  @override
+  Future<void> setCountryCode(String code) async {
+    lastCountryCode = code;
   }
 
   @override
@@ -282,5 +288,34 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Awady Music'), findsOneWidget);
+  });
+
+  testWidgets('Country selector dialog updates countryCode', (tester) async {
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      _buildHarness(
+        libraryRepo: libraryRepo,
+        statsRepo: statsRepo,
+        playerController: playerController,
+        settingsNotifier: settingsNotifier,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Country & Region (Recommendations)'), findsOneWidget);
+    await tester.tap(find.text('Country & Region (Recommendations)'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Saudi Arabia'), findsOneWidget);
+    await tester.tap(find.textContaining('Saudi Arabia'));
+    await tester.pumpAndSettle();
+
+    expect(settingsNotifier.lastCountryCode, equals('SA'));
   });
 }

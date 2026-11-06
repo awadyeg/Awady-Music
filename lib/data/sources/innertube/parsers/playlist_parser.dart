@@ -227,6 +227,40 @@ class PlaylistParser {
     return null;
   }
 
+  /// Extracts any nested watchPlaylistEndpoint.playlistId or audioPlaylistId
+  /// (e.g. OLAK5uy_..., RDCLAK5uy_..., PL...) embedded in a browse response.
+  List<String> findNestedPlaylistIds(Map<String, dynamic> json) {
+    final ids = <String>[];
+    final seen = <String>{};
+
+    void walk(dynamic node) {
+      if (node == null) return;
+      if (node is List) {
+        node.forEach(walk);
+        return;
+      }
+      if (node is! Map<String, dynamic>) return;
+
+      final watchPid = digAs<String>(node, [
+        'watchPlaylistEndpoint',
+        'playlistId',
+      ]);
+      if (watchPid != null && watchPid.isNotEmpty && seen.add(watchPid)) {
+        ids.add(watchPid);
+      }
+
+      final audioPid = node['audioPlaylistId'] as String?;
+      if (audioPid != null && audioPid.isNotEmpty && seen.add(audioPid)) {
+        ids.add(audioPid);
+      }
+
+      node.values.forEach(walk);
+    }
+
+    walk(json);
+    return ids;
+  }
+
   List<Map<String, dynamic>> _findSongItems(Map<String, dynamic> json) {
     final items = <Map<String, dynamic>>[];
     final seenVideoIds = <String>{};
@@ -254,12 +288,34 @@ class PlaylistParser {
               'videoId',
             ]) ??
             digAs<String>(item, [
+              'navigationEndpoint',
+              'watchEndpoint',
+              'videoId',
+            ]) ??
+            digAs<String>(item, [
               'flexColumns',
               0,
               'musicResponsiveListItemFlexColumnRenderer',
               'text',
               'runs',
               0,
+              'navigationEndpoint',
+              'watchEndpoint',
+              'videoId',
+            ]);
+        if (videoId != null && videoId.length == 11) {
+          if (seenVideoIds.add(videoId)) {
+            items.add(item);
+          }
+        }
+        return;
+      }
+
+      if (node.containsKey('playlistPanelVideoRenderer')) {
+        final item = node['playlistPanelVideoRenderer'] as Map<String, dynamic>;
+        final videoId =
+            digAs<String>(item, ['videoId']) ??
+            digAs<String>(item, [
               'navigationEndpoint',
               'watchEndpoint',
               'videoId',
@@ -288,6 +344,12 @@ class PlaylistParser {
   }) {
     final videoId =
         digAs<String>(item, ['playlistItemData', 'videoId']) ??
+        digAs<String>(item, ['videoId']) ??
+        digAs<String>(item, [
+          'navigationEndpoint',
+          'watchEndpoint',
+          'videoId',
+        ]) ??
         digAs<String>(item, [
           'overlay',
           'musicItemThumbnailOverlayRenderer',
@@ -321,6 +383,7 @@ class PlaylistParser {
           0,
           'text',
         ]) ??
+        digAs<String>(item, ['title', 'runs', 0, 'text']) ??
         'Untitled';
     final title = cleanSongTitle(rawTitle);
 
@@ -427,6 +490,12 @@ class PlaylistParser {
   }) {
     final videoId =
         digAs<String>(item, ['playlistItemData', 'videoId']) ??
+        digAs<String>(item, ['videoId']) ??
+        digAs<String>(item, [
+          'navigationEndpoint',
+          'watchEndpoint',
+          'videoId',
+        ]) ??
         digAs<String>(item, [
           'overlay',
           'musicItemThumbnailOverlayRenderer',
@@ -460,6 +529,7 @@ class PlaylistParser {
           0,
           'text',
         ]) ??
+        digAs<String>(item, ['title', 'runs', 0, 'text']) ??
         'Untitled';
     final title = cleanSongTitle(rawTitle);
 
@@ -533,6 +603,24 @@ class PlaylistParser {
             }
           }
         }
+      }
+    }
+
+    if (durationSec == 0) {
+      final lengthText = digAs<String>(item, ['lengthText', 'runs', 0, 'text']);
+      if (lengthText != null) {
+        durationSec = parseDuration(lengthText);
+      }
+    }
+    if (artistName == null) {
+      final bylineText = digAs<String>(item, [
+        'longBylineText',
+        'runs',
+        0,
+        'text',
+      ]);
+      if (bylineText != null && bylineText.isNotEmpty) {
+        artistName = bylineText;
       }
     }
 

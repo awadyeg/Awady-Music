@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:awady_music/data/models/artist.dart';
 import 'package:awady_music/data/models/artist_page.dart';
 import 'package:awady_music/data/models/mood_models.dart';
 import 'package:awady_music/data/models/playlist_page.dart';
@@ -7,6 +8,7 @@ import 'package:awady_music/data/models/remote_playlist.dart';
 import 'package:awady_music/data/models/search_results.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/repositories/catalog_repository.dart';
+import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/data/sources/audius/audius_client.dart';
 import 'package:awady_music/data/sources/innertube/innertube_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -130,4 +132,45 @@ final upNextTracksProvider = FutureProvider.family<List<Track>, String>((
 ) {
   ref.keepAlive5Min();
   return ref.watch(catalogRepositoryProvider).upNext(videoId);
+});
+
+/// Future provider for personalized recommendations based on the user's likes
+/// and followed artists.
+final recommendedForYouProvider = FutureProvider<CatalogList<Track>>((
+  ref,
+) async {
+  ref.keepAlive5Min();
+  final likedAsync = ref.watch(likedTracksStreamProvider);
+  final followedAsync = ref.watch(followedArtistsStreamProvider);
+  final lib = ref.watch(libraryRepositoryProvider);
+
+  var liked = likedAsync.asData?.value ?? const <Track>[];
+  var followed = followedAsync.asData?.value ?? const <Artist>[];
+  var recents = const <Track>[];
+
+  try {
+    if (liked.isEmpty) {
+      liked = lib.likedTracks;
+    }
+  } on Object catch (_) {}
+  try {
+    if (followed.isEmpty) {
+      followed = lib.followedArtists;
+    }
+  } on Object catch (_) {}
+  try {
+    recents = lib.recents;
+  } on Object catch (_) {}
+
+  if (liked.isEmpty && followed.isEmpty) {
+    return CatalogList(const []);
+  }
+
+  return await ref
+      .watch(catalogRepositoryProvider)
+      .recommendedFromLikes(
+        liked,
+        followedArtists: followed,
+        recentTracks: recents,
+      );
 });

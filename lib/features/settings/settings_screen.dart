@@ -282,6 +282,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       tokens: tokens,
                       onTap: () => _showLanguageDialog(context),
                     ),
+                    _buildDivider(tokens),
+
+                    // Country / Region picker
+                    _buildNavTile(
+                      icon: LucideIcons.globe,
+                      title: _countrySettingTitle(
+                        Localizations.localeOf(context).languageCode,
+                      ),
+                      subtitle: _countryDisplayName(
+                        settings.countryCode,
+                        Localizations.localeOf(context).languageCode,
+                      ),
+                      tokens: tokens,
+                      onTap: () => _showCountryDialog(context),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -541,6 +556,57 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       'ar' => 'العربية',
       _ => 'English',
     };
+  }
+
+  String _countrySettingTitle(String langCode) {
+    return switch (langCode) {
+      'ar' => 'الدولة والمنطقة (التوصيات)',
+      'es' => 'País y región (recomendaciones)',
+      _ => 'Country & Region (Recommendations)',
+    };
+  }
+
+  String _countryDisplayName(String code, String langCode) {
+    final c = findMusicCountry(code);
+    return '${c.flag} ${c.localizedName(langCode)} (${c.code})';
+  }
+
+  void _showCountryDialog(BuildContext context) {
+    final settingsNotifier = ref.read(settingsProvider.notifier);
+    final currentCode = ref.read(settingsProvider).countryCode.toUpperCase();
+    final langCode = Localizations.localeOf(context).languageCode;
+
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (ctx) {
+          return AlertDialog(
+            title: Text(_countrySettingTitle(langCode)),
+            content: SizedBox(
+              width: 340,
+              height: 420,
+              child: ListView.builder(
+                itemCount: supportedCountries.length,
+                itemBuilder: (itemCtx, idx) {
+                  final country = supportedCountries[idx];
+                  final isSelected = country.code == currentCode;
+                  final name = country.localizedName(langCode);
+                  return _buildLangOption(
+                    ctx,
+                    label: '${country.flag}  $name (${country.code})',
+                    isSelected: isSelected,
+                    onSelect: () {
+                      unawaited(settingsNotifier.setCountryCode(country.code));
+                      Navigator.of(ctx).pop();
+                    },
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _showLanguageDialog(BuildContext context) {
