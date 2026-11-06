@@ -174,3 +174,33 @@ final recommendedForYouProvider = FutureProvider<CatalogList<Track>>((
         recentTracks: recents,
       );
 });
+
+/// Future provider for AI-generated mixes based on user's liked tracks.
+final aiMixesProvider = FutureProvider<List<AiMixPlaylist>>((ref) async {
+  ref.keepAlive5Min();
+  final likedAsync = ref.watch(likedTracksStreamProvider);
+  final followedAsync = ref.watch(followedArtistsStreamProvider);
+  final lib = ref.watch(libraryRepositoryProvider);
+
+  var liked = likedAsync.asData?.value ?? const <Track>[];
+  var followed = followedAsync.asData?.value ?? const <Artist>[];
+
+  try {
+    if (liked.isEmpty) {
+      liked = lib.likedTracks;
+    }
+  } on Object catch (_) {}
+  try {
+    if (followed.isEmpty) {
+      followed = lib.followedArtists;
+    }
+  } on Object catch (_) {}
+
+  if (liked.isEmpty) {
+    return const [];
+  }
+
+  return await ref
+      .watch(catalogRepositoryProvider)
+      .aiMixesFromLikes(liked, followedArtists: followed);
+});

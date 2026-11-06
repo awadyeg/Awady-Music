@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:awady_music/core/l10n/l10n.dart';
 import 'package:awady_music/core/theme/glass.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:share_plus/share_plus.dart';
@@ -15,11 +18,13 @@ class AppUpdateInfo {
     required this.version,
     required this.downloadUrl,
     this.releaseNotes,
+    this.isNewer = true,
   });
 
   final String version;
   final String downloadUrl;
   final String? releaseNotes;
+  final bool isNewer;
 }
 
 class UpdateChecker {
@@ -27,33 +32,79 @@ class UpdateChecker {
   static const String repoName = 'Awady-Music';
   static const String currentVersion = '1.0.0';
 
-  static Future<AppUpdateInfo?> checkForUpdate({Dio? dio}) async {
+  static Future<AppUpdateInfo?> checkForUpdate({
+    Dio? dio,
+    bool includeCurrent = false,
+  }) async {
     final client = dio ?? Dio();
     try {
-      final res = await client.get<Map<String, dynamic>>(
-        'https://api.github.com/repos/$repoOwner/$repoName/releases/latest',
-        options: Options(
-          headers: {'Accept': 'application/vnd.github.v3+json'},
-          sendTimeout: const Duration(seconds: 8),
-          receiveTimeout: const Duration(seconds: 8),
-        ),
-      );
-      final data = res.data;
-      if (data == null) return null;
+      Map<String, dynamic>? data;
+      try {
+        final res = await client.get<Map<String, dynamic>>(
+          'https://api.github.com/repos/$repoOwner/$repoName/releases/latest',
+          options: Options(
+            headers: {'Accept': 'application/vnd.github.v3+json'},
+            sendTimeout: const Duration(seconds: 8),
+            receiveTimeout: const Duration(seconds: 8),
+          ),
+        );
+        data = res.data;
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 404) {
+          final listRes = await client.get<List<dynamic>>(
+            'https://api.github.com/repos/$repoOwner/$repoName/releases',
+            options: Options(
+              headers: {'Accept': 'application/vnd.github.v3+json'},
+              sendTimeout: const Duration(seconds: 8),
+              receiveTimeout: const Duration(seconds: 8),
+            ),
+          );
+          if (listRes.data != null && listRes.data!.isNotEmpty) {
+            data = listRes.data!.first as Map<String, dynamic>?;
+          }
+        } else {
+          rethrow;
+        }
+      }
+
+      if (data == null) {
+        if (includeCurrent) {
+          return const AppUpdateInfo(
+            version: currentVersion,
+            downloadUrl:
+                'https://github.com/$repoOwner/$repoName/releases/latest/download/app-arm64-v8a-release.apk',
+            releaseNotes: 'Awady Music v$currentVersion — latest version.',
+            isNewer: false,
+          );
+        }
+        return null;
+      }
       final tagName = data['tag_name']?.toString() ?? '';
       final remoteVersion = tagName.replaceFirst(RegExp('^v'), '');
       if (remoteVersion.isEmpty) return null;
 
-      if (_isNewer(remoteVersion, currentVersion)) {
+      final isNewer = _isNewer(remoteVersion, currentVersion);
+      if (isNewer || includeCurrent) {
         final assets = data['assets'];
         String? apkUrl;
         if (assets is List) {
           for (final a in assets) {
             if (a is Map) {
               final name = a['name']?.toString() ?? '';
-              if (name.endsWith('.apk')) {
+              if (name.contains('arm64') && name.endsWith('.apk')) {
                 apkUrl = a['browser_download_url']?.toString();
                 break;
+              }
+            }
+          }
+          if (apkUrl == null) {
+            for (final a in assets) {
+              if (a is Map) {
+                final name = a['name']?.toString() ?? '';
+                if (name.endsWith('.apk')) {
+                  apkUrl = a['browser_download_url']?.toString();
+                  break;
+                }
               }
             }
           }
@@ -63,6 +114,7 @@ class UpdateChecker {
           version: remoteVersion,
           downloadUrl: apkUrl,
           releaseNotes: data['body']?.toString(),
+          isNewer: isNewer,
         );
       }
       return null;
@@ -108,6 +160,168 @@ final updateInfoProvider = NotifierProvider<UpdateNotifier, AppUpdateInfo?>(
   UpdateNotifier.new,
 );
 
+/// Opens a confirmation dialog allowing the user to view details and install
+/// the APK update.
+Future<void> showUpdateConfirmDialog(
+  BuildContext context,
+  AppUpdateInfo info,
+) async {
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) => _UpdateConfirmDialog(info: info),
+  );
+}
+
+class _UpdateConfirmDialog extends StatefulWidget {
+  const _UpdateConfirmDialog({required this.info});
+
+  final AppUpdateInfo info;
+
+  @override
+  State<_UpdateConfirmDialog> createState() => _UpdateConfirmDialogState();
+}
+
+class _UpdateConfirmDialogState extends State<_UpdateConfirmDialog> {
+  static const MethodChannel _updaterChannel = MethodChannel(
+    'com.awady.awady_music/updater',
+  );
+
+  bool _isDownloading = false;
+  double _progress = 0;
+  String? _errorMessage;
+
+  Future<void> _startDownloadAndInstall() async {
+    setState(() {
+      _isDownloading = true;
+      _progress = 0;
+      _errorMessage = null;
+    });
+
+    try {
+      final dio = Dio();
+      final tempDir = Directory.systemTemp;
+      final apkFile = File(
+        '${tempDir.path}/awady-music-v${widget.info.version}.apk',
+      );
+
+      await dio.download(
+        widget.info.downloadUrl,
+        apkFile.path,
+        onReceiveProgress: (received, total) {
+          if (total > 0 && mounted) {
+            setState(() {
+              _progress = (received / total).clamp(0.0, 1.0);
+            });
+          }
+        },
+      );
+
+      if (!mounted) return;
+
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        await _updaterChannel.invokeMethod<void>('installApk', {
+          'filePath': apkFile.path,
+        });
+        if (mounted) Navigator.of(context).pop();
+      } else {
+        await SharePlus.instance.share(
+          ShareParams(
+            text: widget.info.downloadUrl,
+            subject: 'Awady Music Update v${widget.info.version}',
+          ),
+        );
+      }
+    } on Object catch (e) {
+      if (mounted) {
+        setState(() {
+          _isDownloading = false;
+          _errorMessage = e.toString();
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).glass;
+    final l10n = context.l10n;
+    final notes = widget.info.releaseNotes?.trim();
+
+    return AlertDialog(
+      title: Text('Awady Music v${widget.info.version}'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (widget.info.isNewer)
+              Text(
+                l10n.appUpdateAvail,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: tokens.accent,
+                ),
+              )
+            else
+              Text(
+                l10n.settingsUpdateLatest,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: tokens.accent,
+                ),
+              ),
+            if (notes != null && notes.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                notes,
+                style: TextStyle(fontSize: 13, color: tokens.textDim),
+              ),
+            ],
+            if (_isDownloading) ...[
+              const SizedBox(height: 18),
+              LinearProgressIndicator(
+                value: _progress > 0 ? _progress : null,
+                color: tokens.accent,
+                backgroundColor: tokens.glassFill,
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  '${(_progress * 100).toInt()}%',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _errorMessage!,
+                style: const TextStyle(fontSize: 12, color: Colors.redAccent),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isDownloading ? null : () => Navigator.of(context).pop(),
+          child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+        ),
+        FilledButton(
+          onPressed: _isDownloading ? null : _startDownloadAndInstall,
+          child: Text(_isDownloading ? 'Downloading...' : 'Confirm & Install'),
+        ),
+      ],
+    );
+  }
+}
+
 /// Glass card displayed at the top of the Home feed when an app update
 /// is available
 class UpdateBanner extends ConsumerWidget {
@@ -116,7 +330,7 @@ class UpdateBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final update = ref.watch(updateInfoProvider);
-    if (update == null) return const SizedBox.shrink();
+    if (update == null || !update.isNewer) return const SizedBox.shrink();
 
     final tokens = Theme.of(context).glass;
     final l10n = context.l10n;
@@ -185,14 +399,7 @@ class UpdateBanner extends ConsumerWidget {
                   ),
                 ),
                 onPressed: () {
-                  unawaited(
-                    SharePlus.instance.share(
-                      ShareParams(
-                        text: update.downloadUrl,
-                        subject: 'Awady Music Update v${update.version}',
-                      ),
-                    ),
-                  );
+                  unawaited(showUpdateConfirmDialog(context, update));
                 },
                 child: Text(
                   l10n.appUpdateDownload,

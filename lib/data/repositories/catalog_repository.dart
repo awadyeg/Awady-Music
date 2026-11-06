@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:awady_music/core/util/log.dart';
+import 'package:awady_music/data/models/ai_mix_playlist.dart';
 import 'package:awady_music/data/models/artist.dart';
 import 'package:awady_music/data/models/artist_page.dart';
 import 'package:awady_music/data/models/mood_models.dart';
@@ -12,6 +13,8 @@ import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/sources/audius/audius_client.dart';
 import 'package:awady_music/data/sources/innertube/innertube_client.dart';
 import 'package:awady_music/data/sources/innertube/matcher.dart';
+
+export 'package:awady_music/data/models/ai_mix_playlist.dart';
 
 /// A [List] implementation that retains an optional [fromFallback]
 /// metadata flag.
@@ -66,6 +69,11 @@ abstract interface class CatalogRepository {
     List<Track> likedTracks, {
     List<Artist> followedArtists = const [],
     List<Track> recentTracks = const [],
+  });
+
+  Future<List<AiMixPlaylist>> aiMixesFromLikes(
+    List<Track> likedTracks, {
+    List<Artist> followedArtists = const [],
   });
 }
 
@@ -491,5 +499,130 @@ class CatalogRepositoryImpl implements CatalogRepository {
     return CatalogList(
       combined.length > 24 ? combined.sublist(0, 24) : combined,
     );
+  }
+
+  @override
+  Future<List<AiMixPlaylist>> aiMixesFromLikes(
+    List<Track> likedTracks, {
+    List<Artist> followedArtists = const [],
+  }) async {
+    if (likedTracks.isEmpty) return const [];
+
+    final likedSet = likedTracks.map((t) => t.id).toSet();
+    final mixes = <AiMixPlaylist>[];
+
+    Future<List<Track>> getSuggestions(Track seed, int count) async {
+      final vid =
+          seed.streamId ??
+          (seed.id.startsWith('yt-') ? seed.id.substring(3) : '');
+      if (vid.isNotEmpty) {
+        try {
+          final res = await upNext(vid, limit: count + 8);
+          final filtered = res
+              .where((t) => !likedSet.contains(t.id))
+              .take(count)
+              .toList();
+          if (filtered.isNotEmpty) return filtered;
+        } on Object catch (_) {}
+      }
+      try {
+        final res = await search(seed.artist.name);
+        return res.songs
+            .where((t) => !likedSet.contains(t.id))
+            .take(count)
+            .toList();
+      } on Object catch (_) {
+        return const [];
+      }
+    }
+
+    // 1. Overall Mix: All Likes AI Mix
+    final overallHalf = (likedTracks.length / 2).ceil();
+    final overallFirst = likedTracks.take(overallHalf).toList();
+    final overallSecond = likedTracks.skip(overallHalf).toList();
+    final overallSuggested = await getSuggestions(likedTracks.first, 8);
+    final overallTracks = [
+      ...overallFirst,
+      ...overallSuggested,
+      ...overallSecond,
+    ];
+    mixes.add(
+      AiMixPlaylist(
+        id: 'ai-mix-overall',
+        title: 'All Likes AI Mix',
+        subtitle: 'Your liked tracks + fresh discoveries woven in the middle',
+        badge: 'Overall Mix',
+        category: 'All Likes',
+        tracks: overallTracks,
+        suggestedTrackIds: overallSuggested.map((t) => t.id).toSet(),
+      ),
+    );
+
+    // 2. Partition by category/genre/artist for Mix 1, Mix 2, Mix 3
+    final arabicTracks = likedTracks.where((t) {
+      final text = '${t.title} ${t.artist.name}';
+      return RegExp(r'[\u0600-\u06FF]').hasMatch(text);
+    }).toList();
+    final nonArabicTracks = likedTracks.where((t) {
+      final text = '${t.title} ${t.artist.name}';
+      return !RegExp(r'[\u0600-\u06FF]').hasMatch(text);
+    }).toList();
+
+    final categories = <String, List<Track>>{};
+    if (arabicTracks.isNotEmpty) {
+      categories['Arabic & Tarab'] = arabicTracks;
+    }
+    final artistGroups = <String, List<Track>>{};
+    for (final t in (categories.isEmpty ? likedTracks : nonArabicTracks)) {
+      artistGroups.putIfAbsent(t.artist.name, () => []).add(t);
+    }
+    final sortedArtistGroups = artistGroups.entries.toList()
+      ..sort((a, b) => b.value.length.compareTo(a.value.length));
+
+    for (final entry in sortedArtistGroups) {
+      if (categories.length >= 3) break;
+      categories['${entry.key} & Similar'] = entry.value;
+    }
+
+    if (categories.length < 3 && likedTracks.length >= 4) {
+      final chill = likedTracks.where((t) => t.duration >= 220).toList();
+      final upbeat = likedTracks.where((t) => t.duration < 220).toList();
+      if (chill.isNotEmpty && !categories.containsKey('Chill & Slow')) {
+        categories['Chill & Slow'] = chill;
+      }
+      if (categories.length < 3 &&
+          upbeat.isNotEmpty &&
+          !categories.containsKey('Upbeat Energy')) {
+        categories['Upbeat Energy'] = upbeat;
+      }
+    }
+
+    var mixIndex = 1;
+    for (final entry in categories.entries) {
+      if (mixIndex > 3) break;
+      final catTracks = entry.value;
+      final catHalf = (catTracks.length / 2).ceil();
+      final catFirst = catTracks.take(catHalf).toList();
+      final catSecond = catTracks.skip(catHalf).toList();
+      final catSuggested = await getSuggestions(catTracks.first, 6);
+      final woven = [...catFirst, ...catSuggested, ...catSecond];
+
+      mixes.add(
+        AiMixPlaylist(
+          id: 'ai-mix-$mixIndex',
+          title: '${entry.key} Mix',
+          subtitle:
+              '${entry.value.length} liked · '
+              '${catSuggested.length} suggested in middle',
+          badge: 'Mix $mixIndex',
+          category: entry.key,
+          tracks: woven,
+          suggestedTrackIds: catSuggested.map((t) => t.id).toSet(),
+        ),
+      );
+      mixIndex++;
+    }
+
+    return mixes;
   }
 }

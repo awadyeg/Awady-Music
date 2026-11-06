@@ -37,15 +37,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _checkUpdates(L10n l10n) async {
     setState(() => _checkingUpdates = true);
-    final info = await UpdateChecker.checkForUpdate();
+    final info = await UpdateChecker.checkForUpdate(includeCurrent: true);
     if (mounted) {
       setState(() => _checkingUpdates = false);
       if (info != null) {
-        ref.read(updateInfoProvider.notifier).updateInfo = info;
+        if (info.isNewer) {
+          ref.read(updateInfoProvider.notifier).updateInfo = info;
+        }
         _showToast(
-          l10n.settingsUpdateAvailable(info.version),
-          LucideIcons.download,
+          info.isNewer
+              ? l10n.settingsUpdateAvailable(info.version)
+              : l10n.settingsUpdateLatest,
+          info.isNewer ? LucideIcons.download : LucideIcons.check,
         );
+        unawaited(showUpdateConfirmDialog(context, info));
       } else {
         _showToast(l10n.settingsUpdateLatest, LucideIcons.check);
       }

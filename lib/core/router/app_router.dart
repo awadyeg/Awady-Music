@@ -221,7 +221,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/now-playing',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const NowPlayingScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          transitionDuration: const Duration(milliseconds: 360),
+          reverseTransitionDuration: const Duration(milliseconds: 320),
+          child: const NowPlayingScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final curved = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic,
+            );
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 1),
+                end: Offset.zero,
+              ).animate(curved),
+              child: child,
+            );
+          },
+        ),
       ),
       GoRoute(
         path: '/queue',

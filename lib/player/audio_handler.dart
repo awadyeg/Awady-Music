@@ -96,6 +96,7 @@ class AwadyAudioHandler extends BaseAudioHandler
 
   void updateCurrentMediaItem(MediaItem item) {
     mediaItem.add(item);
+    _broadcastState();
   }
 
   void updateCurrentQueue(List<MediaItem> items) {
@@ -116,6 +117,18 @@ class AwadyAudioHandler extends BaseAudioHandler
       _player.playerStateStream.listen((state) {
         if (state.processingState == ProcessingState.completed) {
           onPlaybackCompleted?.call();
+        }
+      }),
+    );
+
+    _subscriptions.add(
+      _player.durationStream.listen((d) {
+        if (d != null && d > Duration.zero) {
+          final current = mediaItem.value;
+          if (current != null && current.duration != d) {
+            mediaItem.add(current.copyWith(duration: d));
+            _broadcastState();
+          }
         }
       }),
     );

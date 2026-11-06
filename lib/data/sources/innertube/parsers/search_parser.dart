@@ -687,12 +687,26 @@ Artwork? parseArtwork(dynamic thumbContainer, {String? fallback}) {
     return null;
   }
 
-  return Artwork(
-    s150: urls.first,
-    s480: urls.length > 1 ? urls[urls.length ~/ 2] : urls.last,
-    s1000: urls.last,
-    fallback: fallback,
-  );
+  final s150 = urls.first;
+  var s480 = urls.length > 1 ? urls[urls.length ~/ 2] : urls.last;
+  var s1000 = urls.last;
+
+  s480 = _upscaleGoogleThumb(s480, 544);
+  s1000 = _upscaleGoogleThumb(s1000, 1080);
+
+  return Artwork(s150: s150, s480: s480, s1000: s1000, fallback: fallback);
+}
+
+String _upscaleGoogleThumb(String url, int size) {
+  if (url.contains('googleusercontent.com') ||
+      url.contains('yt3.ggpht.com') ||
+      url.contains('ggpht.com')) {
+    return url.replaceAll(
+      RegExp(r'=(?:w\d+-h\d+|s\d+)[^?&]*'),
+      '=w$size-h$size-l90-rj',
+    );
+  }
+  return url;
 }
 
 int parseDuration(String? s) {

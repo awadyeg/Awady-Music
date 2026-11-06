@@ -22,6 +22,7 @@ import 'package:awady_music/player/audio_handler.dart';
 import 'package:awady_music/player/eq.dart';
 import 'package:awady_music/player/loudness.dart';
 import 'package:awady_music/player/player_state.dart';
+import 'package:awady_music/widgets/artwork_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,8 +31,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 extension TrackMediaItemX on Track {
   MediaItem toMediaItem() {
-    final artUrl =
-        artwork?.s480 ?? artwork?.s1000 ?? artwork?.s150 ?? artwork?.fallback;
+    final rawArtUrl =
+        artwork?.s1000 ?? artwork?.s480 ?? artwork?.s150 ?? artwork?.fallback;
+    final artUrl = rawArtUrl != null
+        ? ArtworkImage.upscaleUrl(rawArtUrl)
+        : null;
     return MediaItem(
       id: id,
       title: title,

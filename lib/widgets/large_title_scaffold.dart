@@ -41,6 +41,8 @@ class LargeTitleScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).glass;
+    final bottomHeight = bottom?.preferredSize.height ?? 0.0;
+    final effectiveExpandedHeight = expandedHeight + bottomHeight;
 
     Widget scrollView = CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(
@@ -49,7 +51,7 @@ class LargeTitleScaffold extends StatelessWidget {
       slivers: [
         SliverAppBar(
           pinned: true,
-          expandedHeight: expandedHeight,
+          expandedHeight: effectiveExpandedHeight,
           elevation: 0,
           scrolledUnderElevation: 0,
           backgroundColor: Colors.transparent,
@@ -60,8 +62,8 @@ class LargeTitleScaffold extends StatelessWidget {
           flexibleSpace: LayoutBuilder(
             builder: (context, constraints) {
               final topPadding = MediaQuery.paddingOf(context).top;
-              final minHeight = kToolbarHeight + topPadding;
-              final maxHeight = expandedHeight + topPadding;
+              final minHeight = kToolbarHeight + topPadding + bottomHeight;
+              final maxHeight = effectiveExpandedHeight + topPadding;
               final currentHeight = constraints.maxHeight;
 
               final scrollRatio =
@@ -108,7 +110,7 @@ class LargeTitleScaffold extends StatelessWidget {
                   PositionedDirectional(
                     start: 16,
                     end: 16,
-                    bottom: 12,
+                    bottom: 12 + bottomHeight,
                     child: Opacity(
                       opacity: (1.0 - scrollRatio * 2.0).clamp(0.0, 1.0),
                       child: Text(

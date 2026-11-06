@@ -36,9 +36,23 @@ class ArtworkImage extends StatefulWidget {
     );
   }
 
+  static String upscaleUrl(String url, {int size = 1080}) {
+    if (url.isEmpty) return url;
+    if (url.contains('googleusercontent.com') ||
+        url.contains('yt3.ggpht.com') ||
+        url.contains('ggpht.com')) {
+      return url.replaceAll(
+        RegExp(r'=(?:w\d+-h\d+|s\d+)[^?&]*'),
+        '=w$size-h$size-l90-rj',
+      );
+    }
+    return url;
+  }
+
   static List<String> buildCandidates(Artwork? art, [String? directUrl]) {
     if (directUrl != null && directUrl.isNotEmpty) {
-      return [stripSigned(directUrl)];
+      final upscaled = upscaleUrl(directUrl);
+      return [stripSigned(upscaled)];
     }
     if (art == null) return const [];
 
@@ -72,7 +86,18 @@ class ArtworkImage extends StatefulWidget {
       if (!candidates.contains(cleanFb)) candidates.add(cleanFb);
     }
 
-    return candidates;
+    final result = <String>[];
+    for (final c in candidates) {
+      final up = upscaleUrl(c);
+      if (up != c && !result.contains(up)) {
+        result.add(up);
+      }
+      if (!result.contains(c)) {
+        result.add(c);
+      }
+    }
+
+    return result;
   }
 
   @override

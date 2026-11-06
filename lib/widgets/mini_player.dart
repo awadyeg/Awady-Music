@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:awady_music/core/l10n/l10n.dart';
 import 'package:awady_music/core/theme/glass.dart';
 import 'package:awady_music/core/theme/tokens.dart';
@@ -39,6 +41,12 @@ class MiniPlayer extends ConsumerWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => context.push('/now-playing'),
+        onVerticalDragEnd: (details) {
+          final velocity = details.primaryVelocity ?? 0;
+          if (velocity < -200) {
+            unawaited(context.push('/now-playing'));
+          }
+        },
         onHorizontalDragEnd: (details) {
           final velocity = details.primaryVelocity ?? 0;
           if (velocity < -200) {

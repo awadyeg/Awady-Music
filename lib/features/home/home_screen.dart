@@ -61,6 +61,7 @@ class HomeScreen extends ConsumerWidget {
     } on Object catch (_) {}
 
     final recommendedAsync = ref.watch(recommendedForYouProvider);
+    final aiMixesAsync = ref.watch(aiMixesProvider);
     final showRecommended =
         hasLikesOrFollows ||
         (recommendedAsync.asData?.value.items.isNotEmpty ?? false);
@@ -83,6 +84,7 @@ class HomeScreen extends ConsumerWidget {
         onRefresh: () async {
           ref
             ..invalidate(recommendedForYouProvider)
+            ..invalidate(aiMixesProvider)
             ..invalidate(trendingTracksProvider)
             ..invalidate(newReleasesProvider)
             ..invalidate(homePlaylistsProvider);
@@ -244,6 +246,17 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
             ),
+          // AI Mixes based on likes
+          aiMixesAsync.when(
+            data: (mixes) {
+              if (mixes.isEmpty) {
+                return const SliverToBoxAdapter(child: SizedBox.shrink());
+              }
+              return SliverToBoxAdapter(child: _AiMixesSection(mixes: mixes));
+            },
+            loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            error: (_, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+          ),
           // 3. Carousels: Trending this week
           SliverToBoxAdapter(
             child: _CarouselSection<Track>(
@@ -392,6 +405,285 @@ class _CarouselSection<T> extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AiMixesSection extends ConsumerWidget {
+  const _AiMixesSection({required this.mixes});
+
+  final List<AiMixPlaylist> mixes;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = Theme.of(context).glass;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 20, 16, 12),
+          child: SectionHeader(title: 'AI Mixes for You'),
+        ),
+        SizedBox(
+          height: 230,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: mixes.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 14),
+            itemBuilder: (context, idx) {
+              final mix = mixes[idx];
+              final firstArtwork = mix.tracks.isNotEmpty
+                  ? mix.tracks.first.artwork
+                  : null;
+
+              return GestureDetector(
+                onTap: () => _showAiMixSheet(context, ref, mix),
+                child: SizedBox(
+                  width: 160,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(
+                              GlassTokens.radiusCard,
+                            ),
+                            child: ArtworkImage(
+                              art: firstArtwork,
+                              size: 160,
+                              radius: GlassTokens.radiusCard,
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            left: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: tokens.accent.withValues(alpha: 0.9),
+                                borderRadius: BorderRadius.circular(
+                                  GlassTokens.radiusCapsule,
+                                ),
+                              ),
+                              child: Text(
+                                mix.badge,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: tokens.onAccent,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        mix.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: tokens.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${mix.tracks.length} tracks · '
+                        '${mix.suggestedCount} new',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12, color: tokens.textDim),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showAiMixSheet(BuildContext context, WidgetRef ref, AiMixPlaylist mix) {
+    final tokens = Theme.of(context).glass;
+
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) {
+          return Container(
+            height: MediaQuery.of(ctx).size.height * 0.75,
+            decoration: BoxDecoration(
+              color: tokens.bgElevated,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+              border: Border.all(color: tokens.glassStroke),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: tokens.textDim.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: tokens.accent.withValues(
+                                      alpha: 0.15,
+                                    ),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    mix.badge,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: tokens.accent,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    mix.title,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: tokens.textPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              mix.subtitle,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: tokens.textDim,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: tokens.accent,
+                          foregroundColor: tokens.onAccent,
+                          shape: const StadiumBorder(),
+                        ),
+                        onPressed: () {
+                          if (mix.tracks.isNotEmpty) {
+                            ref
+                                .read(playerControllerProvider.notifier)
+                                .playTrack(mix.tracks.first, mix.tracks);
+                            Navigator.pop(ctx);
+                          }
+                        },
+                        icon: const Icon(LucideIcons.play, size: 16),
+                        label: const Text('Play'),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: mix.tracks.length,
+                    itemBuilder: (c, i) {
+                      final t = mix.tracks[i];
+                      final isSuggested = mix.suggestedTrackIds.contains(t.id);
+
+                      return ListTile(
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: ArtworkImage(art: t.artwork, size: 44),
+                        ),
+                        title: Text(
+                          t.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: tokens.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Text(
+                          t.artist.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: tokens.textDim),
+                        ),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSuggested
+                                ? tokens.accent.withValues(alpha: 0.15)
+                                : Colors.redAccent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            isSuggested ? '✨ Suggested' : '❤️ Liked',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isSuggested
+                                  ? tokens.accent
+                                  : Colors.redAccent,
+                            ),
+                          ),
+                        ),
+                        onTap: () {
+                          ref
+                              .read(playerControllerProvider.notifier)
+                              .playTrack(t, mix.tracks);
+                          Navigator.pop(ctx);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
