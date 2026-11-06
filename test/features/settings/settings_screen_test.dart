@@ -183,11 +183,13 @@ void main() {
       expect(find.text('Awady Music'), findsOneWidget);
       expect(find.text('v1.0.0 (build 1)'), findsOneWidget);
 
-      // Attribution line (Mandatory Constitution requirement)
+      // Verify attribution, contribute on GitHub, and legal are not shown
       expect(
         find.text('Based on the open-source Freebify design and concept'),
-        findsOneWidget,
+        findsNothing,
       );
+      expect(find.text('Open source. Contribute on GitHub'), findsNothing);
+      expect(find.text('Legal'), findsNothing);
 
       // Readout stats
       expect(

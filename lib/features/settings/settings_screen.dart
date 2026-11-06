@@ -16,9 +16,7 @@ import 'package:awady_music/widgets/update_banner.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:share_plus/share_plus.dart';
 
 /// Settings screen organizing user preferences into Playback, Appearance,
 /// Library & storage, and About sections.
@@ -57,17 +55,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
     _showToast(l10n.settingsCacheCleared, LucideIcons.check);
-  }
-
-  void _shareGitHub() {
-    unawaited(
-      SharePlus.instance.share(
-        ShareParams(
-          text: 'https://github.com/awadyeg/Awady-Music',
-          subject: 'Awady Music',
-        ),
-      ),
-    );
   }
 
   @override
@@ -444,10 +431,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 color: tokens.accent.withValues(alpha: 0.3),
                               ),
                             ),
-                            child: Icon(
-                              LucideIcons.music,
-                              color: tokens.accent,
-                              size: 22,
+                            clipBehavior: Clip.antiAlias,
+                            child: Image.asset(
+                              'assets/icon/app_icon.png',
+                              width: 44,
+                              height: 44,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Icon(
+                                LucideIcons.music,
+                                color: tokens.accent,
+                                size: 22,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -476,54 +470,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                         ],
                       ),
-                    ),
-                    _buildDivider(tokens),
-
-                    // Attribution line (Mandatory Constitution requirement)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            LucideIcons.heartHandshake,
-                            size: 16,
-                            color: tokens.textDim,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              l10n.aboutAttribution,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: tokens.textDim,
-                                height: 1.35,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    _buildDivider(tokens),
-
-                    // GitHub repository link
-                    _buildNavTile(
-                      icon: LucideIcons.gitBranch,
-                      title: l10n.settingsContribute,
-                      tokens: tokens,
-                      onTap: _shareGitHub,
-                    ),
-                    _buildDivider(tokens),
-
-                    // Legal & Licenses
-                    _buildNavTile(
-                      icon: LucideIcons.scale,
-                      title: l10n.settingsLegal,
-                      tokens: tokens,
-                      onTap: () => context.push('/settings/legal'),
                     ),
                     _buildDivider(tokens),
 
