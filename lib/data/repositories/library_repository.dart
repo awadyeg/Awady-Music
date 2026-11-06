@@ -68,6 +68,7 @@ abstract interface class LibraryRepository {
 
   bool isLiked(String id);
   void toggleLike(Track track);
+  void addLikedTracks(List<Track> tracks);
 
   bool isFollowing(String id);
   void toggleFollow(Artist artist);
@@ -255,6 +256,34 @@ class LibraryRepositoryImpl implements LibraryRepository {
       }
     }
     _likedController.add(likedTracks);
+  }
+
+  @override
+  void addLikedTracks(List<Track> tracks) {
+    if (tracks.isEmpty) return;
+    final now = DateTime.now();
+    var added = false;
+    for (final track in tracks.reversed) {
+      if (track.id.isEmpty || _liked.containsKey(track.id)) continue;
+      final repaired = repairTrack(track);
+      _liked[repaired.id] = repaired;
+      _likedOrder
+        ..remove(repaired.id)
+        ..insert(0, repaired.id);
+      added = true;
+      if (db != null) {
+        unawaited(
+          db!.libraryDao.upsertTrack(
+            repaired.id,
+            jsonEncode(slimTrack(repaired)),
+          ),
+        );
+        unawaited(db!.libraryDao.likeTrack(repaired.id, now));
+      }
+    }
+    if (added) {
+      _likedController.add(likedTracks);
+    }
   }
 
   @override
@@ -497,6 +526,14 @@ class LibraryRepositoryImpl implements LibraryRepository {
         final updated = p.tracks.map((t) => hits[t.id] ?? t).toList();
         _playlists[i] = p.copyWith(tracks: updated);
         if (db != null) {
+          for (final hit in hits.values) {
+            unawaited(
+              db!.libraryDao.upsertTrack(
+                hit.id,
+                jsonEncode(slimTrack(repairTrack(hit))),
+              ),
+            );
+          }
           final entries = updated
               .map((t) => (trackId: t.id, pending: t.pending))
               .toList();
@@ -506,6 +543,36 @@ class LibraryRepositoryImpl implements LibraryRepository {
     }
     if (touched) {
       _playlistsController.add(playlists);
+    }
+
+    var likedTouched = false;
+    final now = DateTime.now();
+    for (final entry in hits.entries) {
+      final oldId = entry.key;
+      final hit = repairTrack(entry.value);
+      if (_liked.containsKey(oldId)) {
+        likedTouched = true;
+        _liked.remove(oldId);
+        _liked[hit.id] = hit;
+        final idx = _likedOrder.indexOf(oldId);
+        if (idx != -1) {
+          if (_likedOrder.contains(hit.id) && oldId != hit.id) {
+            _likedOrder.removeAt(idx);
+          } else {
+            _likedOrder[idx] = hit.id;
+          }
+        }
+        if (db != null) {
+          unawaited(db!.libraryDao.unlikeTrack(oldId));
+          unawaited(
+            db!.libraryDao.upsertTrack(hit.id, jsonEncode(slimTrack(hit))),
+          );
+          unawaited(db!.libraryDao.likeTrack(hit.id, now));
+        }
+      }
+    }
+    if (likedTouched) {
+      _likedController.add(likedTracks);
     }
   }
 
@@ -530,6 +597,21 @@ class LibraryRepositoryImpl implements LibraryRepository {
     }
     if (touched) {
       _playlistsController.add(playlists);
+    }
+
+    var likedTouched = false;
+    for (final id in gone) {
+      if (_liked.containsKey(id)) {
+        likedTouched = true;
+        _liked.remove(id);
+        _likedOrder.remove(id);
+        if (db != null) {
+          unawaited(db!.libraryDao.unlikeTrack(id));
+        }
+      }
+    }
+    if (likedTouched) {
+      _likedController.add(likedTracks);
     }
   }
 
@@ -570,6 +652,19 @@ final followedArtistsStreamProvider = StreamProvider<List<Artist>>((
   try {
     yield repo.followedArtists;
     yield* repo.watchFollowedArtists();
+  } on Object catch (_) {
+    yield const [];
+  }
+});
+
+/// Reactive stream provider for local playlists.
+final playlistsStreamProvider = StreamProvider<List<LocalPlaylist>>((
+  ref,
+) async* {
+  final repo = ref.watch(libraryRepositoryProvider);
+  try {
+    yield repo.playlists;
+    yield* repo.watchPlaylists();
   } on Object catch (_) {
     yield const [];
   }

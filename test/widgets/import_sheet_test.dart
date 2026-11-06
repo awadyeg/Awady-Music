@@ -37,6 +37,10 @@ void main() {
       expect(find.byKey(const Key('import_url_field')), findsOneWidget);
       expect(find.byKey(const Key('import_submit_button')), findsOneWidget);
       expect(find.byKey(const Key('import_file_button')), findsOneWidget);
+      expect(
+        find.byKey(const Key('import_destination_selector')),
+        findsOneWidget,
+      );
       expect(find.text('OR'), findsOneWidget);
     });
 

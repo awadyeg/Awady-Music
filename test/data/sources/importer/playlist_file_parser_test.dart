@@ -143,5 +143,32 @@ void main() {
         throwsFormatException,
       );
     });
+
+    test('parses Spotify GDPR YourLibrary.json into Liked Songs', () {
+      const json = '''
+{
+  "tracks": [
+    {"artist": "Amr Diab", "album": "Tamally Maak", "track": "Tamally Maak", "uri": "spotify:track:123"},
+    {"artist": "Fairuz", "album": "Kifak Inta", "track": "Kifak Inta", "uri": "spotify:track:456"}
+  ]
+}''';
+      final result = PlaylistFileParser.parseJson(json);
+      expect(result.name, 'Liked Songs');
+      expect(result.entries.length, 2);
+      expect(result.entries[0].title, 'Tamally Maak');
+      expect(result.entries[0].artist, 'Amr Diab');
+    });
+
+    test('parses Exportify CSV with Duration (ms) into seconds', () {
+      const csv = '''
+"Track Name","Artist Name(s)","Duration (ms)"
+"Tamally Maak","Amr Diab","245000"''';
+      final result = PlaylistFileParser.parseCsv(
+        csv,
+        defaultName: 'Liked_Songs',
+      );
+      expect(result.entries.length, 1);
+      expect(result.entries.first.duration, 245);
+    });
   });
 }

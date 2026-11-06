@@ -191,6 +191,10 @@ void main() {
       expect(find.text('Open source. Contribute on GitHub'), findsNothing);
       expect(find.text('Legal'), findsNothing);
 
+      // Spotify import options in Library section
+      expect(find.text('Import Playlists from Spotify'), findsOneWidget);
+      expect(find.text('Import Likes from Spotify'), findsOneWidget);
+
       // Readout stats
       expect(
         find.text(

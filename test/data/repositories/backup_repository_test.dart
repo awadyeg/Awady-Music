@@ -40,6 +40,13 @@ class _FakeLibraryRepository implements LibraryRepository {
   }
 
   @override
+  void addLikedTracks(List<Track> tracks) {
+    for (final t in tracks) {
+      _liked[t.id] = t;
+    }
+  }
+
+  @override
   bool isFollowing(String id) => _followed.containsKey(id);
 
   @override

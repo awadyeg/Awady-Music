@@ -88,13 +88,37 @@ class SpotifyImporter {
 
   static final RegExp spotifyIdPattern = RegExp(r'^[A-Za-z0-9]{10,40}$');
   static final RegExp spotifyUrlPattern = RegExp(
-    r'open\.spotify\.com/playlist/([A-Za-z0-9]+)',
+    r'open\.spotify\.com/(?:intl-[A-Za-z-]+/)?playlist/([A-Za-z0-9]+)',
   );
   static final RegExp spotifyUriPattern = RegExp(
     'spotify:playlist:([A-Za-z0-9]+)',
   );
+  static final RegExp spotifyEntityUrlPattern = RegExp(
+    r'open\.spotify\.com/(?:intl-[A-Za-z-]+/)?(playlist|album|track)/([A-Za-z0-9]{10,40})',
+  );
+  static final RegExp spotifyEntityUriPattern = RegExp(
+    'spotify:(playlist|album|track):([A-Za-z0-9]{10,40})',
+  );
 
   final Dio _dio;
+
+  static (String kind, String id)? extractEntity(String input) {
+    final trimmed = input.trim();
+    final urlMatch = spotifyEntityUrlPattern.firstMatch(trimmed);
+    if (urlMatch != null) {
+      return (urlMatch.group(1)!, urlMatch.group(2)!);
+    }
+
+    final uriMatch = spotifyEntityUriPattern.firstMatch(trimmed);
+    if (uriMatch != null) {
+      return (uriMatch.group(1)!, uriMatch.group(2)!);
+    }
+
+    if (spotifyIdPattern.hasMatch(trimmed)) {
+      return ('playlist', trimmed);
+    }
+    return null;
+  }
 
   static String? extractPlaylistId(String input) {
     final trimmed = input.trim();
@@ -104,19 +128,24 @@ class SpotifyImporter {
     final uriMatch = spotifyUriPattern.firstMatch(trimmed);
     if (uriMatch != null) return uriMatch.group(1);
 
+    final entity = extractEntity(trimmed);
+    if (entity != null) return entity.$2;
+
     if (spotifyIdPattern.hasMatch(trimmed)) return trimmed;
     return null;
   }
 
   Future<SpotifyImportResult> importPlaylist(String input) async {
-    final id = extractPlaylistId(input);
-    if (id == null) return SpotifyImportResult.failed;
+    final entity = extractEntity(input);
+    if (entity == null) return SpotifyImportResult.failed;
+    final kind = entity.$1;
+    final id = entity.$2;
 
     try {
-      final emb = await fetchEmbed(id);
+      final emb = await fetchEmbed(id, kind: kind);
       if (emb == null) return SpotifyImportResult.failed;
 
-      if (emb.token != null && emb.token!.isNotEmpty) {
+      if (kind == 'playlist' && emb.token != null && emb.token!.isNotEmpty) {
         final full = await pathfinder(id, emb.token!);
         if (full != null && full.tracks.length >= emb.tracks.length) {
           return SpotifyImportResult(
@@ -134,17 +163,22 @@ class SpotifyImporter {
         source: 'embed',
         name: emb.name,
         tracks: emb.tracks,
-        limited: emb.total > emb.tracks.length || emb.tracks.length >= 100,
+        limited:
+            kind == 'playlist' &&
+            (emb.total > emb.tracks.length || emb.tracks.length >= 100),
       );
     } on Object {
       return SpotifyImportResult.failed;
     }
   }
 
-  Future<SpotifyEmbedResult?> fetchEmbed(String id) async {
+  Future<SpotifyEmbedResult?> fetchEmbed(
+    String id, {
+    String kind = 'playlist',
+  }) async {
     try {
       final response = await _dio.get<String>(
-        'https://open.spotify.com/embed/playlist/$id',
+        'https://open.spotify.com/embed/$kind/$id',
         options: Options(
           headers: {
             'User-Agent': userAgent,
@@ -193,12 +227,8 @@ class SpotifyImporter {
       final entity = data is Map<String, dynamic> ? data['entity'] : null;
       if (entity is! Map<String, dynamic>) return null;
 
-      final name = entity['name']?.toString() ?? '';
+      final name = (entity['name'] ?? entity['title'])?.toString().trim() ?? '';
       final trackList = entity['trackList'];
-      if (name.isEmpty || trackList is! List || trackList.isEmpty) return null;
-
-      final dynamic totalCount = entity['totalCount'];
-      final total = totalCount is num ? totalCount.toInt() : trackList.length;
 
       final settings = state['settings'];
       final session = settings is Map<String, dynamic>
@@ -209,17 +239,46 @@ class SpotifyImporter {
           : null;
 
       final tracks = <ImportEntry>[];
-      for (final item in trackList) {
-        if (item is Map) {
-          final title = item['title']?.toString();
-          final subtitle = item['subtitle']?.toString();
-          if (title != null && subtitle != null && title.isNotEmpty) {
-            tracks.add(ImportEntry(title: title, artist: subtitle));
+      if (trackList is List && trackList.isNotEmpty) {
+        for (final item in trackList) {
+          if (item is Map) {
+            final title = item['title']?.toString();
+            final subtitle = item['subtitle']?.toString();
+            final durMs = item['duration'];
+            final duration = durMs is num && durMs > 0
+                ? (durMs / 1000).round()
+                : null;
+            if (title != null && subtitle != null && title.isNotEmpty) {
+              tracks.add(
+                ImportEntry(title: title, artist: subtitle, duration: duration),
+              );
+            }
           }
+        }
+      } else if (name.isNotEmpty) {
+        // Single Spotify track embed fallback
+        var artistStr = entity['subtitle']?.toString().trim() ?? '';
+        if (artistStr.isEmpty && entity['artists'] is List) {
+          artistStr = (entity['artists'] as List)
+              .whereType<Map<dynamic, dynamic>>()
+              .map((a) => (a['name'] ?? '').toString().trim())
+              .where((s) => s.isNotEmpty)
+              .join(', ');
+        }
+        final durMs = entity['duration'];
+        final duration = durMs is num && durMs > 0
+            ? (durMs / 1000).round()
+            : null;
+        if (artistStr.isNotEmpty) {
+          tracks.add(
+            ImportEntry(title: name, artist: artistStr, duration: duration),
+          );
         }
       }
 
-      if (tracks.isEmpty) return null;
+      if (name.isEmpty || tracks.isEmpty) return null;
+      final dynamic totalCount = entity['totalCount'];
+      final total = totalCount is num ? totalCount.toInt() : tracks.length;
       return SpotifyEmbedResult(
         name: name,
         total: total,

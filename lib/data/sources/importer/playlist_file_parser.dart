@@ -97,14 +97,25 @@ class PlaylistFileParser {
     }
 
     final (titleIndex, artistIndex) = findCols(rows[0]);
+    final headerLower = rows[0].map((s) => s.trim().toLowerCase()).toList();
+    final durationIndex = headerLower.indexWhere((s) => s.contains('duration'));
     final entries = <ImportEntry>[];
 
     for (var i = 1; i < rows.length && entries.length < maxEntries; i++) {
       final row = rows[i];
       final title = titleIndex < row.length ? row[titleIndex].trim() : '';
       final artist = artistIndex < row.length ? row[artistIndex].trim() : '';
+      int? duration;
+      if (durationIndex >= 0 && durationIndex < row.length) {
+        final rawDur = int.tryParse(row[durationIndex].trim());
+        if (rawDur != null && rawDur > 0) {
+          duration = rawDur > 1000 ? (rawDur / 1000).round() : rawDur;
+        }
+      }
       if (title.isNotEmpty || artist.isNotEmpty) {
-        entries.add(ImportEntry(title: title, artist: artist));
+        entries.add(
+          ImportEntry(title: title, artist: artist, duration: duration),
+        );
       }
     }
 
@@ -125,6 +136,66 @@ class PlaylistFileParser {
     }
 
     final app = j['app']?.toString();
+    if (app == null) {
+      // Support Spotify GDPR YourLibrary.json and Playlist1.json exports
+      final dynamic spotifyPlaylists = j['playlists'];
+      if (spotifyPlaylists is List && spotifyPlaylists.isNotEmpty) {
+        final firstPl = spotifyPlaylists.first;
+        if (firstPl is Map) {
+          final plName = firstPl['name']?.toString().trim() ?? defaultName;
+          final items = firstPl['items'];
+          if (items is List) {
+            final entries = <ImportEntry>[];
+            for (final it in items) {
+              if (it is Map) {
+                final tr = it['track'] is Map ? it['track'] as Map : it;
+                final title =
+                    (tr['trackName'] ?? tr['name'] ?? tr['title'] ?? '')
+                        .toString()
+                        .trim();
+                final artist = (tr['artistName'] ?? tr['artist'] ?? '')
+                    .toString()
+                    .trim();
+                if (title.isNotEmpty || artist.isNotEmpty) {
+                  entries.add(ImportEntry(title: title, artist: artist));
+                }
+              }
+              if (entries.length >= maxEntries) break;
+            }
+            if (entries.isNotEmpty) {
+              return ParsedPlaylistFile(
+                name: plName.isNotEmpty ? plName : defaultName,
+                entries: entries,
+              );
+            }
+          }
+        }
+      }
+
+      final dynamic rawTracks = j['tracks'];
+      if (rawTracks is List && rawTracks.isNotEmpty) {
+        final entries = <ImportEntry>[];
+        for (final tr in rawTracks) {
+          if (tr is Map &&
+              (tr.containsKey('track') || tr.containsKey('trackName'))) {
+            final title = (tr['track'] ?? tr['trackName'] ?? '')
+                .toString()
+                .trim();
+            final artist = (tr['artist'] ?? tr['artistName'] ?? '')
+                .toString()
+                .trim();
+            if (title.isNotEmpty || artist.isNotEmpty) {
+              entries.add(ImportEntry(title: title, artist: artist));
+            }
+          }
+          if (entries.length >= maxEntries) break;
+        }
+        if (entries.isNotEmpty) {
+          return ParsedPlaylistFile(name: 'Liked Songs', entries: entries);
+        }
+      }
+    }
+
     if (app != 'freebify' && app != 'awadymusic') {
       throw const FormatException('Not a supported playlist backup');
     }

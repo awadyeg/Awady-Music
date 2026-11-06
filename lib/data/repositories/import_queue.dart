@@ -202,6 +202,14 @@ class ImportQueue {
         enqueuePending(playlist.id, pendingTracks);
       }
     }
+    try {
+      final pendingLiked = libraryRepo.likedTracks
+          .where((t) => t.pending)
+          .toList();
+      if (pendingLiked.isNotEmpty) {
+        enqueuePending('liked', pendingLiked);
+      }
+    } on Object catch (_) {}
   }
 
   Future<void> _pump() async {

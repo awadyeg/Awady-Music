@@ -14,6 +14,7 @@ import 'package:awady_music/widgets/artwork_image.dart';
 import 'package:awady_music/widgets/collage_cover.dart';
 import 'package:awady_music/widgets/glass_sheet.dart';
 import 'package:awady_music/widgets/glass_toast.dart';
+import 'package:awady_music/widgets/import_sheet.dart';
 import 'package:awady_music/widgets/skeletons.dart';
 import 'package:awady_music/widgets/track_menu_sheet.dart';
 import 'package:awady_music/widgets/track_tile.dart';
@@ -461,7 +462,13 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
 
     switch (resolvedKind) {
       case PlaylistKind.liked:
-        final tracks = libraryRepo.likedTracks;
+        final likedAsync = ref.watch(likedTracksStreamProvider);
+        var tracks = likedAsync.asData?.value ?? const <Track>[];
+        if (tracks.isEmpty) {
+          try {
+            tracks = libraryRepo.likedTracks;
+          } on Object catch (_) {}
+        }
         return _buildView(
           context: context,
           tokens: tokens,
@@ -501,6 +508,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
         );
 
       case PlaylistKind.local:
+        ref.watch(playlistsStreamProvider);
         final playlist = libraryRepo.getPlaylist(widget.id);
         if (playlist == null) {
           return _buildNotFound(context, tokens, l10n);
@@ -934,6 +942,26 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                         icon: const Icon(LucideIcons.search, size: 18),
                         label: Text(l10n.playlistFindSongs),
                       ),
+                      if (widget.id == 'liked') ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: tokens.textPrimary,
+                            side: BorderSide(color: tokens.glassStroke),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          onPressed: () => unawaited(
+                            showImportSheet(
+                              context,
+                              initialDestination: ImportDestination.liked,
+                            ),
+                          ),
+                          icon: const Icon(LucideIcons.link2, size: 18),
+                          label: Text(l10n.importPlaylistTitle),
+                        ),
+                      ],
                     ],
                   ),
                 ),

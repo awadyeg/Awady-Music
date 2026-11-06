@@ -110,6 +110,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final tokens = Theme.of(context).glass;
     final l10n = context.l10n;
     final libraryRepo = ref.watch(libraryRepositoryProvider);
+    ref
+      ..watch(likedTracksStreamProvider)
+      ..watch(playlistsStreamProvider)
+      ..watch(followedArtistsStreamProvider);
     final downloadsCountAsync = ref.watch(downloadsCountProvider);
     final downloadsCount = downloadsCountAsync.value ?? 0;
 

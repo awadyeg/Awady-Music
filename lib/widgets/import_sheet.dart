@@ -18,19 +18,33 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-Future<void> showImportSheet(BuildContext context, {String? initialUrl}) {
+enum ImportDestination { playlist, liked }
+
+Future<void> showImportSheet(
+  BuildContext context, {
+  String? initialUrl,
+  ImportDestination initialDestination = ImportDestination.playlist,
+}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (ctx) => ImportSheet(initialUrl: initialUrl),
+    builder: (ctx) => ImportSheet(
+      initialUrl: initialUrl,
+      initialDestination: initialDestination,
+    ),
   );
 }
 
 class ImportSheet extends ConsumerStatefulWidget {
-  const ImportSheet({this.initialUrl, super.key});
+  const ImportSheet({
+    this.initialUrl,
+    this.initialDestination = ImportDestination.playlist,
+    super.key,
+  });
 
   final String? initialUrl;
+  final ImportDestination initialDestination;
 
   @override
   ConsumerState<ImportSheet> createState() => _ImportSheetState();
@@ -38,12 +52,14 @@ class ImportSheet extends ConsumerStatefulWidget {
 
 class _ImportSheetState extends ConsumerState<ImportSheet> {
   late final TextEditingController _urlController;
+  late ImportDestination _destination;
   bool _busy = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+    _destination = widget.initialDestination;
     _urlController = TextEditingController(text: widget.initialUrl ?? '');
     if (widget.initialUrl != null && widget.initialUrl!.trim().isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -62,10 +78,50 @@ class _ImportSheetState extends ConsumerState<ImportSheet> {
     String playlistName,
     List<ImportEntry> entries, {
     bool limited = false,
+    ImportDestination? forceDestination,
   }) async {
     final libraryRepo = ref.read(libraryRepositoryProvider);
     final importQueue = ref.read(importQueueProvider);
     final l10n = context.l10n;
+    final target = forceDestination ?? _destination;
+
+    if (target == ImportDestination.liked) {
+      final batchId = DateTime.now().millisecondsSinceEpoch.toRadixString(36);
+      final placeholders = entries.asMap().entries.map((item) {
+        final i = item.key;
+        final e = item.value;
+        final artistName = e.artist.isNotEmpty ? e.artist : 'Unknown artist';
+        final cleanHandle = artistName.toLowerCase().replaceAll(
+          RegExp('[^a-z0-9]+'),
+          '-',
+        );
+
+        return Track(
+          id: 'spi-liked-$batchId-$i',
+          title: e.title.isNotEmpty ? e.title : 'Untitled',
+          artist: Artist(id: 'spa-$cleanHandle', name: artistName),
+          duration: e.duration ?? 0,
+          source: TrackSource.yt,
+          pending: true,
+        );
+      }).toList();
+
+      libraryRepo.addLikedTracks(placeholders);
+      importQueue.enqueuePending('liked', placeholders);
+
+      if (mounted) {
+        final msg = limited
+            ? l10n.importLimited(placeholders.length.toString())
+            : l10n.importImported(placeholders.length.toString());
+        ref.read(toastProvider.notifier).show(msg);
+
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        unawaited(context.push('/playlist/liked'));
+      }
+      return;
+    }
 
     final pid = libraryRepo.createPlaylist(playlistName);
     final placeholders = entries.asMap().entries.map((item) {
@@ -119,13 +175,13 @@ class _ImportSheetState extends ConsumerState<ImportSheet> {
       _error = null;
     });
 
-    // 1. Check if Spotify URL
-    final spotifyId = SpotifyImporter.extractPlaylistId(url);
-    if (spotifyId != null &&
+    // 1. Check if Spotify URL / URI / ID
+    final spotifyEntity = SpotifyImporter.extractEntity(url);
+    if (spotifyEntity != null &&
         (url.contains('spotify') ||
             SpotifyImporter.spotifyIdPattern.hasMatch(url))) {
       final importer = SpotifyImporter();
-      final res = await importer.importPlaylist(spotifyId);
+      final res = await importer.importPlaylist(url);
 
       if (!res.ok) {
         if (mounted) {
@@ -162,6 +218,20 @@ class _ImportSheetState extends ConsumerState<ImportSheet> {
       }
 
       final libraryRepo = ref.read(libraryRepositoryProvider);
+      if (_destination == ImportDestination.liked) {
+        libraryRepo.addLikedTracks(res.tracks);
+        if (mounted) {
+          ref
+              .read(toastProvider.notifier)
+              .show(l10n.importImported(res.tracks.length.toString()));
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+          unawaited(context.push('/playlist/liked'));
+        }
+        return;
+      }
+
       final pid = libraryRepo.createPlaylist(res.name);
       libraryRepo.addTracksToPlaylist(pid, res.tracks);
 
@@ -210,19 +280,35 @@ class _ImportSheetState extends ConsumerState<ImportSheet> {
         _busy = true;
       });
 
+      final lowerName = fileName.toLowerCase();
+      final autoLiked =
+          lowerName == 'liked_songs' ||
+          lowerName == 'liked songs' ||
+          lowerName == 'yourlibrary';
+
       if (file.extension?.toLowerCase() == 'json' ||
           file.name.endsWith('.freebify.json')) {
         final parsed = await PlaylistFileParser.parseJsonCompute(
           content,
           defaultName: fileName.replaceAll('.freebify', ''),
         );
-        await _matchEntries(parsed.name, parsed.entries);
+        final isLikedFile =
+            autoLiked || parsed.name.toLowerCase() == 'liked songs';
+        await _matchEntries(
+          parsed.name,
+          parsed.entries,
+          forceDestination: isLikedFile ? ImportDestination.liked : null,
+        );
       } else {
         final parsed = await PlaylistFileParser.parseCsvCompute(
           content,
           defaultName: fileName,
         );
-        await _matchEntries(parsed.name, parsed.entries);
+        await _matchEntries(
+          parsed.name,
+          parsed.entries,
+          forceDestination: autoLiked ? ImportDestination.liked : null,
+        );
       }
     } on FormatException catch (e) {
       if (mounted) {
@@ -288,17 +374,45 @@ class _ImportSheetState extends ConsumerState<ImportSheet> {
                   size: 22,
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  l10n.importPlaylistTitle,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: tokens.textPrimary,
+                Expanded(
+                  child: Text(
+                    l10n.importPlaylistTitle,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: tokens.textPrimary,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+
+            // Destination selector (Playlist vs Liked Songs)
+            SegmentedButton<ImportDestination>(
+              key: const Key('import_destination_selector'),
+              segments: [
+                ButtonSegment(
+                  value: ImportDestination.playlist,
+                  icon: const Icon(LucideIcons.listMusic, size: 16),
+                  label: Text(l10n.libraryPlaylistLabel),
+                ),
+                ButtonSegment(
+                  value: ImportDestination.liked,
+                  icon: const Icon(LucideIcons.heart, size: 16),
+                  label: Text(l10n.libraryLikedSongs),
+                ),
+              ],
+              selected: {_destination},
+              onSelectionChanged: _busy
+                  ? null
+                  : (selection) {
+                      setState(() {
+                        _destination = selection.first;
+                      });
+                    },
+            ),
+            const SizedBox(height: 14),
 
             // URL Input field
             TextField(

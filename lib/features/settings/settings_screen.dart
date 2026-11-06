@@ -10,6 +10,7 @@ import 'package:awady_music/data/repositories/stats_repository.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/equalizer_sheet.dart';
 import 'package:awady_music/widgets/glass_toast.dart';
+import 'package:awady_music/widgets/import_sheet.dart';
 import 'package:awady_music/widgets/large_title_scaffold.dart';
 import 'package:awady_music/widgets/section_header.dart';
 import 'package:awady_music/widgets/update_banner.dart';
@@ -321,6 +322,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     _buildDivider(tokens),
 
+                    // Import playlists from Spotify
+                    _buildNavTile(
+                      icon: LucideIcons.listMusic,
+                      title: _spotifyImportPlaylistsTitle(
+                        Localizations.localeOf(context).languageCode,
+                      ),
+                      subtitle: l10n.importUrlHint,
+                      tokens: tokens,
+                      onTap: () => unawaited(showImportSheet(context)),
+                    ),
+                    _buildDivider(tokens),
+
+                    // Import Liked Songs from Spotify
+                    _buildNavTile(
+                      icon: LucideIcons.heart,
+                      title: _spotifyImportLikesTitle(
+                        Localizations.localeOf(context).languageCode,
+                      ),
+                      subtitle: _spotifyImportLikesSub(
+                        Localizations.localeOf(context).languageCode,
+                      ),
+                      tokens: tokens,
+                      onTap: () => unawaited(
+                        showImportSheet(
+                          context,
+                          initialDestination: ImportDestination.liked,
+                        ),
+                      ),
+                    ),
+                    _buildDivider(tokens),
+
                     // Export library & stats
                     _buildNavTile(
                       icon: LucideIcons.share2,
@@ -515,6 +547,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _countryDisplayName(String code, String langCode) {
     final c = findMusicCountry(code);
     return '${c.flag} ${c.localizedName(langCode)} (${c.code})';
+  }
+
+  String _spotifyImportPlaylistsTitle(String langCode) {
+    return switch (langCode) {
+      'ar' => 'استيراد قوائم التشغيل من Spotify',
+      'es' => 'Importar playlists de Spotify',
+      _ => 'Import Playlists from Spotify',
+    };
+  }
+
+  String _spotifyImportLikesTitle(String langCode) {
+    return switch (langCode) {
+      'ar' => 'استيراد الأغاني المفضلة من Spotify',
+      'es' => 'Importar canciones que te gustan de Spotify',
+      _ => 'Import Likes from Spotify',
+    };
+  }
+
+  String _spotifyImportLikesSub(String langCode) {
+    return switch (langCode) {
+      'ar' => 'عبر رابط قائمة تشغيل أو ملف CSV / YourLibrary.json',
+      'es' => 'Mediante enlace o archivo CSV / YourLibrary.json',
+      _ => 'Via Spotify link or Exportify CSV / YourLibrary.json',
+    };
   }
 
   void _showCountryDialog(BuildContext context) {
