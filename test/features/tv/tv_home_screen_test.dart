@@ -14,6 +14,7 @@ import 'package:awady_music/player/connect_receiver.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/player/player_state.dart';
 import 'package:flutter/material.dart' hide RepeatMode;
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -328,5 +329,39 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(exitCalled, isTrue);
+  });
+
+  testWidgets('TvHomeScreen focuses Home sidebar button initially and handles '
+      'D-pad Select activation', (tester) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final fakePlayer = FakePlayerController();
+    await tester.pumpWidget(
+      _buildTvHarness(
+        playerController: fakePlayer,
+        libraryRepo: libraryRepo,
+        sampleTracks: const [sampleTrack],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Home button in sidebar has autofocus: true
+    // Pressing D-pad Down moves focus to Search
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+
+    // Pressing D-pad Center (LogicalKeyboardKey.select) activates Search tab
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+
+    // Search tab should now be visible
+    expect(find.text('Search songs, artists, or genres...'), findsOneWidget);
+    // Verify fakePlayer.toggle was NOT hijacked by the select key
+    expect(fakePlayer.toggleCalled, isFalse);
   });
 }

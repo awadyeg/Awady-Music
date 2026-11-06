@@ -82,93 +82,101 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
     final player = ref.read(playerControllerProvider.notifier);
     final curTrack = ps.current;
 
-    return Shortcuts(
-      shortcuts: const <ShortcutActivator, Intent>{
-        SingleActivator(LogicalKeyboardKey.space): _TvPlayPauseIntent(),
-        SingleActivator(LogicalKeyboardKey.select): _TvPlayPauseIntent(),
-        SingleActivator(LogicalKeyboardKey.mediaPlayPause):
-            _TvPlayPauseIntent(),
-        SingleActivator(LogicalKeyboardKey.mediaTrackNext): _TvNextIntent(),
-        SingleActivator(LogicalKeyboardKey.mediaTrackPrevious): _TvPrevIntent(),
-        SingleActivator(LogicalKeyboardKey.escape): _TvBackIntent(),
-        SingleActivator(LogicalKeyboardKey.backspace): _TvBackIntent(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleBack();
       },
-      child: Actions(
-        actions: <Type, Action<Intent>>{
-          _TvPlayPauseIntent: CallbackAction<_TvPlayPauseIntent>(
-            onInvoke: (_) => player.toggle(),
-          ),
-          _TvNextIntent: CallbackAction<_TvNextIntent>(
-            onInvoke: (_) => player.next(),
-          ),
-          _TvPrevIntent: CallbackAction<_TvPrevIntent>(
-            onInvoke: (_) => player.prev(),
-          ),
-          _TvBackIntent: CallbackAction<_TvBackIntent>(
-            onInvoke: (_) {
-              _handleBack();
-              return null;
-            },
-          ),
+      child: Shortcuts(
+        shortcuts: const <ShortcutActivator, Intent>{
+          SingleActivator(LogicalKeyboardKey.mediaPlayPause):
+              _TvPlayPauseIntent(),
+          SingleActivator(LogicalKeyboardKey.mediaPlay): _TvPlayPauseIntent(),
+          SingleActivator(LogicalKeyboardKey.mediaPause): _TvPlayPauseIntent(),
+          SingleActivator(LogicalKeyboardKey.mediaTrackNext): _TvNextIntent(),
+          SingleActivator(LogicalKeyboardKey.mediaTrackPrevious):
+              _TvPrevIntent(),
+          SingleActivator(LogicalKeyboardKey.escape): _TvBackIntent(),
+          SingleActivator(LogicalKeyboardKey.backspace): _TvBackIntent(),
+          SingleActivator(LogicalKeyboardKey.goBack): _TvBackIntent(),
         },
-        child: Scaffold(
-          backgroundColor: const Color(0xFF0D0E15),
-          body: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Ambient blurred artwork background
-              if (curTrack?.artwork != null)
-                Positioned.fill(
-                  child: ImageFiltered(
-                    imageFilter: ImageFilter.blur(sigmaX: 70, sigmaY: 70),
-                    child: Opacity(
-                      opacity: 0.35,
-                      child: ArtworkImage(art: curTrack!.artwork, size: 600),
-                    ),
-                  ),
-                ),
-
-              // Subtle dark glass tint
-              Container(color: Colors.black.withValues(alpha: 0.5)),
-
-              // Main TV Navigation Shell
-              SafeArea(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Left TV Navigation Rail
-                    _buildTvSidebar(tokens, curTrack),
-
-                    const VerticalDivider(
-                      width: 1,
-                      thickness: 1,
-                      color: Color(0x1FFFFFFF),
-                    ),
-
-                    // Right Content Area
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: _buildActiveContentView(curTrack),
-                          ),
-
-                          // Persistent TV Mini Player (when browsing)
-                          if (_currentTab != TvTab.nowPlaying &&
-                              curTrack != null)
-                            Positioned(
-                              left: 16,
-                              right: 24,
-                              bottom: 12,
-                              child: _buildTvMiniPlayer(tokens, curTrack, ps),
-                            ),
-                        ],
+        child: Actions(
+          actions: <Type, Action<Intent>>{
+            _TvPlayPauseIntent: CallbackAction<_TvPlayPauseIntent>(
+              onInvoke: (_) => player.toggle(),
+            ),
+            _TvNextIntent: CallbackAction<_TvNextIntent>(
+              onInvoke: (_) => player.next(),
+            ),
+            _TvPrevIntent: CallbackAction<_TvPrevIntent>(
+              onInvoke: (_) => player.prev(),
+            ),
+            _TvBackIntent: CallbackAction<_TvBackIntent>(
+              onInvoke: (_) {
+                _handleBack();
+                return null;
+              },
+            ),
+          },
+          child: Scaffold(
+            backgroundColor: const Color(0xFF0D0E15),
+            body: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Ambient blurred artwork background
+                if (curTrack?.artwork != null)
+                  Positioned.fill(
+                    child: ImageFiltered(
+                      imageFilter: ImageFilter.blur(sigmaX: 70, sigmaY: 70),
+                      child: Opacity(
+                        opacity: 0.35,
+                        child: ArtworkImage(art: curTrack!.artwork, size: 600),
                       ),
                     ),
-                  ],
+                  ),
+
+                // Subtle dark glass tint
+                Container(color: Colors.black.withValues(alpha: 0.5)),
+
+                // Main TV Navigation Shell
+                SafeArea(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Left TV Navigation Rail
+                      _buildTvSidebar(tokens, curTrack),
+
+                      const VerticalDivider(
+                        width: 1,
+                        thickness: 1,
+                        color: Color(0x1FFFFFFF),
+                      ),
+
+                      // Right Content Area
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: _buildActiveContentView(curTrack),
+                            ),
+
+                            // Persistent TV Mini Player (when browsing)
+                            if (_currentTab != TvTab.nowPlaying &&
+                                curTrack != null)
+                              Positioned(
+                                left: 16,
+                                right: 24,
+                                bottom: 12,
+                                child: _buildTvMiniPlayer(tokens, curTrack, ps),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -191,6 +199,7 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
             label: 'Home',
             tab: TvTab.home,
             tokens: tokens,
+            autofocus: true,
           ),
           const SizedBox(height: 10),
 
@@ -261,10 +270,12 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
     required String label,
     required TvTab tab,
     required GlassTokens tokens,
+    bool autofocus = false,
   }) {
     final isSelected = _currentTab == tab;
 
     return TvFocusButton(
+      autofocus: autofocus,
       onPressed: () {
         setState(() {
           _previousTab = _currentTab;
