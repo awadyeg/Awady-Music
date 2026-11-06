@@ -39,10 +39,17 @@ class MainActivity : AudioServiceActivity() {
                         return@setMethodCallHandler
                     }
                     try {
+                        val targetFile = if (file.canonicalPath.startsWith(cacheDir.canonicalPath)) {
+                            file
+                        } else {
+                            val copied = File(cacheDir, file.name)
+                            file.copyTo(copied, overwrite = true)
+                            copied
+                        }
                         val uri = FileProvider.getUriForFile(
                             this,
                             "$packageName.fileprovider",
-                            file
+                            targetFile
                         )
                         val intent = Intent(Intent.ACTION_VIEW).apply {
                             setDataAndType(uri, "application/vnd.android.package-archive")

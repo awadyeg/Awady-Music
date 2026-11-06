@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 @immutable
@@ -30,7 +31,7 @@ class AppUpdateInfo {
 class UpdateChecker {
   static const String repoOwner = 'awadyeg';
   static const String repoName = 'Awady-Music';
-  static const String currentVersion = '1.0.0';
+  static const String currentVersion = '1.0.2';
 
   static Future<AppUpdateInfo?> checkForUpdate({
     Dio? dio,
@@ -199,7 +200,12 @@ class _UpdateConfirmDialogState extends State<_UpdateConfirmDialog> {
 
     try {
       final dio = Dio();
-      final tempDir = Directory.systemTemp;
+      Directory tempDir;
+      try {
+        tempDir = await getTemporaryDirectory();
+      } on Object catch (_) {
+        tempDir = Directory.systemTemp;
+      }
       final apkFile = File(
         '${tempDir.path}/awady-music-v${widget.info.version}.apk',
       );

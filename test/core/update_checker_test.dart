@@ -44,7 +44,7 @@ void main() {
       dioAdapter.onGet(
         'https://api.github.com/repos/awadyeg/Awady-Music/releases/latest',
         (server) => server.reply(200, {
-          'tag_name': 'v1.0.0',
+          'tag_name': 'v1.0.2',
           'body': 'Initial release',
         }),
       );
