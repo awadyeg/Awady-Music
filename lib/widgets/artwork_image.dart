@@ -142,6 +142,11 @@ class _ArtworkImageState extends State<ArtworkImage> {
       );
     }
 
+    final cachePixelSize =
+        (widget.size * (MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0))
+            .round()
+            .clamp(64, 1024);
+
     return ClipRRect(
       borderRadius: borderRadius,
       child: CachedNetworkImage(
@@ -149,6 +154,8 @@ class _ArtworkImageState extends State<ArtworkImage> {
         imageUrl: currentUrl,
         width: widget.size,
         height: widget.size,
+        memCacheWidth: cachePixelSize,
+        memCacheHeight: cachePixelSize,
         fit: widget.fit,
         fadeInDuration: const Duration(milliseconds: 180),
         placeholder: (_, _) => _buildPlaceholder(borderRadius),

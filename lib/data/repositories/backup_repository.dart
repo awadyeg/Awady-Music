@@ -10,11 +10,14 @@ import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/data/repositories/stats_repository.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+
+Object? _parseJson(String source) => jsonDecode(source);
 
 class BackupImportResult {
   const BackupImportResult({
@@ -129,7 +132,7 @@ class BackupRepository {
   Future<BackupImportResult> importBackupJson(String jsonString) async {
     final dynamic decoded;
     try {
-      decoded = jsonDecode(jsonString);
+      decoded = await compute(_parseJson, jsonString);
     } on Object catch (e) {
       return BackupImportResult(
         likedCount: 0,

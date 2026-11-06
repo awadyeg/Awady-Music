@@ -11,6 +11,18 @@ class ParsedPlaylistFile {
   final List<ImportEntry> entries;
 }
 
+class _ParseArgs {
+  const _ParseArgs(this.text, this.defaultName);
+  final String text;
+  final String defaultName;
+}
+
+ParsedPlaylistFile _parseJsonComputeEntrypoint(_ParseArgs args) =>
+    PlaylistFileParser.parseJson(args.text, defaultName: args.defaultName);
+
+ParsedPlaylistFile _parseCsvComputeEntrypoint(_ParseArgs args) =>
+    PlaylistFileParser.parseCsv(args.text, defaultName: args.defaultName);
+
 class PlaylistFileParser {
   static const int maxEntries = 5000;
 
@@ -158,5 +170,25 @@ class PlaylistFileParser {
         : defaultName;
 
     return ParsedPlaylistFile(name: name, entries: entries);
+  }
+
+  static Future<ParsedPlaylistFile> parseJsonCompute(
+    String jsonText, {
+    String defaultName = 'Imported Playlist',
+  }) {
+    return compute(
+      _parseJsonComputeEntrypoint,
+      _ParseArgs(jsonText, defaultName),
+    );
+  }
+
+  static Future<ParsedPlaylistFile> parseCsvCompute(
+    String csvText, {
+    String defaultName = 'Imported Playlist',
+  }) {
+    return compute(
+      _parseCsvComputeEntrypoint,
+      _ParseArgs(csvText, defaultName),
+    );
   }
 }

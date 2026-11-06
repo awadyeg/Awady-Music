@@ -212,13 +212,13 @@ class _ImportSheetState extends ConsumerState<ImportSheet> {
 
       if (file.extension?.toLowerCase() == 'json' ||
           file.name.endsWith('.freebify.json')) {
-        final parsed = PlaylistFileParser.parseJson(
+        final parsed = await PlaylistFileParser.parseJsonCompute(
           content,
           defaultName: fileName.replaceAll('.freebify', ''),
         );
         await _matchEntries(parsed.name, parsed.entries);
       } else {
-        final parsed = PlaylistFileParser.parseCsv(
+        final parsed = await PlaylistFileParser.parseCsvCompute(
           content,
           defaultName: fileName,
         );

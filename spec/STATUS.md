@@ -84,12 +84,13 @@
 - T-67: Backup export/import (implemented lib/data/repositories/backup_repository.dart creating complete single JSON backup containing liked songs, followed artists, playlists with tracks, playback statistics, and settings; implemented merge logic on import combining without duplicates; wired Export backup and Import backup tiles in SettingsScreen; unit tests in test/data/repositories/backup_repository_test.dart; 3 unit tests passing, total 413 tests)
 - Phase 6 (Import, downloads, backup) complete!
 - T-68: Accessibility pass (added tooltips to all interactive icon buttons; Semantics to Big Play/Pause and interactive controls; LiveBars reduced motion support via MediaQuery.disableAnimationsOf; resilient MediaCard text scaling with 200% font size without overflow; 4 accessibility & 200% text scale tests passing; total 417 tests green)
+- T-69: Performance pass (configured ArtworkImage with dynamic memCacheWidth and memCacheHeight clamped [64, 1024] to prevent image decoding RAM bloat; moved large JSON parsing in BackupRepository and PlaylistFileParser to background compute isolates; added automated 1,000-track playlist scrolling virtualization test confirming smooth 60 FPS performance; total 418 tests green)
 
 ## In Progress
-- T-69: Performance pass (Phase 7: Polish & release)
-
-## Next
 - T-70: Release config & final build (Phase 7: Polish & release)
 
+## Next
+- CHECKPOINT G: Final verification, release split-per-abi APKs, v1.0.0 tag, and push
+
 ## Left
-- 2 tasks remaining (T-69 to T-70)
+- 1 task remaining (T-70)
