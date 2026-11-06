@@ -3,20 +3,20 @@ import 'dart:ui';
 
 import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/theme/tokens.dart';
-import 'package:awady_music/data/models/enums.dart';
 import 'package:awady_music/data/models/track.dart';
-import 'package:awady_music/data/repositories/library_repository.dart';
-import 'package:awady_music/features/now_playing/lyrics_view.dart';
+import 'package:awady_music/features/tv/tv_browser_views.dart';
+import 'package:awady_music/features/tv/tv_focus_button.dart';
+import 'package:awady_music/features/tv/tv_now_playing_view.dart';
 import 'package:awady_music/player/connect_receiver.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/player/player_state.dart';
-import 'package:awady_music/widgets/animated_favorite_button.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
-import 'package:flutter/material.dart' hide RepeatMode;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+enum TvTab { home, search, library, nowPlaying, settings }
 
 class _TvPlayPauseIntent extends Intent {
   const _TvPlayPauseIntent();
@@ -30,16 +30,13 @@ class _TvPrevIntent extends Intent {
   const _TvPrevIntent();
 }
 
-class _TvSeekForwardIntent extends Intent {
-  const _TvSeekForwardIntent();
+class _TvBackIntent extends Intent {
+  const _TvBackIntent();
 }
 
-class _TvSeekBackwardIntent extends Intent {
-  const _TvSeekBackwardIntent();
-}
-
-/// Fullscreen TV mode optimized for big screens (1080p/4K), D-pad navigation,
-/// ambient blurred background, synced lyrics, and Awady Connect sync.
+/// Standalone Android TV Navigation Shell with D-pad navigation,
+/// TV sidebar (Home, Search, Library, Now Playing, Settings), and responsive
+/// layout optimized for 540dp/1080p TV viewports.
 class TvHomeScreen extends ConsumerStatefulWidget {
   const TvHomeScreen({this.onExitTvMode, super.key});
 
@@ -50,38 +47,32 @@ class TvHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
-  Timer? _clockTimer;
-  DateTime _now = DateTime.now();
-  int _selectedRightTab = 0; // 0 = Lyrics, 1 = Up Next
+  TvTab _currentTab = TvTab.home;
+  TvTab _previousTab = TvTab.home;
 
   @override
   void initState() {
     super.initState();
-    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) {
-        setState(() => _now = DateTime.now());
-      }
-    });
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(ref.read(connectReceiverProvider.notifier).start());
     });
   }
 
-  @override
-  void dispose() {
-    _clockTimer?.cancel();
-    super.dispose();
+  void _handleSelectTrack(Track track, List<Track> queue, int index) {
+    ref.read(playerControllerProvider.notifier).playContext(queue, index);
+    setState(() {
+      _previousTab = _currentTab;
+      _currentTab = TvTab.nowPlaying;
+    });
   }
 
-  String _formatTime(DateTime dt) {
-    return DateFormat.jm().format(dt);
-  }
-
-  String _formatDuration(Duration d) {
-    final m = d.inMinutes;
-    final s = d.inSeconds % 60;
-    return '$m:${s.toString().padLeft(2, '0')}';
+  void _handleBack() {
+    if (_currentTab != TvTab.home) {
+      setState(() => _currentTab = TvTab.home);
+    } else {
+      unawaited(ref.read(settingsProvider.notifier).setTvMode('off'));
+      widget.onExitTvMode?.call();
+    }
   }
 
   @override
@@ -89,7 +80,6 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
     final tokens = Theme.of(context).glass;
     final ps = ref.watch(playerControllerProvider);
     final player = ref.read(playerControllerProvider.notifier);
-    final receiverState = ref.watch(connectReceiverProvider);
     final curTrack = ps.current;
 
     return Shortcuts(
@@ -100,10 +90,8 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
             _TvPlayPauseIntent(),
         SingleActivator(LogicalKeyboardKey.mediaTrackNext): _TvNextIntent(),
         SingleActivator(LogicalKeyboardKey.mediaTrackPrevious): _TvPrevIntent(),
-        SingleActivator(LogicalKeyboardKey.arrowRight, alt: true):
-            _TvSeekForwardIntent(),
-        SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true):
-            _TvSeekBackwardIntent(),
+        SingleActivator(LogicalKeyboardKey.escape): _TvBackIntent(),
+        SingleActivator(LogicalKeyboardKey.backspace): _TvBackIntent(),
       },
       child: Actions(
         actions: <Type, Action<Intent>>{
@@ -116,17 +104,9 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
           _TvPrevIntent: CallbackAction<_TvPrevIntent>(
             onInvoke: (_) => player.prev(),
           ),
-          _TvSeekForwardIntent: CallbackAction<_TvSeekForwardIntent>(
+          _TvBackIntent: CallbackAction<_TvBackIntent>(
             onInvoke: (_) {
-              final target = ps.currentTime + const Duration(seconds: 10);
-              player.seek(target > ps.duration ? ps.duration : target);
-              return null;
-            },
-          ),
-          _TvSeekBackwardIntent: CallbackAction<_TvSeekBackwardIntent>(
-            onInvoke: (_) {
-              final target = ps.currentTime - const Duration(seconds: 10);
-              player.seek(target < Duration.zero ? Duration.zero : target);
+              _handleBack();
               return null;
             },
           ),
@@ -148,615 +128,372 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
                   ),
                 ),
 
-              // Subtle dark overlay
-              Container(color: Colors.black.withValues(alpha: 0.45)),
+              // Subtle dark glass tint
+              Container(color: Colors.black.withValues(alpha: 0.5)),
 
-              // Main Content Area
+              // Main TV Navigation Shell
               SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 20,
-                  ),
-                  child: Column(
-                    children: [
-                      _buildTopHeader(tokens, receiverState),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: curTrack == null
-                            ? _buildEmptyState(tokens)
-                            : Row(
-                                children: [
-                                  // Left Panel: Album Art & Controls
-                                  Expanded(
-                                    flex: 42,
-                                    child: _buildLeftPanel(
-                                      tokens,
-                                      curTrack,
-                                      ps,
-                                      player,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 32),
-                                  // Right Panel: Lyrics / Up Next
-                                  Expanded(
-                                    flex: 58,
-                                    child: _buildRightPanel(
-                                      tokens,
-                                      curTrack,
-                                      ps,
-                                      player,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Left TV Navigation Rail
+                    _buildTvSidebar(tokens, curTrack),
+
+                    const VerticalDivider(
+                      width: 1,
+                      thickness: 1,
+                      color: Color(0x1FFFFFFF),
+                    ),
+
+                    // Right Content Area
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: _buildActiveContentView(curTrack),
+                          ),
+
+                          // Persistent TV Mini Player (when browsing)
+                          if (_currentTab != TvTab.nowPlaying &&
+                              curTrack != null)
+                            Positioned(
+                              left: 16,
+                              right: 24,
+                              bottom: 12,
+                              child: _buildTvMiniPlayer(tokens, curTrack, ps),
+                            ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopHeader(
-    GlassTokens tokens,
-    ConnectReceiverState receiverState,
-  ) {
-    return Row(
-      children: [
-        Icon(LucideIcons.music, color: tokens.accent, size: 28),
-        const SizedBox(width: 12),
-        Text(
-          'Awady Music TV',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: tokens.textPrimary,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(width: 24),
-
-        // Connect Status Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: receiverState.activeControllerName != null
-                ? const Color(0xFF10B981).withValues(alpha: 0.2)
-                : tokens.accent.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: receiverState.activeControllerName != null
-                  ? const Color(0xFF10B981).withValues(alpha: 0.4)
-                  : tokens.accent.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                receiverState.activeControllerName != null
-                    ? LucideIcons.smartphone
-                    : LucideIcons.tv,
-                size: 14,
-                color: receiverState.activeControllerName != null
-                    ? const Color(0xFF10B981)
-                    : tokens.accent,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                receiverState.activeControllerName != null
-                    ? 'Controlled by ${receiverState.activeControllerName}'
-                    : 'Awady Connect Ready • Port ${receiverState.port}',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: receiverState.activeControllerName != null
-                      ? const Color(0xFF10B981)
-                      : tokens.accent,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const Spacer(),
-
-        // Digital Clock
-        Text(
-          _formatTime(_now),
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: tokens.textDim,
-          ),
-        ),
-
-        const SizedBox(width: 16),
-
-        // Exit TV Mode Button
-        _TvFocusButton(
-          onPressed: () {
-            unawaited(ref.read(settingsProvider.notifier).setTvMode('off'));
-            widget.onExitTvMode?.call();
-          },
-          tooltip: 'Exit TV Mode',
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: tokens.glassFill,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(LucideIcons.minimize2, color: tokens.textDim, size: 20),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLeftPanel(
-    GlassTokens tokens,
-    Track track,
-    PlayerState ps,
-    PlayerController player,
-  ) {
-    final curPos = ps.currentTime;
-    final dur = ps.duration;
-    final progress = dur.inMilliseconds > 0
-        ? (curPos.inMilliseconds / dur.inMilliseconds).clamp(0.0, 1.0)
-        : 0.0;
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Album Artwork
-        Center(
-          child: Container(
-            width: 280,
-            height: 280,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: tokens.accent.withValues(alpha: 0.25),
-                  blurRadius: 32,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: ArtworkImage(art: track.artwork, size: 544),
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Title & Artist
-        Text(
-          track.title,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            color: tokens.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          track.artist.name,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            color: tokens.textDim,
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Progress Scrubber Bar
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 6,
-                  color: tokens.accent,
-                  backgroundColor: tokens.glassFill,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _formatDuration(curPos),
-                    style: TextStyle(fontSize: 12, color: tokens.textDim),
-                  ),
-                  Text(
-                    _formatDuration(dur),
-                    style: TextStyle(fontSize: 12, color: tokens.textDim),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Playback Controls Row
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Shuffle
-            _TvFocusButton(
-              onPressed: player.toggleShuffle,
-              child: Icon(
-                LucideIcons.shuffle,
-                color: ps.shuffle ? tokens.accent : tokens.textDim,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 14),
-
-            // Prev
-            _TvFocusButton(
-              onPressed: player.prev,
-              child: Icon(
-                LucideIcons.skipBack,
-                color: tokens.textPrimary,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 14),
-
-            // Play / Pause (Big Primary Button)
-            _TvFocusButton(
-              onPressed: player.toggle,
-              autofocus: true,
-              child: Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: tokens.accent,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: tokens.accent.withValues(alpha: 0.35),
-                      blurRadius: 16,
-                      spreadRadius: 1,
                     ),
                   ],
                 ),
-                child: Icon(
-                  ps.isPlaying ? LucideIcons.pause : LucideIcons.play,
-                  color: tokens.onAccent,
-                  size: 30,
-                ),
               ),
-            ),
-            const SizedBox(width: 14),
-
-            // Next
-            _TvFocusButton(
-              onPressed: player.next,
-              child: Icon(
-                LucideIcons.skipForward,
-                color: tokens.textPrimary,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 14),
-
-            // Repeat
-            _TvFocusButton(
-              onPressed: player.cycleRepeat,
-              child: Icon(
-                ps.repeat == RepeatMode.one
-                    ? LucideIcons.repeat1
-                    : LucideIcons.repeat,
-                color: ps.repeat != RepeatMode.off
-                    ? tokens.accent
-                    : tokens.textDim,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 14),
-
-            // Like / Heart
-            AnimatedFavoriteButton(
-              isLiked: ref.watch(libraryRepositoryProvider).isLiked(track.id),
-              onTap: () {
-                ref.read(libraryRepositoryProvider).toggleLike(track);
-              },
-              size: 24,
-            ),
-          ],
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildRightPanel(
-    GlassTokens tokens,
-    Track track,
-    PlayerState ps,
-    PlayerController player,
-  ) {
+  Widget _buildTvSidebar(GlassTokens tokens, Track? curTrack) {
     return Container(
-      decoration: BoxDecoration(
-        color: tokens.glassFill,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: tokens.glassStroke),
-      ),
+      width: 68,
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
         children: [
-          // Segmented Tab Selector: [ Lyrics ] [ Up Next (N) ]
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                _buildTabButton(
-                  title: 'Lyrics',
-                  icon: LucideIcons.mic2,
-                  index: 0,
-                  tokens: tokens,
-                ),
-                const SizedBox(width: 12),
-                _buildTabButton(
-                  title: 'Up Next (${ps.queue.length})',
-                  icon: LucideIcons.listMusic,
-                  index: 1,
-                  tokens: tokens,
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
+          // App Logo
+          Icon(LucideIcons.music, color: tokens.accent, size: 26),
+          const SizedBox(height: 18),
 
-          // Tab Content
-          Expanded(
-            child: _selectedRightTab == 0
-                ? LyricsView(
-                    track: track,
-                    currentTime: ps.currentTime,
-                    onSeek: player.seek,
-                  )
-                : _buildUpNextQueue(tokens, ps, player),
+          // Home
+          _buildSidebarItem(
+            icon: LucideIcons.house,
+            label: 'Home',
+            tab: TvTab.home,
+            tokens: tokens,
+          ),
+          const SizedBox(height: 10),
+
+          // Search
+          _buildSidebarItem(
+            icon: LucideIcons.search,
+            label: 'Search',
+            tab: TvTab.search,
+            tokens: tokens,
+          ),
+          const SizedBox(height: 10),
+
+          // Library
+          _buildSidebarItem(
+            icon: LucideIcons.library,
+            label: 'Library',
+            tab: TvTab.library,
+            tokens: tokens,
+          ),
+          const SizedBox(height: 10),
+
+          // Now Playing
+          _buildSidebarItem(
+            icon: LucideIcons.disc,
+            label: 'Now Playing',
+            tab: TvTab.nowPlaying,
+            tokens: tokens,
+          ),
+          const SizedBox(height: 10),
+
+          // Settings
+          _buildSidebarItem(
+            icon: LucideIcons.settings,
+            label: 'Settings',
+            tab: TvTab.settings,
+            tokens: tokens,
+          ),
+
+          const Spacer(),
+
+          // Exit TV Mode
+          TvFocusButton(
+            onPressed: () {
+              unawaited(ref.read(settingsProvider.notifier).setTvMode('off'));
+              widget.onExitTvMode?.call();
+            },
+            tooltip: 'Exit TV Mode',
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: tokens.glassFill,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                LucideIcons.minimize2,
+                color: tokens.textDim,
+                size: 18,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTabButton({
-    required String title,
+  Widget _buildSidebarItem({
     required IconData icon,
-    required int index,
+    required String label,
+    required TvTab tab,
     required GlassTokens tokens,
   }) {
-    final isSelected = _selectedRightTab == index;
-    return _TvFocusButton(
-      onPressed: () => setState(() => _selectedRightTab = index),
+    final isSelected = _currentTab == tab;
+
+    return TvFocusButton(
+      onPressed: () {
+        setState(() {
+          _previousTab = _currentTab;
+          _currentTab = tab;
+        });
+      },
+      tooltip: label,
+      borderRadius: 12,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           color: isSelected
-              ? tokens.accent.withValues(alpha: 0.2)
+              ? tokens.accent.withValues(alpha: 0.22)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? tokens.accent : Colors.transparent,
+            width: 1.5,
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? tokens.accent : tokens.textDim,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? tokens.accent : tokens.textDim,
-              ),
-            ),
-          ],
+        child: Icon(
+          icon,
+          color: isSelected ? tokens.accent : tokens.textDim,
+          size: 22,
         ),
       ),
     );
   }
 
-  Widget _buildUpNextQueue(
-    GlassTokens tokens,
-    PlayerState ps,
-    PlayerController player,
-  ) {
-    if (ps.queue.isEmpty) {
-      return Center(
-        child: Text(
-          'Queue is empty',
-          style: TextStyle(color: tokens.textDim, fontSize: 16),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: ps.queue.length,
-      itemBuilder: (context, i) {
-        final item = ps.queue[i];
-        final isCurrent = i == ps.index;
-
-        return _TvFocusButton(
-          onPressed: () => player.playContext(ps.queue, i),
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isCurrent
-                  ? tokens.accent.withValues(alpha: 0.15)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
+  Widget _buildActiveContentView(Track? curTrack) {
+    switch (_currentTab) {
+      case TvTab.home:
+        return TvHomeView(onSelectTrack: _handleSelectTrack);
+      case TvTab.search:
+        return TvSearchView(onSelectTrack: _handleSelectTrack);
+      case TvTab.library:
+        return TvLibraryView(onSelectTrack: _handleSelectTrack);
+      case TvTab.nowPlaying:
+        if (curTrack == null) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: 28,
-                  child: Text(
-                    '${i + 1}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isCurrent ? tokens.accent : tokens.textDim,
+                const Icon(LucideIcons.disc, size: 54, color: Colors.white24),
+                const SizedBox(height: 12),
+                const Text(
+                  'No track is currently playing',
+                  style: TextStyle(fontSize: 16, color: Colors.white70),
+                ),
+                const SizedBox(height: 16),
+                TvFocusButton(
+                  onPressed: () => setState(() => _currentTab = TvTab.home),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).glass.accent,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Browse Music',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: SizedBox(
-                    width: 44,
-                    height: 44,
-                    child: ArtworkImage(art: item.artwork, size: 80),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: isCurrent ? tokens.accent : tokens.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        item.artist.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 12, color: tokens.textDim),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isCurrent)
-                  Icon(LucideIcons.volume2, color: tokens.accent, size: 20),
               ],
             ),
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: TvNowPlayingView(
+            track: curTrack,
+            onBackToBrowse: () {
+              setState(() => _currentTab = _previousTab);
+            },
           ),
         );
-      },
-    );
+      case TvTab.settings:
+        return const TvSettingsView();
+    }
   }
 
-  Widget _buildEmptyState(GlassTokens tokens) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(LucideIcons.tv, size: 64, color: tokens.textDim),
-          const SizedBox(height: 16),
-          Text(
-            'Awady Music TV Mode',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: tokens.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Cast music from your phone using Awady Connect,\n'
-            'or play a song to begin listening.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: tokens.textDim, height: 1.5),
-          ),
+  Widget _buildTvMiniPlayer(GlassTokens tokens, Track track, PlayerState ps) {
+    final player = ref.read(playerControllerProvider.notifier);
+
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xEE161822),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: tokens.accent.withValues(alpha: 0.3)),
+        boxShadow: const [
+          BoxShadow(color: Colors.black45, blurRadius: 16, spreadRadius: 2),
         ],
       ),
-    );
-  }
-}
-
-/// D-pad navigable focusable button with high-contrast glowing scale focus
-/// effect.
-class _TvFocusButton extends StatefulWidget {
-  const _TvFocusButton({
-    required this.child,
-    required this.onPressed,
-    this.autofocus = false,
-    this.tooltip,
-  });
-
-  final Widget child;
-  final VoidCallback onPressed;
-  final bool autofocus;
-  final String? tooltip;
-
-  @override
-  State<_TvFocusButton> createState() => _TvFocusButtonState();
-}
-
-class _TvFocusButtonState extends State<_TvFocusButton> {
-  bool _isFocused = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = Theme.of(context).glass;
-
-    return FocusableActionDetector(
-      autofocus: widget.autofocus,
-      onFocusChange: (focused) => setState(() => _isFocused = focused),
-      actions: <Type, Action<Intent>>{
-        ActivateIntent: CallbackAction<ActivateIntent>(
-          onInvoke: (_) => widget.onPressed(),
-        ),
-      },
-      child: GestureDetector(
-        onTap: widget.onPressed,
-        child: AnimatedScale(
-          scale: _isFocused ? 1.08 : 1.0,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: _isFocused
-                  ? Border.all(color: tokens.accent, width: 2.5)
-                  : null,
-              boxShadow: _isFocused
-                  ? [
-                      BoxShadow(
-                        color: tokens.accent.withValues(alpha: 0.4),
-                        blurRadius: 14,
-                        spreadRadius: 1,
-                      ),
-                    ]
-                  : null,
+      child: Row(
+        children: [
+          TvFocusButton(
+            onPressed: () {
+              setState(() {
+                _previousTab = _currentTab;
+                _currentTab = TvTab.nowPlaying;
+              });
+            },
+            borderRadius: 8,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: SizedBox(
+                width: 36,
+                height: 36,
+                child: ArtworkImage(art: track.artwork, size: 72),
+              ),
             ),
-            child: widget.tooltip != null
-                ? Tooltip(message: widget.tooltip ?? '', child: widget.child)
-                : widget.child,
           ),
-        ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                setState(() {
+                  _previousTab = _currentTab;
+                  _currentTab = TvTab.nowPlaying;
+                });
+              },
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    track.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    track.artist.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, color: tokens.textDim),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          TvFocusButton(
+            onPressed: player.prev,
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                LucideIcons.skipBack,
+                color: tokens.textPrimary,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          TvFocusButton(
+            onPressed: player.toggle,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: tokens.accent,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                ps.isPlaying ? LucideIcons.pause : LucideIcons.play,
+                color: tokens.onAccent,
+                size: 18,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          TvFocusButton(
+            onPressed: player.next,
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                LucideIcons.skipForward,
+                color: tokens.textPrimary,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          TvFocusButton(
+            onPressed: () {
+              setState(() {
+                _previousTab = _currentTab;
+                _currentTab = TvTab.nowPlaying;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: tokens.accent.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: tokens.accent),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LucideIcons.disc, color: tokens.accent, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Full Player',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: tokens.accent,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

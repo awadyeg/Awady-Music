@@ -1,11 +1,16 @@
 import 'package:awady_music/core/l10n/l10n.dart';
 import 'package:awady_music/core/theme/app_theme.dart';
 import 'package:awady_music/data/models/artist.dart';
+import 'package:awady_music/data/models/local_playlist.dart';
 import 'package:awady_music/data/models/lyrics.dart';
+import 'package:awady_music/data/models/mood_models.dart';
 import 'package:awady_music/data/models/track.dart';
+import 'package:awady_music/data/repositories/catalog_providers.dart';
+import 'package:awady_music/data/repositories/catalog_repository.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/data/repositories/lyrics_repository.dart';
 import 'package:awady_music/features/tv/tv_home_screen.dart';
+import 'package:awady_music/player/connect_receiver.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/player/player_state.dart';
 import 'package:flutter/material.dart' hide RepeatMode;
@@ -16,6 +21,21 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockLibraryRepository extends Mock implements LibraryRepository;
+
+class FakeConnectReceiverNotifier extends Notifier<ConnectReceiverState>
+    implements ConnectReceiverNotifier {
+  @override
+  ConnectReceiverState build() => const ConnectReceiverState();
+
+  @override
+  Future<void> start({int? port}) async {}
+
+  @override
+  void stop() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class FakePlayerController extends Notifier<PlayerState>
     implements PlayerController {
@@ -53,11 +73,24 @@ class FakePlayerController extends Notifier<PlayerState>
 Widget _buildTvHarness({
   required FakePlayerController playerController,
   required MockLibraryRepository libraryRepo,
+  VoidCallback? onExitTvMode,
+  List<Track> sampleTracks = const [],
 }) {
   return ProviderScope(
     overrides: [
       playerControllerProvider.overrideWith(() => playerController),
+      connectReceiverProvider.overrideWith(FakeConnectReceiverNotifier.new),
       libraryRepositoryProvider.overrideWithValue(libraryRepo),
+      trendingTracksProvider.overrideWith(
+        (ref) async => CatalogList(sampleTracks),
+      ),
+      recommendedForYouProvider.overrideWith(
+        (ref) async => CatalogList(sampleTracks),
+      ),
+      chartsProvider.overrideWith((ref) async => CatalogList(sampleTracks)),
+      moodCategoriesProvider.overrideWith(
+        (ref) async => const <MoodCategory>[],
+      ),
       lyricsForTrackProvider.overrideWith(
         (ref, track) async => const NoLyrics(),
       ),
@@ -70,7 +103,7 @@ Widget _buildTvHarness({
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const TvHomeScreen(),
+      home: TvHomeScreen(onExitTvMode: onExitTvMode),
     ),
   );
 }
@@ -88,9 +121,11 @@ void main() {
   setUp(() {
     libraryRepo = MockLibraryRepository();
     when(() => libraryRepo.isLiked(any())).thenReturn(false);
+    when(() => libraryRepo.likedTracks).thenReturn(<Track>[sampleTrack]);
+    when(() => libraryRepo.playlists).thenReturn(<LocalPlaylist>[]);
   });
 
-  testWidgets('TvHomeScreen displays header and empty state when idle', (
+  testWidgets('TvHomeScreen renders TV sidebar navigation and starts in Home', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1920, 1080);
@@ -102,12 +137,66 @@ void main() {
 
     final fakePlayer = FakePlayerController();
     await tester.pumpWidget(
-      _buildTvHarness(playerController: fakePlayer, libraryRepo: libraryRepo),
+      _buildTvHarness(
+        playerController: fakePlayer,
+        libraryRepo: libraryRepo,
+        sampleTracks: const [sampleTrack],
+      ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Awady Music TV'), findsOneWidget);
-    expect(find.text('Awady Music TV Mode'), findsOneWidget);
+    // Verify sidebar navigation icons
+    expect(find.byIcon(LucideIcons.house), findsOneWidget);
+    expect(find.byIcon(LucideIcons.search), findsOneWidget);
+    expect(find.byIcon(LucideIcons.library), findsOneWidget);
+    expect(find.byIcon(LucideIcons.disc), findsOneWidget);
+    expect(find.byIcon(LucideIcons.settings), findsOneWidget);
+    expect(find.byIcon(LucideIcons.minimize2), findsOneWidget);
+
+    // Verify TV Home carousels are present
+    expect(find.text('Trending Now'), findsOneWidget);
+    expect(find.text('Recommended For You'), findsOneWidget);
+    expect(find.text('Top Charts'), findsOneWidget);
+  });
+
+  testWidgets('TvHomeScreen switches between sidebar tabs', (tester) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final fakePlayer = FakePlayerController();
+    await tester.pumpWidget(
+      _buildTvHarness(
+        playerController: fakePlayer,
+        libraryRepo: libraryRepo,
+        sampleTracks: const [sampleTrack],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 1. Switch to Search tab
+    await tester.tap(find.byTooltip('Search'));
+    await tester.pumpAndSettle();
+    expect(find.text('Search songs, artists, or genres...'), findsOneWidget);
+    expect(find.text('Browse Categories & Moods'), findsOneWidget);
+
+    // 2. Switch to Library tab
+    await tester.tap(find.byTooltip('Library'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Liked Songs'), findsOneWidget);
+
+    // 3. Switch to Settings tab
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Awady Connect Receiver'), findsOneWidget);
+
+    // 4. Switch back to Home tab
+    await tester.tap(find.byTooltip('Home'));
+    await tester.pumpAndSettle();
+    expect(find.text('Trending Now'), findsOneWidget);
   });
 
   testWidgets('TvHomeScreen renders track details and triggers controls', (
@@ -130,8 +219,16 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _buildTvHarness(playerController: fakePlayer, libraryRepo: libraryRepo),
+      _buildTvHarness(
+        playerController: fakePlayer,
+        libraryRepo: libraryRepo,
+        sampleTracks: const [sampleTrack],
+      ),
     );
+    await tester.pumpAndSettle();
+
+    // Navigate to Now Playing tab via sidebar
+    await tester.tap(find.byTooltip('Now Playing'));
     await tester.pumpAndSettle();
 
     expect(find.text('Blinding Lights'), findsOneWidget);
@@ -143,6 +240,12 @@ void main() {
     await tester.tap(pauseFinder);
     expect(fakePlayer.toggleCalled, isTrue);
 
+    // Tap next button
+    final nextFinder = find.byIcon(LucideIcons.skipForward);
+    expect(nextFinder, findsOneWidget);
+    await tester.tap(nextFinder);
+    expect(fakePlayer.nextCalled, isTrue);
+
     // Switch right panel to Up Next tab
     final upNextTab = find.text('Up Next (1)');
     expect(upNextTab, findsOneWidget);
@@ -151,5 +254,79 @@ void main() {
 
     // Verify track is listed in Up Next queue
     expect(find.text('Blinding Lights'), findsWidgets);
+
+    // Tap Back button in Now Playing
+    final backFinder = find.byIcon(LucideIcons.arrowLeft);
+    expect(backFinder, findsOneWidget);
+    await tester.tap(backFinder);
+    await tester.pumpAndSettle();
+
+    // Should return to Home tab
+    expect(find.text('Trending Now'), findsOneWidget);
+  });
+
+  testWidgets(
+    'TvHomeScreen shows TV Mini Player when browsing with active track',
+    (tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final fakePlayer = FakePlayerController(
+        initial: const PlayerState(
+          queue: [sampleTrack],
+          index: 0,
+          isPlaying: true,
+          duration: Duration(seconds: 200),
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildTvHarness(
+          playerController: fakePlayer,
+          libraryRepo: libraryRepo,
+          sampleTracks: const [sampleTrack],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // In Home tab, with track playing, mini player is visible.
+      // Tap on the mini player's track info (e.g. artist text in mini player)
+      final miniPlayerArtistFinder = find.text('The Weeknd').last;
+      await tester.tap(miniPlayerArtistFinder);
+      await tester.pumpAndSettle();
+
+      // Should now be on Now Playing view: Back button is present
+      expect(find.byIcon(LucideIcons.arrowLeft), findsOneWidget);
+    },
+  );
+
+  testWidgets('TvHomeScreen handles Exit TV mode button', (tester) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    var exitCalled = false;
+    final fakePlayer = FakePlayerController();
+    await tester.pumpWidget(
+      _buildTvHarness(
+        playerController: fakePlayer,
+        libraryRepo: libraryRepo,
+        onExitTvMode: () => exitCalled = true,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Tap Exit TV button
+    await tester.tap(find.byTooltip('Exit TV Mode'));
+    await tester.pumpAndSettle();
+
+    expect(exitCalled, isTrue);
   });
 }
