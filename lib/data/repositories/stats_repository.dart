@@ -278,6 +278,7 @@ class StatsRepository {
   void setState(StatsState newState) {
     _state = newState;
     _controller.add(_state);
+    _persist();
   }
 
   /// Accumulates listening time in milliseconds for [track].

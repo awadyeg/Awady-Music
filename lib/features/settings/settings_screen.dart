@@ -4,6 +4,7 @@ import 'package:awady_music/core/l10n/l10n.dart';
 import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/core/util/log.dart';
+import 'package:awady_music/data/repositories/backup_repository.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/data/repositories/stats_repository.dart';
 import 'package:awady_music/player/player_controller.dart';
@@ -314,12 +315,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       icon: LucideIcons.share2,
                       title: l10n.settingsExport,
                       tokens: tokens,
-                      onTap: () {
-                        ref.read(statsRepositoryProvider).flush();
-                        _showToast(
-                          l10n.settingsBackupExported,
-                          LucideIcons.check,
-                        );
+                      onTap: () async {
+                        try {
+                          ref.read(statsRepositoryProvider).flush();
+                          await ref
+                              .read(backupRepositoryProvider)
+                              .exportAndShare();
+                          _showToast(
+                            l10n.settingsBackupExported,
+                            LucideIcons.check,
+                          );
+                        } on Object catch (_) {
+                          _showToast(
+                            l10n.settingsExportFailed,
+                            LucideIcons.alertCircle,
+                          );
+                        }
+                      },
+                    ),
+                    _buildDivider(tokens),
+
+                    // Import backup
+                    _buildNavTile(
+                      icon: LucideIcons.fileInput,
+                      title: l10n.importBackup,
+                      tokens: tokens,
+                      onTap: () async {
+                        try {
+                          final res = await ref
+                              .read(backupRepositoryProvider)
+                              .pickAndImportBackup();
+                          if (res != null) {
+                            if (res.success) {
+                              _showToast(
+                                l10n.importBackupSuccess,
+                                LucideIcons.check,
+                              );
+                            } else {
+                              _showToast(
+                                res.error ?? l10n.importFailed,
+                                LucideIcons.alertCircle,
+                              );
+                            }
+                          }
+                        } on Object catch (_) {
+                          _showToast(
+                            l10n.importFailed,
+                            LucideIcons.alertCircle,
+                          );
+                        }
                       },
                     ),
                     _buildDivider(tokens),
