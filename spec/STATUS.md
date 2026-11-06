@@ -79,12 +79,13 @@
 - T-62: YT Music playlist import (implemented lib/data/sources/youtube/yt_playlist_importer.dart extracting list ID from music.youtube.com URLs, watch links, raw IDs, stripping VL prefixes, and fetching tracks via InnertubeClient.playlist; 8 unit tests passing, total 379 tests)
 - T-63: CSV and JSON parser (implemented lib/data/sources/importer/playlist_file_parser.dart porting csvRows character-by-character parser with quotes and commas, Spotify and loose column detection findCols, and .freebify.json / awadymusic playlist JSON reader; 12 unit tests passing, total 391 tests)
 - T-64: ImportQueue (implemented lib/data/repositories/import_queue.dart faithfully porting src/store/resolve.ts with pending row queue, background matching concurrency 3, SQLite song_matches database caching, tap-to-resolve out-of-band jump resolveNow, retry & drop logic, and resumePending on app open; 5 unit tests passing, total 396 tests)
+- T-65: Import sheet UI (implemented lib/widgets/import_sheet.dart with URL input field, submit button, file picker for CSV/JSON, inline error handling, library import action in LibraryScreen, /import route in AppRouter, and lib/core/util/deep_link_handler.dart handling awadymusic:// and Spotify/YouTube shared links; 8 unit & widget tests passing, total 404 tests)
 
 ## In Progress
-- T-65: Import sheet UI (Phase 6: Import, downloads, backup)
-
-## Next
 - T-66: Downloads (Phase 6: Import, downloads, backup)
 
+## Next
+- T-67: Backup export/import (Phase 6: Import, downloads, backup)
+
 ## Left
-- 6 tasks remaining (T-65 to T-70)
+- 5 tasks remaining (T-66 to T-70)

@@ -15,6 +15,7 @@ import 'package:awady_music/features/stats/stats_screen.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/equalizer_sheet.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
+import 'package:awady_music/widgets/import_sheet.dart';
 import 'package:awady_music/widgets/mini_player.dart';
 import 'package:awady_music/widgets/offline_banner.dart';
 import 'package:flutter/material.dart';
@@ -230,8 +231,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/import',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => PlaceholderScreen(
-          'ImportScreen: ${state.uri.queryParameters['url'] ?? ''}',
+        builder: (context, state) => Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/library');
+                }
+              },
+            ),
+          ),
+          body: SafeArea(
+            child: ImportSheet(initialUrl: state.uri.queryParameters['url']),
+          ),
         ),
       ),
       GoRoute(

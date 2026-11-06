@@ -8,6 +8,7 @@ import 'package:awady_music/data/models/artwork.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
 import 'package:awady_music/widgets/collage_cover.dart';
+import 'package:awady_music/widgets/import_sheet.dart';
 import 'package:awady_music/widgets/large_title_scaffold.dart';
 import 'package:awady_music/widgets/section_header.dart';
 import 'package:flutter/material.dart';
@@ -131,9 +132,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       title: l10n.sideYourLibrary,
       actions: [
         IconButton(
+          key: const Key('library_import_button'),
           icon: const Icon(LucideIcons.link2, size: 22),
           tooltip: l10n.importTitle,
-          onPressed: () => context.push('/import'),
+          onPressed: () => showImportSheet(context),
         ),
         IconButton(
           icon: const Icon(LucideIcons.settings, size: 22),
