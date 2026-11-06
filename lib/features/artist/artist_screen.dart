@@ -43,11 +43,16 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     return count.toString();
   }
 
+  String get _providerKey =>
+      (widget.nameHint != null && widget.nameHint!.trim().isNotEmpty)
+      ? '${widget.id}\t${widget.nameHint!.trim()}'
+      : widget.id;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final tokens = Theme.of(context).glass;
-    final artistAsync = ref.watch(artistPageProvider(widget.id));
+    final artistAsync = ref.watch(artistPageProvider(_providerKey));
 
     return Scaffold(
       backgroundColor: tokens.bg,
@@ -114,7 +119,13 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
               ),
               child: const Icon(LucideIcons.arrowLeft, color: Colors.white),
             ),
-            onPressed: () => context.pop(),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
           ),
           flexibleSpace: FlexibleSpaceBar(
             stretchModes: const [
@@ -581,7 +592,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                 side: BorderSide(color: tokens.glassStroke),
                 shape: const StadiumBorder(),
               ),
-              onPressed: () => ref.refresh(artistPageProvider(widget.id)),
+              onPressed: () => ref.refresh(artistPageProvider(_providerKey)),
               child: Text(l10n.artistRetry),
             ),
           ],

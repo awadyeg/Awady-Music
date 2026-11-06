@@ -362,10 +362,21 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                               GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: () {
-                                  if (track.artist.id.isNotEmpty) {
+                                  final rawId =
+                                      (track.artist.id.isNotEmpty &&
+                                          track.artist.id != 'yt-')
+                                      ? track.artist.id
+                                      : 'yt-${track.artist.name}';
+                                  if (rawId.isNotEmpty && rawId != 'yt-') {
+                                    final encodedId = Uri.encodeComponent(
+                                      rawId,
+                                    );
+                                    final encodedName = Uri.encodeComponent(
+                                      track.artist.name,
+                                    );
                                     unawaited(
                                       context.push(
-                                        '/artist/${track.artist.id}',
+                                        '/artist/$encodedId?n=$encodedName',
                                       ),
                                     );
                                   }

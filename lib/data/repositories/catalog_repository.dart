@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:awady_music/core/util/log.dart';
+import 'package:awady_music/data/models/artist.dart';
 import 'package:awady_music/data/models/artist_page.dart';
 import 'package:awady_music/data/models/mood_models.dart';
 import 'package:awady_music/data/models/playlist_page.dart';
@@ -145,7 +146,8 @@ class CatalogRepositoryImpl implements CatalogRepository {
   Future<ArtistPage> artist(String channelId, {String? nameHint}) async {
     final cleanId = channelId
         .replaceFirst(RegExp('^yt-'), '')
-        .replaceFirst(RegExp('^MPLA'), '');
+        .replaceFirst(RegExp('^MPLA'), '')
+        .trim();
     final isYtChannel =
         channelId.startsWith('yt-') ||
         cleanId.startsWith('UC') ||
@@ -163,11 +165,32 @@ class CatalogRepositoryImpl implements CatalogRepository {
     }
 
     try {
-      var user = await audiusClient.user(channelId);
-      if (user == null && nameHint != null && nameHint.isNotEmpty) {
-        final searchHits = await audiusClient.searchUsers(nameHint);
-        if (searchHits.isNotEmpty) {
-          user = searchHits.first;
+      Artist? user;
+      if (!isYtChannel) {
+        try {
+          user = await audiusClient.user(channelId);
+        } on Object catch (e) {
+          Log.w('Audius direct user lookup failed for $channelId: $e');
+        }
+      }
+
+      if (user == null && !isYtChannel) {
+        try {
+          return await innertubeClient.artist(channelId, nameHint: nameHint);
+        } on Object catch (e) {
+          Log.w('Innertube artist lookup failed for $channelId: $e');
+        }
+      }
+
+      if (user == null) {
+        final searchQuery = (nameHint != null && nameHint.trim().isNotEmpty)
+            ? nameHint.trim()
+            : (!cleanId.startsWith('UC') ? cleanId : '');
+        if (searchQuery.isNotEmpty) {
+          final searchHits = await audiusClient.searchUsers(searchQuery);
+          if (searchHits.isNotEmpty) {
+            user = searchHits.first;
+          }
         }
       }
 

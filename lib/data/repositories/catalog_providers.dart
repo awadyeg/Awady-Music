@@ -50,10 +50,18 @@ final suggestProvider = FutureProvider.family<List<String>, String>((
 /// Future provider family for artist detail page data.
 final artistPageProvider = FutureProvider.family<ArtistPage, String>((
   ref,
-  channelId,
+  key,
 ) {
   ref.keepAlive5Min();
-  return ref.watch(catalogRepositoryProvider).artist(channelId);
+  final tabIdx = key.indexOf('\t');
+  if (tabIdx >= 0) {
+    final channelId = key.substring(0, tabIdx);
+    final nameHint = key.substring(tabIdx + 1);
+    return ref
+        .watch(catalogRepositoryProvider)
+        .artist(channelId, nameHint: nameHint.isNotEmpty ? nameHint : null);
+  }
+  return ref.watch(catalogRepositoryProvider).artist(key);
 });
 
 /// Future provider family for playlist page data.

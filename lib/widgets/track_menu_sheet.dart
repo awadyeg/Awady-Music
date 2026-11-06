@@ -335,7 +335,8 @@ class TrackMenuSheet extends ConsumerWidget {
                   },
                 ),
                 // Go to artist
-                if (track.artist.id.isNotEmpty) ...[
+                if (track.artist.id.isNotEmpty ||
+                    track.artist.name.isNotEmpty) ...[
                   ListTile(
                     leading: Icon(
                       LucideIcons.user,
@@ -348,7 +349,18 @@ class TrackMenuSheet extends ConsumerWidget {
                     ),
                     onTap: () {
                       Navigator.pop(context);
-                      unawaited(context.push('/artist/${track.artist.id}'));
+                      final rawId =
+                          (track.artist.id.isNotEmpty &&
+                              track.artist.id != 'yt-')
+                          ? track.artist.id
+                          : 'yt-${track.artist.name}';
+                      final encodedId = Uri.encodeComponent(rawId);
+                      final encodedName = Uri.encodeComponent(
+                        track.artist.name,
+                      );
+                      unawaited(
+                        context.push('/artist/$encodedId?n=$encodedName'),
+                      );
                     },
                   ),
                 ],

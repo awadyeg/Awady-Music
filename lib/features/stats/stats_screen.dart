@@ -403,87 +403,101 @@ class StatsScreen extends ConsumerWidget {
                 ...topArtists.take(5).toList().asMap().entries.map((entry) {
                   final index = entry.key;
                   final artist = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 6,
-                      horizontal: 4,
-                    ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 22,
-                          child: Text(
-                            '${index + 1}',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: tokens.textDim,
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      if (artist.name.trim().isNotEmpty) {
+                        final encodedId = Uri.encodeComponent(
+                          'yt-${artist.name}',
+                        );
+                        final encodedName = Uri.encodeComponent(artist.name);
+                        unawaited(
+                          context.push('/artist/$encodedId?n=$encodedName'),
+                        );
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 6,
+                        horizontal: 4,
+                      ),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 22,
+                            child: Text(
+                              '${index + 1}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: tokens.textDim,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        ClipOval(
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            color: tokens.bgElevated,
-                            child: Center(
-                              child: Text(
-                                artist.name.isNotEmpty
-                                    ? artist.name[0].toUpperCase()
-                                    : 'A',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: tokens.accent,
+                          const SizedBox(width: 10),
+                          ClipOval(
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              color: tokens.bgElevated,
+                              child: Center(
+                                child: Text(
+                                  artist.name.isNotEmpty
+                                      ? artist.name[0].toUpperCase()
+                                      : 'A',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: tokens.accent,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            artist.name,
-                            textDirection: _detectDirection(artist.name),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: tokens.textPrimary,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              artist.name,
+                              textDirection: _detectDirection(artist.name),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: tokens.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              LucideIcons.play,
-                              size: 12,
-                              color: tokens.textDim,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              '${artist.plays}',
-                              style: TextStyle(
-                                fontSize: 12,
+                          const SizedBox(width: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                LucideIcons.play,
+                                size: 12,
                                 color: tokens.textDim,
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              FormatUtils.formatDuration(artist.ms ~/ 1000),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: tokens.textDim,
+                              const SizedBox(width: 3),
+                              Text(
+                                '${artist.plays}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: tokens.textDim,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 10),
+                              Text(
+                                FormatUtils.formatDuration(artist.ms ~/ 1000),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: tokens.textDim,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }),

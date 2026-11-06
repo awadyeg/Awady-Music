@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/core/util/semaphore.dart';
+import 'package:awady_music/data/models/artist.dart';
 import 'package:awady_music/data/models/artist_page.dart';
 import 'package:awady_music/data/models/mood_models.dart';
 import 'package:awady_music/data/models/playlist_page.dart';
@@ -189,43 +190,207 @@ class InnertubeClient {
     return _searchParser.parseSuggestions(res);
   }
 
-  /// Fetches and parses full artist profile, top tracks, and discography.
-  Future<ArtistPage> artist(String channelId, {String? nameHint}) async {
-    var cleanId = channelId.startsWith('yt-')
-        ? channelId.substring(3)
-        : channelId;
-    if (cleanId.startsWith('MPLA')) {
-      cleanId = cleanId.substring(4);
+  static final RegExp _ucChannelPattern = RegExp(r'^UC[\w-]{8,}$');
+
+  Artist? _pickArtistFromSearch(SearchResults searchRes, String query) {
+    final qLower = query.trim().toLowerCase();
+    if (searchRes.top is Artist) {
+      final topArtist = searchRes.top! as Artist;
+      final topCid = (topArtist.streamId ?? topArtist.id)
+          .replaceFirst(RegExp('^yt-'), '')
+          .replaceFirst(RegExp('^MPLA'), '')
+          .trim();
+      if (_ucChannelPattern.hasMatch(topCid)) {
+        return topArtist;
+      }
     }
 
-    if (!cleanId.startsWith('UC') && !cleanId.startsWith('MPRE')) {
-      final query = (nameHint != null && nameHint.trim().isNotEmpty)
-          ? nameHint.trim()
-          : cleanId;
-      final searchRes = await search(query);
-      if (searchRes.artists.isNotEmpty) {
-        final matched = searchRes.artists.first;
-        final matchedId = matched.streamId ?? matched.id;
-        cleanId = matchedId.startsWith('yt-')
-            ? matchedId.substring(3)
-            : matchedId;
-      } else if (searchRes.songs.isNotEmpty) {
-        final firstSong = searchRes.songs.first;
-        return ArtistPage(
-          artist: firstSong.artist,
-          topSongs: searchRes.songs,
-          albums: searchRes.playlists.where((p) => p.isAlbum).toList(),
-          singles: searchRes.playlists.where((p) => !p.isAlbum).toList(),
+    if (searchRes.artists.isNotEmpty) {
+      for (final a in searchRes.artists) {
+        if (a.name.trim().toLowerCase() == qLower) {
+          return a;
+        }
+      }
+      for (final a in searchRes.artists) {
+        if (a.name.toLowerCase().contains(qLower) ||
+            (qLower.isNotEmpty && qLower.contains(a.name.toLowerCase()))) {
+          return a;
+        }
+      }
+      return searchRes.artists.first;
+    }
+
+    for (final song in searchRes.songs) {
+      final cid = (song.artist.streamId ?? song.artist.id)
+          .replaceFirst(RegExp('^yt-'), '')
+          .replaceFirst(RegExp('^MPLA'), '')
+          .trim();
+      if (_ucChannelPattern.hasMatch(cid)) {
+        return song.artist;
+      }
+    }
+
+    if (searchRes.top is Artist) {
+      return searchRes.top! as Artist;
+    }
+    return null;
+  }
+
+  /// Fetches and parses full artist profile, top tracks, and discography.
+  Future<ArtistPage> artist(String channelId, {String? nameHint}) async {
+    var cleanId = channelId
+        .replaceFirst(RegExp('^yt-'), '')
+        .replaceFirst(RegExp('^MPLA'), '')
+        .trim();
+
+    final effectiveHint = (nameHint != null && nameHint.trim().isNotEmpty)
+        ? nameHint.trim()
+        : (!_ucChannelPattern.hasMatch(cleanId) && cleanId.isNotEmpty
+              ? cleanId
+              : null);
+
+    SearchResults? cachedSearch;
+    Artist? searchMatchedArtist;
+
+    if (!_ucChannelPattern.hasMatch(cleanId)) {
+      final query = effectiveHint ?? cleanId;
+      if (query.isEmpty) {
+        throw StateError('Empty artist identifier');
+      }
+      cachedSearch = await search(query);
+      searchMatchedArtist = _pickArtistFromSearch(cachedSearch, query);
+      if (searchMatchedArtist != null) {
+        final matchedId =
+            (searchMatchedArtist.streamId ?? searchMatchedArtist.id)
+                .replaceFirst(RegExp('^yt-'), '')
+                .replaceFirst(RegExp('^MPLA'), '')
+                .trim();
+        if (_ucChannelPattern.hasMatch(matchedId)) {
+          cleanId = matchedId;
+        }
+      }
+      if (!_ucChannelPattern.hasMatch(cleanId)) {
+        if (cachedSearch.songs.isNotEmpty || searchMatchedArtist != null) {
+          final fallbackArtist =
+              searchMatchedArtist ?? cachedSearch.songs.first.artist;
+          return ArtistPage(
+            artist: fallbackArtist.copyWith(
+              trackCount: cachedSearch.songs.length,
+            ),
+            topSongs: cachedSearch.songs,
+            albums: cachedSearch.playlists.where((p) => p.isAlbum).toList(),
+            singles: cachedSearch.playlists.where((p) => !p.isAlbum).toList(),
+          );
+        }
+        throw StateError('Artist not found on YouTube Music for "$query"');
+      }
+    }
+
+    ArtistPage? page;
+    Exception? browseError;
+    try {
+      final res = await post('browse', {'browseId': cleanId});
+      page = _artistParser.parseArtistPage(
+        res,
+        channelId: cleanId,
+        nameHint: effectiveHint ?? searchMatchedArtist?.name,
+      );
+    } on Exception catch (e) {
+      browseError = e;
+      Log.w('Innertube browse failed for artist $cleanId: $e');
+    }
+
+    final isDeadPage =
+        page == null ||
+        (page.topSongs.isEmpty && page.albums.isEmpty && page.singles.isEmpty);
+
+    if (isDeadPage) {
+      final rescueQuery =
+          effectiveHint ??
+          searchMatchedArtist?.name ??
+          (page != null &&
+                  page.artist.name.isNotEmpty &&
+                  page.artist.name != 'Artist'
+              ? page.artist.name
+              : null);
+      if (rescueQuery != null && rescueQuery.isNotEmpty) {
+        try {
+          cachedSearch ??= await search(rescueQuery);
+          searchMatchedArtist ??= _pickArtistFromSearch(
+            cachedSearch,
+            rescueQuery,
+          );
+          if (searchMatchedArtist != null) {
+            final rescueCid =
+                (searchMatchedArtist.streamId ?? searchMatchedArtist.id)
+                    .replaceFirst(RegExp('^yt-'), '')
+                    .replaceFirst(RegExp('^MPLA'), '')
+                    .trim();
+            if (_ucChannelPattern.hasMatch(rescueCid) && rescueCid != cleanId) {
+              final res2 = await post('browse', {'browseId': rescueCid});
+              page = _artistParser.parseArtistPage(
+                res2,
+                channelId: rescueCid,
+                nameHint: searchMatchedArtist.name,
+              );
+            }
+          }
+        } on Object catch (e) {
+          Log.w('Innertube artist rescue search failed for "$rescueQuery": $e');
+        }
+      }
+    }
+
+    if (page != null && page.topSongs.isEmpty) {
+      final songQuery =
+          (page.artist.name.isNotEmpty && page.artist.name != 'Artist')
+          ? page.artist.name
+          : effectiveHint;
+      if (cachedSearch == null && songQuery != null && songQuery.isNotEmpty) {
+        try {
+          cachedSearch = await search(songQuery);
+        } on Object catch (_) {}
+      }
+      if (cachedSearch != null && cachedSearch.songs.isNotEmpty) {
+        page = ArtistPage(
+          artist: page.artist.copyWith(
+            trackCount: cachedSearch.songs.length,
+            profilePicture:
+                page.artist.profilePicture ??
+                searchMatchedArtist?.profilePicture,
+          ),
+          topSongs: cachedSearch.songs,
+          albums: page.albums.isNotEmpty
+              ? page.albums
+              : cachedSearch.playlists.where((p) => p.isAlbum).toList(),
+          singles: page.singles.isNotEmpty
+              ? page.singles
+              : cachedSearch.playlists.where((p) => !p.isAlbum).toList(),
+          bio: page.bio,
         );
       }
     }
 
-    final res = await post('browse', {'browseId': cleanId});
-    return _artistParser.parseArtistPage(
-      res,
-      channelId: cleanId,
-      nameHint: nameHint,
-    );
+    if (page != null) {
+      return page;
+    }
+
+    if (cachedSearch != null &&
+        (cachedSearch.songs.isNotEmpty || searchMatchedArtist != null)) {
+      final fallbackArtist =
+          searchMatchedArtist ?? cachedSearch.songs.first.artist;
+      return ArtistPage(
+        artist: fallbackArtist.copyWith(trackCount: cachedSearch.songs.length),
+        topSongs: cachedSearch.songs,
+        albums: cachedSearch.playlists.where((p) => p.isAlbum).toList(),
+        singles: cachedSearch.playlists.where((p) => !p.isAlbum).toList(),
+      );
+    }
+
+    if (browseError != null) {
+      throw browseError;
+    }
+    throw StateError('Artist not found for $channelId');
   }
 
   /// Fetches an album by its browseId (e.g. MPREb_...).

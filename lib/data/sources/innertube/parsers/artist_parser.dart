@@ -51,38 +51,43 @@ class ArtistParser {
     final followerCount = parseCount(subText);
 
     // Banners & Avatar
-    final bannerThumbnails =
-        dig(header, [
-          'thumbnail',
-          'musicThumbnailRenderer',
-          'thumbnail',
-          'thumbnails',
-        ]) as List? ??
-        dig(header, [
-          'foregroundThumbnail',
-          'musicThumbnailRenderer',
-          'thumbnail',
-          'thumbnails',
-        ]) as List?;
+    final bannerThumbnails = dig(header, [
+      'thumbnail',
+      'musicThumbnailRenderer',
+      'thumbnail',
+      'thumbnails',
+    ]) as List?;
+    final foregroundThumbnails = dig(header, [
+      'foregroundThumbnail',
+      'musicThumbnailRenderer',
+      'thumbnail',
+      'thumbnails',
+    ]) as List?;
 
-    String? coverPhotoUrl;
-    Artwork? avatarArtwork;
-
-    if (bannerThumbnails != null && bannerThumbnails.isNotEmpty) {
-      final urls = bannerThumbnails
+    List<String> extractUrls(List<dynamic>? thumbs) {
+      if (thumbs == null || thumbs.isEmpty) return const [];
+      return thumbs
           .whereType<Map<String, dynamic>>()
           .map((t) => t['url'] as String? ?? '')
           .where((u) => u.isNotEmpty)
           .toList();
-      if (urls.isNotEmpty) {
-        coverPhotoUrl = urls.last;
-        avatarArtwork = Artwork(
-          s150: urls.first,
-          s480: urls.length > 1 ? urls[urls.length ~/ 2] : urls.last,
-          s1000: urls.last,
-        );
-      }
     }
+
+    final bannerUrls = extractUrls(bannerThumbnails);
+    final fgUrls = extractUrls(foregroundThumbnails);
+    final avatarUrls = fgUrls.isNotEmpty ? fgUrls : bannerUrls;
+    final coverUrls = bannerUrls.isNotEmpty ? bannerUrls : fgUrls;
+
+    final coverPhotoUrl = coverUrls.isNotEmpty ? coverUrls.last : null;
+    final avatarArtwork = avatarUrls.isNotEmpty
+        ? Artwork(
+            s150: avatarUrls.first,
+            s480: avatarUrls.length > 1
+                ? avatarUrls[avatarUrls.length ~/ 2]
+                : avatarUrls.last,
+            s1000: avatarUrls.last,
+          )
+        : null;
 
     String? bio;
     final topSongs = <Track>[];
@@ -155,15 +160,35 @@ class ArtistParser {
           ).hasMatch(shelfTitle);
 
           final items = mcsr['contents'] as List?;
-          if (items != null && (isAlbumShelf || isSingleShelf)) {
-            for (final item in items) {
-              if (item is! Map<String, dynamic>) continue;
-              final pl = _parseCarouselAlbumRow(item, artistName: name);
-              if (pl != null) {
-                if (isAlbumShelf) {
-                  albums.add(pl);
-                } else {
-                  singles.add(pl);
+          if (items != null) {
+            if (isAlbumShelf || isSingleShelf) {
+              for (final item in items) {
+                if (item is! Map<String, dynamic>) continue;
+                final pl = _parseCarouselAlbumRow(item, artistName: name);
+                if (pl != null) {
+                  if (isAlbumShelf) {
+                    albums.add(pl);
+                  } else {
+                    singles.add(pl);
+                  }
+                }
+              }
+            } else if (topSongs.length < 50) {
+              for (final item in items) {
+                if (item is! Map<String, dynamic>) continue;
+                final track =
+                    _parseArtistSongItem(
+                      item,
+                      artistName: name,
+                      artistChannelId: effectiveId,
+                    ) ??
+                    _parseCarouselSongItem(
+                      item,
+                      artistName: name,
+                      artistChannelId: effectiveId,
+                    );
+                if (track != null && topSongs.length < 50) {
+                  topSongs.add(track);
                 }
               }
             }
@@ -441,6 +466,70 @@ class ArtistParser {
       isAlbum: isAlbum,
       artwork: artwork,
       owner: Artist(id: 'yt-$artistName', name: artistName, handle: artistName),
+    );
+  }
+
+  Track? _parseCarouselSongItem(
+    Map<String, dynamic> raw, {
+    required String artistName,
+    required String artistChannelId,
+  }) {
+    final item = raw['musicTwoRowItemRenderer'] as Map<String, dynamic>? ?? raw;
+    final videoId =
+        digAs<String>(item, [
+          'navigationEndpoint',
+          'watchEndpoint',
+          'videoId',
+        ]) ??
+        digAs<String>(item, [
+          'thumbnailOverlay',
+          'musicItemThumbnailOverlayRenderer',
+          'content',
+          'musicPlayButtonRenderer',
+          'playNavigationEndpoint',
+          'watchEndpoint',
+          'videoId',
+        ]);
+    if (videoId == null || videoId.length != 11) return null;
+
+    final rawTitle = digAs<String>(item, ['title', 'runs', 0, 'text']) ?? '';
+    if (rawTitle.isEmpty) return null;
+    final title = cleanSongTitle(rawTitle);
+
+    final subRuns = dig(item, ['subtitle', 'runs']) as List?;
+    var playCount = 0;
+    if (subRuns != null) {
+      for (final run in subRuns) {
+        if (run is! Map<String, dynamic>) continue;
+        final runText = run['text'] as String? ?? '';
+        if (RegExp(
+          'views|plays|vistas',
+          caseSensitive: false,
+        ).hasMatch(runText)) {
+          playCount = parseCount(runText);
+        }
+      }
+    }
+
+    final fallbackThumb = 'https://i.ytimg.com/vi/$videoId/hqdefault.jpg';
+    final artwork = parseArtwork(
+      item['thumbnailRenderer'] ?? item['thumbnail'],
+      fallback: fallbackThumb,
+    );
+
+    return Track(
+      id: 'yt-$videoId',
+      source: TrackSource.yt,
+      streamId: videoId,
+      title: title,
+      playCount: playCount,
+      artwork: artwork,
+      artist: Artist(
+        id: 'yt-${artistChannelId.isNotEmpty ? artistChannelId : artistName}',
+        streamId: artistChannelId.isNotEmpty ? artistChannelId : null,
+        name: artistName,
+        handle: artistName,
+      ),
     );
   }
 }

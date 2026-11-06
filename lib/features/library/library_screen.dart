@@ -415,7 +415,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     size: 18,
                     color: tokens.textFaint,
                   ),
-                  onTap: () => context.push('/artist/${artist.id}'),
+                  onTap: () {
+                    final rawId = (artist.id.isNotEmpty && artist.id != 'yt-')
+                        ? artist.id
+                        : 'yt-${artist.name}';
+                    unawaited(
+                      context.push(
+                        '/artist/${Uri.encodeComponent(rawId)}?n=${Uri.encodeComponent(artist.name)}',
+                      ),
+                    );
+                  },
                 );
               },
             ),

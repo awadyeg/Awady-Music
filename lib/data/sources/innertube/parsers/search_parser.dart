@@ -228,9 +228,15 @@ class SearchParser {
           'text',
         ]) ??
         '';
-    final subtitle =
-        digAs<String>(shelf, ['subtitle', 'runs', 0, 'text']) ?? '';
-    final browseId =
+    final subRuns = dig(shelf, ['subtitle', 'runs']) as List?;
+    final subtitle = subRuns != null
+        ? subRuns
+              .whereType<Map<String, dynamic>>()
+              .map((r) => r['text'] as String? ?? '')
+              .join(' ')
+        : (digAs<String>(shelf, ['subtitle', 'runs', 0, 'text']) ?? '');
+
+    var browseId =
         digAs<String>(shelf, [
           'title',
           'runs',
@@ -244,24 +250,69 @@ class SearchParser {
           'browseEndpoint',
           'browseId',
         ]) ??
+        digAs<String>(shelf, ['onTap', 'browseEndpoint', 'browseId']) ??
+        digAs<String>(shelf, [
+          'header',
+          'musicCardShelfHeaderBasicRenderer',
+          'title',
+          'runs',
+          0,
+          'navigationEndpoint',
+          'browseEndpoint',
+          'browseId',
+        ]) ??
         '';
 
+    if (browseId.isEmpty) {
+      browseId =
+          _findArtistBrowseId(shelf['buttons']) ??
+          _findArtistBrowseId(shelf['menu']) ??
+          '';
+    }
+
+    final cleanBrowseId = browseId.replaceFirst(RegExp('^MPLA'), '').trim();
     final artwork = parseArtwork(shelf['thumbnail']);
 
     if (subtitle.toLowerCase().contains('artist') ||
-        browseId.startsWith('UC')) {
-      final monthly = digAs<String>(shelf, ['subtitle', 'runs', 2, 'text']);
+        subtitle.toLowerCase().contains('artista') ||
+        cleanBrowseId.startsWith('UC')) {
+      final effectiveId = cleanBrowseId.isNotEmpty ? cleanBrowseId : title;
+      if (effectiveId.isEmpty) return null;
+      final monthly =
+          digAs<String>(shelf, ['subtitle', 'runs', 2, 'text']) ?? subtitle;
       return Artist(
-        id: 'yt-$browseId',
-        streamId: browseId,
-        name: title,
-        handle: title,
+        id: 'yt-$effectiveId',
+        streamId: cleanBrowseId.isNotEmpty ? cleanBrowseId : null,
+        name: title.isNotEmpty ? title : effectiveId,
+        handle: title.isNotEmpty ? title : effectiveId,
         isVerified: true,
         followerCount: parseCount(monthly),
         profilePicture: artwork,
       );
     }
 
+    return null;
+  }
+
+  String? _findArtistBrowseId(dynamic node) {
+    if (node == null) return null;
+    if (node is List) {
+      for (final item in node) {
+        final found = _findArtistBrowseId(item);
+        if (found != null) return found;
+      }
+      return null;
+    }
+    if (node is Map) {
+      final bid = digAs<String>(node, ['browseEndpoint', 'browseId']);
+      if (bid != null && (bid.startsWith('UC') || bid.startsWith('MPLA'))) {
+        return bid;
+      }
+      for (final value in node.values) {
+        final found = _findArtistBrowseId(value);
+        if (found != null) return found;
+      }
+    }
     return null;
   }
 
@@ -438,7 +489,9 @@ class SearchParser {
 
   Artist? _parseArtistItem(Map<String, dynamic> raw) {
     final item =
-        raw['musicResponsiveListItemRenderer'] as Map<String, dynamic>? ?? raw;
+        raw['musicResponsiveListItemRenderer'] as Map<String, dynamic>? ??
+        raw['musicTwoRowItemRenderer'] as Map<String, dynamic>? ??
+        raw;
 
     final name =
         digAs<String>(item, [
@@ -450,14 +503,16 @@ class SearchParser {
           0,
           'text',
         ]) ??
+        digAs<String>(item, ['title', 'runs', 0, 'text']) ??
         '';
 
-    final browseId =
+    final rawBrowseId =
         digAs<String>(item, [
           'navigationEndpoint',
           'browseEndpoint',
           'browseId',
         ]) ??
+        digAs<String>(item, ['onTap', 'browseEndpoint', 'browseId']) ??
         digAs<String>(item, [
           'flexColumns',
           0,
@@ -468,7 +523,17 @@ class SearchParser {
           'navigationEndpoint',
           'browseEndpoint',
           'browseId',
+        ]) ??
+        digAs<String>(item, [
+          'title',
+          'runs',
+          0,
+          'navigationEndpoint',
+          'browseEndpoint',
+          'browseId',
         ]);
+
+    final browseId = rawBrowseId?.replaceFirst(RegExp('^MPLA'), '').trim();
 
     if (name.isEmpty || browseId == null || !browseId.startsWith('UC')) {
       return null;

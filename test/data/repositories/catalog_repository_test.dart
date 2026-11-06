@@ -390,6 +390,12 @@ void main() {
 
       final searchAsync = await container.read(searchProvider('adele').future);
       expect(searchAsync.fromFallback, isFalse);
+
+      final artistWithHint = await container.read(
+        artistPageProvider('yt-UC12345\tAdele').future,
+      );
+      expect(artistWithHint.fromFallback, isFalse);
+      expect(artistWithHint.artist.name, equals('YT Artist'));
     });
   });
 }

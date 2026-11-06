@@ -551,11 +551,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         separatorBuilder: (_, _) => const SizedBox(width: 14),
                         itemBuilder: (context, idx) {
                           final artist = results.artists[idx];
+                          final rawId =
+                              (artist.id.isNotEmpty && artist.id != 'yt-')
+                              ? artist.id
+                              : 'yt-${artist.name}';
                           return ArtistCard(
                             name: artist.name,
                             artwork: artist.profilePicture,
-                            onTap: () =>
-                                unawaited(context.push('/artist/${artist.id}')),
+                            onTap: () => unawaited(
+                              context.push(
+                                '/artist/${Uri.encodeComponent(rawId)}?n=${Uri.encodeComponent(artist.name)}',
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -631,11 +638,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final artist = results.artists[index];
+                      final rawId = (artist.id.isNotEmpty && artist.id != 'yt-')
+                          ? artist.id
+                          : 'yt-${artist.name}';
                       return ArtistCard(
                         name: artist.name,
                         artwork: artist.profilePicture,
-                        onTap: () =>
-                            unawaited(context.push('/artist/${artist.id}')),
+                        onTap: () => unawaited(
+                          context.push(
+                            '/artist/${Uri.encodeComponent(rawId)}?n=${Uri.encodeComponent(artist.name)}',
+                          ),
+                        ),
                       );
                     }, childCount: results.artists.length),
                   ),
@@ -883,8 +896,15 @@ class _TopResultCard extends ConsumerWidget {
       );
     } else if (top is Artist) {
       final artist = top as Artist;
+      final rawId = (artist.id.isNotEmpty && artist.id != 'yt-')
+          ? artist.id
+          : 'yt-${artist.name}';
       return InkWell(
-        onTap: () => unawaited(context.push('/artist/${artist.id}')),
+        onTap: () => unawaited(
+          context.push(
+            '/artist/${Uri.encodeComponent(rawId)}?n=${Uri.encodeComponent(artist.name)}',
+          ),
+        ),
         borderRadius: BorderRadius.circular(20),
         child: GlassSurface(
           padding: const EdgeInsets.all(16),
