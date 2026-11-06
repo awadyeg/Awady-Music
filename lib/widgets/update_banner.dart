@@ -31,7 +31,7 @@ class AppUpdateInfo {
 class UpdateChecker {
   static const String repoOwner = 'awadyeg';
   static const String repoName = 'Awady-Music';
-  static const String currentVersion = '1.0.5';
+  static const String currentVersion = '1.0.6';
 
   static Future<AppUpdateInfo?> checkForUpdate({
     Dio? dio,

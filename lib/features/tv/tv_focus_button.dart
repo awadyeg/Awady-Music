@@ -43,7 +43,17 @@ class _TvFocusButtonState extends State<TvFocusButton> {
       autofocus: widget.autofocus,
       focusNode: widget.focusNode,
       onFocusChange: (focused) {
-        if (mounted) setState(() => _isFocused = focused);
+        if (mounted) {
+          setState(() => _isFocused = focused);
+          if (focused) {
+            Scrollable.ensureVisible(
+              context,
+              alignment: 0.5,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+            );
+          }
+        }
       },
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent) {
@@ -51,7 +61,6 @@ class _TvFocusButtonState extends State<TvFocusButton> {
           if (key == LogicalKeyboardKey.select ||
               key == LogicalKeyboardKey.enter ||
               key == LogicalKeyboardKey.numpadEnter ||
-              key == LogicalKeyboardKey.space ||
               key == LogicalKeyboardKey.gameButtonA) {
             _handlePress();
             return KeyEventResult.handled;
@@ -85,13 +94,18 @@ class _TvFocusButtonState extends State<TvFocusButton> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(widget.borderRadius),
                 border: _isFocused
-                    ? Border.all(color: tokens.accent, width: 2.5)
+                    ? Border.all(color: Colors.white, width: 3)
                     : null,
                 boxShadow: _isFocused
                     ? [
                         BoxShadow(
-                          color: tokens.accent.withValues(alpha: 0.4),
-                          blurRadius: 14,
+                          color: tokens.accent,
+                          blurRadius: 18,
+                          spreadRadius: 2,
+                        ),
+                        const BoxShadow(
+                          color: Colors.black54,
+                          blurRadius: 10,
                           spreadRadius: 1,
                         ),
                       ]

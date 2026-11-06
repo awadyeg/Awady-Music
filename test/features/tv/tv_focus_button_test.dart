@@ -55,20 +55,16 @@ void main() {
     expect(pressCount, equals(2));
   });
 
-  testWidgets('TvFocusButton triggers onPressed on Space and GameButtonA', (
+  testWidgets('TvFocusButton triggers onPressed on GameButtonA', (
     tester,
   ) async {
-    var pressCount = 0;
-    await tester.pumpWidget(buildHarness(onPressed: () => pressCount++));
+    var pressed = false;
+    await tester.pumpWidget(buildHarness(onPressed: () => pressed = true));
     await tester.pumpAndSettle();
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.space);
-    await tester.pumpAndSettle();
-    expect(pressCount, equals(1));
 
     await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonA);
     await tester.pumpAndSettle();
-    expect(pressCount, equals(2));
+    expect(pressed, isTrue);
   });
 
   testWidgets('TvFocusButton triggers onPressed on tap', (tester) async {

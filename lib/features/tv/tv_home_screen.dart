@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/theme/tokens.dart';
+import 'package:awady_music/core/util/tv_detector.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/features/tv/tv_browser_views.dart';
 import 'package:awady_music/features/tv/tv_focus_button.dart';
@@ -70,9 +71,155 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
     if (_currentTab != TvTab.home) {
       setState(() => _currentTab = TvTab.home);
     } else {
-      unawaited(ref.read(settingsProvider.notifier).setTvMode('off'));
-      widget.onExitTvMode?.call();
+      unawaited(_showExitDialog());
     }
+  }
+
+  Future<void> _showExitDialog() async {
+    final tokens = Theme.of(context).glass;
+    final isNative = ref.read(isNativeTvProvider).value ?? false;
+
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (dialogContext) {
+        return Center(
+          child: Container(
+            width: 440,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF161822),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: tokens.accent.withValues(alpha: 0.4)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black87,
+                  blurRadius: 30,
+                  spreadRadius: 8,
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LucideIcons.logOut, color: tokens.accent, size: 38),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Exit Awady Music?',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Are you sure you want to close the app?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: tokens.textDim),
+                  ),
+                  const SizedBox(height: 24),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 10,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      // Cancel Button (autofocused)
+                      TvFocusButton(
+                        autofocus: true,
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        borderRadius: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: tokens.glassFill,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: tokens.glassStroke),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Exit App Button
+                      TvFocusButton(
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop();
+                          unawaited(SystemNavigator.pop());
+                          widget.onExitTvMode?.call();
+                        },
+                        borderRadius: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE11D48),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'Exit App',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      if (!isNative)
+                        TvFocusButton(
+                          onPressed: () {
+                            Navigator.of(dialogContext).pop();
+                            unawaited(
+                              ref
+                                  .read(settingsProvider.notifier)
+                                  .setTvMode('off'),
+                            );
+                            widget.onExitTvMode?.call();
+                          },
+                          borderRadius: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: tokens.accent,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Mobile Mode',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: tokens.onAccent,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -93,6 +240,7 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
               _TvPlayPauseIntent(),
           SingleActivator(LogicalKeyboardKey.mediaPlay): _TvPlayPauseIntent(),
           SingleActivator(LogicalKeyboardKey.mediaPause): _TvPlayPauseIntent(),
+          SingleActivator(LogicalKeyboardKey.space): _TvPlayPauseIntent(),
           SingleActivator(LogicalKeyboardKey.mediaTrackNext): _TvNextIntent(),
           SingleActivator(LogicalKeyboardKey.mediaTrackPrevious):
               _TvPrevIntent(),
@@ -154,19 +302,20 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
 
                       // Right Content Area
                       Expanded(
-                        child: Stack(
+                        child: Column(
                           children: [
-                            Positioned.fill(
-                              child: _buildActiveContentView(curTrack),
-                            ),
+                            Expanded(child: _buildActiveContentView(curTrack)),
 
                             // Persistent TV Mini Player (when browsing)
                             if (_currentTab != TvTab.nowPlaying &&
                                 curTrack != null)
-                              Positioned(
-                                left: 16,
-                                right: 24,
-                                bottom: 12,
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  6,
+                                  24,
+                                  10,
+                                ),
                                 child: _buildTvMiniPlayer(tokens, curTrack, ps),
                               ),
                           ],
@@ -240,24 +389,17 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
 
           const Spacer(),
 
-          // Exit TV Mode
+          // Exit App
           TvFocusButton(
-            onPressed: () {
-              unawaited(ref.read(settingsProvider.notifier).setTvMode('off'));
-              widget.onExitTvMode?.call();
-            },
-            tooltip: 'Exit TV Mode',
+            onPressed: _handleBack,
+            tooltip: 'Exit App',
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: tokens.glassFill,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                LucideIcons.minimize2,
-                color: tokens.textDim,
-                size: 18,
-              ),
+              child: Icon(LucideIcons.logOut, color: tokens.textDim, size: 18),
             ),
           ),
         ],
@@ -370,73 +512,83 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
     final player = ref.read(playerControllerProvider.notifier);
 
     return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: const Color(0xEE161822),
+        color: const Color(0xFA141620),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: tokens.accent.withValues(alpha: 0.3)),
+        border: Border.all(color: tokens.accent.withValues(alpha: 0.35)),
         boxShadow: const [
-          BoxShadow(color: Colors.black45, blurRadius: 16, spreadRadius: 2),
+          BoxShadow(color: Colors.black54, blurRadius: 16, spreadRadius: 2),
         ],
       ),
       child: Row(
         children: [
-          TvFocusButton(
-            onPressed: () {
-              setState(() {
-                _previousTab = _currentTab;
-                _currentTab = TvTab.nowPlaying;
-              });
-            },
-            borderRadius: 8,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: SizedBox(
-                width: 36,
-                height: 36,
-                child: ArtworkImage(art: track.artwork, size: 72),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
+          // Unified Focusable Artwork & Title
           Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
+            child: TvFocusButton(
+              onPressed: () {
                 setState(() {
                   _previousTab = _currentTab;
                   _currentTab = TvTab.nowPlaying;
                 });
               },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    track.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: tokens.textPrimary,
+              tooltip: 'Open Now Playing',
+              borderRadius: 10,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: ArtworkImage(art: track.artwork, size: 72),
+                      ),
                     ),
-                  ),
-                  Text(
-                    track.artist.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11, color: tokens.textDim),
-                  ),
-                ],
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            track.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: tokens.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            track.artist.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: tokens.textDim,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
+          const SizedBox(width: 8),
+
+          // Previous Button
           TvFocusButton(
             onPressed: player.prev,
+            tooltip: 'Previous',
+            borderRadius: 8,
             child: Padding(
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(6),
               child: Icon(
                 LucideIcons.skipBack,
                 color: tokens.textPrimary,
@@ -445,8 +597,12 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
             ),
           ),
           const SizedBox(width: 6),
+
+          // Play / Pause Button
           TvFocusButton(
             onPressed: player.toggle,
+            tooltip: ps.isPlaying ? 'Pause' : 'Play',
+            borderRadius: 18,
             child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
@@ -461,10 +617,14 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
             ),
           ),
           const SizedBox(width: 6),
+
+          // Next Button
           TvFocusButton(
             onPressed: player.next,
+            tooltip: 'Next',
+            borderRadius: 8,
             child: Padding(
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(6),
               child: Icon(
                 LucideIcons.skipForward,
                 color: tokens.textPrimary,
@@ -472,7 +632,9 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
+
+          // Fullscreen Player Button
           TvFocusButton(
             onPressed: () {
               setState(() {
@@ -480,8 +642,10 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
                 _currentTab = TvTab.nowPlaying;
               });
             },
+            tooltip: 'Fullscreen Player',
+            borderRadius: 8,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: tokens.accent.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(8),

@@ -9,6 +9,7 @@ import 'package:awady_music/data/repositories/catalog_providers.dart';
 import 'package:awady_music/data/repositories/catalog_repository.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/data/repositories/lyrics_repository.dart';
+import 'package:awady_music/features/tv/tv_focus_button.dart';
 import 'package:awady_music/features/tv/tv_home_screen.dart';
 import 'package:awady_music/player/connect_receiver.dart';
 import 'package:awady_music/player/player_controller.dart';
@@ -152,7 +153,7 @@ void main() {
     expect(find.byIcon(LucideIcons.library), findsOneWidget);
     expect(find.byIcon(LucideIcons.disc), findsOneWidget);
     expect(find.byIcon(LucideIcons.settings), findsOneWidget);
-    expect(find.byIcon(LucideIcons.minimize2), findsOneWidget);
+    expect(find.byIcon(LucideIcons.logOut), findsOneWidget);
 
     // Verify TV Home carousels are present
     expect(find.text('Trending Now'), findsOneWidget);
@@ -295,9 +296,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // In Home tab, with track playing, mini player is visible.
-      // Tap on the mini player's track info (e.g. artist text in mini player)
-      final miniPlayerArtistFinder = find.text('The Weeknd').last;
-      await tester.tap(miniPlayerArtistFinder);
+      // Tap on the mini player's unified Open Now Playing button
+      await tester.tap(find.byTooltip('Open Now Playing'));
       await tester.pumpAndSettle();
 
       // Should now be on Now Playing view: Back button is present
@@ -305,7 +305,7 @@ void main() {
     },
   );
 
-  testWidgets('TvHomeScreen handles Exit TV mode button', (tester) async {
+  testWidgets('TvHomeScreen handles Exit App flow via dialog', (tester) async {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -324,8 +324,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Tap Exit TV button
-    await tester.tap(find.byTooltip('Exit TV Mode'));
+    // Tap Exit App button in sidebar
+    await tester.tap(find.byTooltip('Exit App'));
+    await tester.pumpAndSettle();
+
+    // Dialog appears with 'Exit Awady Music?' and 'Exit App' button
+    expect(find.text('Exit Awady Music?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TvFocusButton, 'Exit App'));
     await tester.pumpAndSettle();
 
     expect(exitCalled, isTrue);
@@ -363,5 +368,40 @@ void main() {
     expect(find.text('Search songs, artists, or genres...'), findsOneWidget);
     // Verify fakePlayer.toggle was NOT hijacked by the select key
     expect(fakePlayer.toggleCalled, isFalse);
+  });
+
+  testWidgets('TvHomeScreen toggles playback globally on Space key', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final fakePlayer = FakePlayerController(
+      initial: const PlayerState(
+        queue: [sampleTrack],
+        index: 0,
+        isPlaying: true,
+        duration: Duration(seconds: 200),
+      ),
+    );
+
+    await tester.pumpWidget(
+      _buildTvHarness(
+        playerController: fakePlayer,
+        libraryRepo: libraryRepo,
+        sampleTracks: const [sampleTrack],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Press Space anywhere while browsing
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pumpAndSettle();
+
+    expect(fakePlayer.toggleCalled, isTrue);
   });
 }

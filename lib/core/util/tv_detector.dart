@@ -21,11 +21,15 @@ final isNativeTvProvider = FutureProvider<bool>((ref) async {
 /// Indicates whether TV mode is currently active based on user settings
 /// and system detection.
 final isTvModeProvider = Provider<bool>((ref) {
+  final isNativeTv = ref.watch(isNativeTvProvider).value ?? false;
+  // Actual Android TV devices always run in TV mode to prevent accidental
+  // drop into touch-only mobile UI.
+  if (isNativeTv) return true;
+
   final settings = ref.watch(settingsProvider);
   if (settings.tvMode == 'on') return true;
   if (settings.tvMode == 'off') return false;
-  final nativeTv = ref.watch(isNativeTvProvider).value ?? false;
-  return nativeTv;
+  return false;
 });
 
 /// Utility for detecting 16:9 big screen / TV layout.
