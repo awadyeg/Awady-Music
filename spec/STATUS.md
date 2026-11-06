@@ -80,12 +80,13 @@
 - T-63: CSV and JSON parser (implemented lib/data/sources/importer/playlist_file_parser.dart porting csvRows character-by-character parser with quotes and commas, Spotify and loose column detection findCols, and .freebify.json / awadymusic playlist JSON reader; 12 unit tests passing, total 391 tests)
 - T-64: ImportQueue (implemented lib/data/repositories/import_queue.dart faithfully porting src/store/resolve.ts with pending row queue, background matching concurrency 3, SQLite song_matches database caching, tap-to-resolve out-of-band jump resolveNow, retry & drop logic, and resumePending on app open; 5 unit tests passing, total 396 tests)
 - T-65: Import sheet UI (implemented lib/widgets/import_sheet.dart with URL input field, submit button, file picker for CSV/JSON, inline error handling, library import action in LibraryScreen, /import route in AppRouter, and lib/core/util/deep_link_handler.dart handling awadymusic:// and Spotify/YouTube shared links; 8 unit & widget tests passing, total 404 tests)
+- T-66: Downloads (implemented lib/data/repositories/downloads_repository.dart with background downloading via Dio to documents/downloads/<sanitized Artist - Title>.m4a, atomic .part to .m4a rename, concurrency 2, Wi-Fi only restriction check, download progress streams, database integration in DownloadsDao, missing file pruning on app launch, deleteDownload; implemented lib/features/downloads/downloads_screen.dart with LargeTitleScaffold, subtitle count, active download items with progress bar and cancel, empty state, and Play all; wired into AppRouter /library/downloads, PlaylistScreen download all, and TrackMenuSheet download actions; 6 unit & widget tests passing, total 410 tests)
 
 ## In Progress
-- T-66: Downloads (Phase 6: Import, downloads, backup)
-
-## Next
 - T-67: Backup export/import (Phase 6: Import, downloads, backup)
 
+## Next
+- T-68: Accessibility pass (Phase 7: Polish & release)
+
 ## Left
-- 5 tasks remaining (T-66 to T-70)
+- 4 tasks remaining (T-67 to T-70)

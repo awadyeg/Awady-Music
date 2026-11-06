@@ -7,6 +7,7 @@ import 'package:awady_music/data/models/artwork.dart';
 import 'package:awady_music/data/models/local_playlist.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/repositories/catalog_providers.dart';
+import 'package:awady_music/data/repositories/downloads_repository.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
@@ -89,6 +90,10 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
 
   void _downloadAll(List<Track> tracks, L10n l10n) {
     if (tracks.isEmpty) return;
+    final repo = ref.read(downloadsRepositoryProvider);
+    for (final track in tracks) {
+      unawaited(repo.enqueueDownload(track));
+    }
     ref
         .read(toastProvider.notifier)
         .show(l10n.playlistDownloading(tracks.length.toString()));

@@ -4,6 +4,7 @@ import 'package:awady_music/core/l10n/l10n.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/core/util/format.dart';
 import 'package:awady_music/data/models/track.dart';
+import 'package:awady_music/data/repositories/downloads_repository.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
@@ -388,6 +389,114 @@ class TrackMenuSheet extends ConsumerWidget {
                       SharePlus.instance.share(
                         ShareParams(text: url, subject: track.title),
                       ),
+                    );
+                  },
+                ),
+                // Download / Remove download
+                Builder(
+                  builder: (ctx) {
+                    final downloadsRepo = ref.read(downloadsRepositoryProvider);
+                    final isDownloaded =
+                        ref
+                            .watch(downloadedTracksProvider)
+                            .asData
+                            ?.value
+                            .any((t) => t.id == track.id) ??
+                        false;
+                    final progress = ref
+                        .watch(downloadProgressStreamProvider)
+                        .asData
+                        ?.value[track.id];
+
+                    if (progress?.status == DownloadStatus.downloading) {
+                      final pct = (progress!.progress * 100).toInt().toString();
+                      return ListTile(
+                        leading: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            value: progress.progress > 0
+                                ? progress.progress
+                                : null,
+                            strokeWidth: 2,
+                            color: tokens.accent,
+                          ),
+                        ),
+                        title: Text(
+                          l10n.tableDownloading(pct),
+                          style: TextStyle(color: tokens.textPrimary),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(LucideIcons.x, size: 18),
+                          tooltip: l10n.downloadsCancel,
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            downloadsRepo.cancelDownload(track.id);
+                          },
+                        ),
+                      );
+                    }
+
+                    if (progress?.status == DownloadStatus.queued) {
+                      return ListTile(
+                        leading: Icon(
+                          LucideIcons.clock,
+                          color: tokens.textDim,
+                          size: 22,
+                        ),
+                        title: Text(
+                          l10n.downloadsQueued,
+                          style: TextStyle(color: tokens.textPrimary),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(LucideIcons.x, size: 18),
+                          tooltip: l10n.downloadsCancel,
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            downloadsRepo.cancelDownload(track.id);
+                          },
+                        ),
+                      );
+                    }
+
+                    if (isDownloaded) {
+                      return ListTile(
+                        leading: Icon(
+                          LucideIcons.trash2,
+                          color: tokens.danger,
+                          size: 22,
+                        ),
+                        title: Text(
+                          l10n.tableRemoveDownload,
+                          style: TextStyle(color: tokens.danger),
+                        ),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          unawaited(downloadsRepo.deleteDownload(track.id));
+                          ref
+                              .read(toastProvider.notifier)
+                              .show(l10n.tableRemoveDownload);
+                        },
+                      );
+                    }
+
+                    return ListTile(
+                      leading: Icon(
+                        LucideIcons.download,
+                        color: tokens.textPrimary,
+                        size: 22,
+                      ),
+                      title: Text(
+                        l10n.tableDownload,
+                        style: TextStyle(color: tokens.textPrimary),
+                      ),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        unawaited(downloadsRepo.enqueueDownload(track));
+                        ref
+                            .read(toastProvider.notifier)
+                            .show(l10n.tableDownloading('0'));
+                      },
                     );
                   },
                 ),

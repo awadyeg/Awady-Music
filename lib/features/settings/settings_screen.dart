@@ -178,6 +178,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         },
                       ),
                     ],
+
+                    _buildDivider(tokens),
+                    // Wi-Fi only downloads
+                    _buildSwitchTile(
+                      title: l10n.wifiOnlyDownloads,
+                      value: settings.wifiOnlyDownloads,
+                      tokens: tokens,
+                      onChanged: (val) {
+                        unawaited(
+                          ref
+                              .read(settingsProvider.notifier)
+                              .setWifiOnlyDownloads(wifiOnly: val),
+                        );
+                      },
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),

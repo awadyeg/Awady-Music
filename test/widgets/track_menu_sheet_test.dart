@@ -4,6 +4,7 @@ import 'package:awady_music/data/models/album_ref.dart';
 import 'package:awady_music/data/models/artist.dart';
 import 'package:awady_music/data/models/local_playlist.dart';
 import 'package:awady_music/data/models/track.dart';
+import 'package:awady_music/data/repositories/downloads_repository.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/player/player_state.dart';
@@ -57,6 +58,8 @@ Widget _buildHarness({
     overrides: [
       playerControllerProvider.overrideWith(() => playerController),
       libraryRepositoryProvider.overrideWithValue(libraryRepo),
+      downloadedTracksProvider.overrideWith((ref) => Stream.value([])),
+      downloadProgressStreamProvider.overrideWith((ref) => Stream.value({})),
     ],
     child: MaterialApp(
       theme: theme ?? AppTheme.dark(),
@@ -149,6 +152,7 @@ void main() {
 
       expect(find.text('Remove from playlist'), findsOneWidget);
 
+      await tester.ensureVisible(find.text('Remove from playlist'));
       await tester.tap(find.text('Remove from playlist'));
       await tester.pumpAndSettle();
 

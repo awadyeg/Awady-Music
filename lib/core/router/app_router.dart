@@ -1,5 +1,6 @@
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/features/artist/artist_screen.dart';
+import 'package:awady_music/features/downloads/downloads_screen.dart';
 import 'package:awady_music/features/genre/genre_screen.dart';
 import 'package:awady_music/features/home/home_screen.dart';
 import 'package:awady_music/features/legal/legal_screen.dart';
@@ -165,8 +166,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   ),
                   GoRoute(
                     path: 'downloads',
-                    builder: (context, state) =>
-                        const PlaceholderScreen('DownloadsScreen'),
+                    builder: (context, state) => const DownloadsScreen(),
                   ),
                   GoRoute(
                     path: 'recent',

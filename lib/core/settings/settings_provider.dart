@@ -10,24 +10,28 @@ class AppSettings {
     this.locale,
     this.reduceTransparency = false,
     this.autoplay = true,
+    this.wifiOnlyDownloads = false,
   });
 
   final ThemeMode themeMode;
   final Locale? locale;
   final bool reduceTransparency;
   final bool autoplay;
+  final bool wifiOnlyDownloads;
 
   AppSettings copyWith({
     ThemeMode? themeMode,
     Locale? Function()? locale,
     bool? reduceTransparency,
     bool? autoplay,
+    bool? wifiOnlyDownloads,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
       locale: locale != null ? locale() : this.locale,
       reduceTransparency: reduceTransparency ?? this.reduceTransparency,
       autoplay: autoplay ?? this.autoplay,
+      wifiOnlyDownloads: wifiOnlyDownloads ?? this.wifiOnlyDownloads,
     );
   }
 }
@@ -39,6 +43,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _keyLocale = 'settings_locale';
   static const _keyReduceTransparency = 'settings_reduce_transparency';
   static const _keyAutoplay = 'settings_autoplay';
+  static const _keyWifiOnlyDownloads = 'settings_wifi_only_downloads';
 
   @override
   AppSettings build() {
@@ -70,12 +75,14 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
     final reduceTransparency = prefs.getBool(_keyReduceTransparency) ?? false;
     final autoplay = prefs.getBool(_keyAutoplay) ?? true;
+    final wifiOnlyDownloads = prefs.getBool(_keyWifiOnlyDownloads) ?? false;
 
     return AppSettings(
       themeMode: themeMode,
       locale: locale,
       reduceTransparency: reduceTransparency,
       autoplay: autoplay,
+      wifiOnlyDownloads: wifiOnlyDownloads,
     );
   }
 
@@ -113,6 +120,14 @@ class SettingsNotifier extends Notifier<AppSettings> {
         ref.read(sharedPreferencesProvider) ??
         await SharedPreferences.getInstance();
     await prefs.setBool(_keyAutoplay, autoplay);
+  }
+
+  Future<void> setWifiOnlyDownloads({required bool wifiOnly}) async {
+    state = state.copyWith(wifiOnlyDownloads: wifiOnly);
+    final prefs =
+        ref.read(sharedPreferencesProvider) ??
+        await SharedPreferences.getInstance();
+    await prefs.setBool(_keyWifiOnlyDownloads, wifiOnly);
   }
 }
 
