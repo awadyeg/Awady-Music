@@ -7,6 +7,7 @@ import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/core/util/semaphore.dart';
 import 'package:awady_music/data/db/app_database.dart';
 import 'package:awady_music/data/models/track.dart';
+import 'package:awady_music/data/sources/ytstream/client_constants.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_impl.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -173,12 +174,16 @@ class DownloadsRepository {
       // Resolve audio stream
       final videoId = track.streamId ?? track.id;
       final info = await streamResolver.resolve(videoId);
+      final isVisionOs = info.url.queryParameters['c'] == 'VISIONOS';
 
       // Download audio file to .part first
       await _dio.download(
         info.url.toString(),
         partPath,
         cancelToken: cancelToken,
+        options: isVisionOs
+            ? Options(headers: const {'User-Agent': visionOsUserAgent})
+            : null,
         onReceiveProgress: (received, total) {
           _updateProgress(
             track.id,

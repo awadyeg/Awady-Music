@@ -15,6 +15,7 @@ import 'package:awady_music/data/sources/audius/audius_client.dart';
 import 'package:awady_music/data/sources/deezer/deezer_client.dart';
 import 'package:awady_music/data/sources/innertube/innertube_client.dart';
 import 'package:awady_music/data/sources/innertube/matcher.dart';
+import 'package:awady_music/data/sources/ytstream/client_constants.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_impl.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_provider.dart';
 import 'package:awady_music/player/audio_handler.dart';
@@ -1256,7 +1257,13 @@ class PlayerController extends Notifier<PlayerState> {
         final videoId = track.streamId ?? track.id;
         try {
           final info = await _streamResolver.resolve(videoId);
-          source = AudioSource.uri(info.url);
+          final isVisionOs = info.url.queryParameters['c'] == 'VISIONOS';
+          source = AudioSource.uri(
+            info.url,
+            headers: isVisionOs
+                ? const {'User-Agent': visionOsUserAgent}
+                : null,
+          );
           loudnessDb = info.loudnessDb;
         } on Object catch (e, st) {
           Log.w('Stream resolve failed for $videoId: $e', e, st);
@@ -1268,7 +1275,14 @@ class PlayerController extends Notifier<PlayerState> {
                 videoId,
                 forceFresh: true,
               );
-              source = AudioSource.uri(freshInfo.url);
+              final isVisionOs =
+                  freshInfo.url.queryParameters['c'] == 'VISIONOS';
+              source = AudioSource.uri(
+                freshInfo.url,
+                headers: isVisionOs
+                    ? const {'User-Agent': visionOsUserAgent}
+                    : null,
+              );
               loudnessDb = freshInfo.loudnessDb;
             } on Object catch (e2, st2) {
               Log.w('Stream retry failed for $videoId: $e2', e2, st2);

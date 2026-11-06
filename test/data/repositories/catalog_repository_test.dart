@@ -265,6 +265,32 @@ void main() {
       expect(res.artist.name, equals('YT Artist'));
     });
 
+    test(
+      'artist returns YTM artist for prefixed yt-UC and yt-MPLA ids',
+      () async {
+        final res1 = await repo.artist('yt-UC12345');
+        expect(res1.fromFallback, isFalse);
+        expect(res1.artist.name, equals('YT Artist'));
+
+        final res2 = await repo.artist('yt-MPLAUC12345');
+        expect(res2.fromFallback, isFalse);
+        expect(res2.artist.name, equals('YT Artist'));
+      },
+    );
+
+    test(
+      'album and playlist resolve prefixed ytalb- and ytpl- ids via YTM',
+      () async {
+        final alb = await repo.album('ytalb-MPREb_12345');
+        expect(alb.fromFallback, isFalse);
+        expect(alb.playlist.name, equals('YT Album'));
+
+        final pl = await repo.playlist('ytpl-VLRDCLAK5uy_12345');
+        expect(pl.fromFallback, isFalse);
+        expect(pl.playlist.name, equals('YT Playlist'));
+      },
+    );
+
     test('artist falls back to Audius when YTM fails', () async {
       fakeYt.shouldThrow = true;
 

@@ -143,8 +143,13 @@ class CatalogRepositoryImpl implements CatalogRepository {
 
   @override
   Future<ArtistPage> artist(String channelId, {String? nameHint}) async {
+    final cleanId = channelId
+        .replaceFirst(RegExp('^yt-'), '')
+        .replaceFirst(RegExp('^MPLA'), '');
     final isYtChannel =
-        channelId.startsWith('UC') || channelId.startsWith('MPRE');
+        channelId.startsWith('yt-') ||
+        cleanId.startsWith('UC') ||
+        cleanId.startsWith('MPRE');
 
     if (isYtChannel) {
       try {
@@ -191,10 +196,15 @@ class CatalogRepositoryImpl implements CatalogRepository {
 
   @override
   Future<PlaylistPage> album(String browseId) async {
+    final cleanId = browseId.replaceFirst(RegExp('^(ytalb-|ytpl-|yt-)'), '');
     final isYtBrowse =
-        browseId.startsWith('MPRE') ||
-        browseId.startsWith('VL') ||
-        browseId.startsWith('OLAK');
+        browseId.startsWith('ytalb-') ||
+        browseId.startsWith('ytpl-') ||
+        cleanId.startsWith('MPRE') ||
+        cleanId.startsWith('VL') ||
+        cleanId.startsWith('PL') ||
+        cleanId.startsWith('RD') ||
+        cleanId.startsWith('OLAK');
 
     if (isYtBrowse) {
       try {
@@ -221,11 +231,15 @@ class CatalogRepositoryImpl implements CatalogRepository {
 
   @override
   Future<PlaylistPage> playlist(String browseId) async {
+    final cleanId = browseId.replaceFirst(RegExp('^(ytpl-|ytalb-|yt-)'), '');
     final isYtPlaylist =
-        browseId.startsWith('VL') ||
-        browseId.startsWith('PL') ||
-        browseId.startsWith('RD') ||
-        browseId.startsWith('OLAK');
+        browseId.startsWith('ytpl-') ||
+        browseId.startsWith('ytalb-') ||
+        cleanId.startsWith('VL') ||
+        cleanId.startsWith('PL') ||
+        cleanId.startsWith('RD') ||
+        cleanId.startsWith('OLAK') ||
+        cleanId.startsWith('MPRE');
 
     if (isYtPlaylist) {
       try {

@@ -191,9 +191,35 @@ class InnertubeClient {
 
   /// Fetches and parses full artist profile, top tracks, and discography.
   Future<ArtistPage> artist(String channelId, {String? nameHint}) async {
-    final cleanId = channelId.startsWith('yt-')
+    var cleanId = channelId.startsWith('yt-')
         ? channelId.substring(3)
         : channelId;
+    if (cleanId.startsWith('MPLA')) {
+      cleanId = cleanId.substring(4);
+    }
+
+    if (!cleanId.startsWith('UC') && !cleanId.startsWith('MPRE')) {
+      final query = (nameHint != null && nameHint.trim().isNotEmpty)
+          ? nameHint.trim()
+          : cleanId;
+      final searchRes = await search(query);
+      if (searchRes.artists.isNotEmpty) {
+        final matched = searchRes.artists.first;
+        final matchedId = matched.streamId ?? matched.id;
+        cleanId = matchedId.startsWith('yt-')
+            ? matchedId.substring(3)
+            : matchedId;
+      } else if (searchRes.songs.isNotEmpty) {
+        final firstSong = searchRes.songs.first;
+        return ArtistPage(
+          artist: firstSong.artist,
+          topSongs: searchRes.songs,
+          albums: searchRes.playlists.where((p) => p.isAlbum).toList(),
+          singles: searchRes.playlists.where((p) => !p.isAlbum).toList(),
+        );
+      }
+    }
+
     final res = await post('browse', {'browseId': cleanId});
     return _artistParser.parseArtistPage(
       res,
@@ -204,18 +230,23 @@ class InnertubeClient {
 
   /// Fetches an album by its browseId (e.g. MPREb_...).
   Future<PlaylistPage> album(String browseId) async {
-    final cleanId = browseId.startsWith('ytalb-')
-        ? browseId.substring(6)
-        : browseId;
+    final cleanId = browseId.replaceFirst(RegExp('^(ytalb-|ytpl-|yt-)'), '');
+    if (cleanId.startsWith('VL') ||
+        cleanId.startsWith('PL') ||
+        cleanId.startsWith('RD') ||
+        cleanId.startsWith('OLAK')) {
+      return await playlist(cleanId);
+    }
     final res = await post('browse', {'browseId': cleanId});
     return _playlistParser.parseAlbum(res, cleanId);
   }
 
   /// Fetches a playlist by its browseId with VL-prefix strip/retry.
   Future<PlaylistPage> playlist(String browseId) async {
-    final cleanId = browseId.startsWith('ytpl-')
-        ? browseId.substring(5)
-        : browseId;
+    final cleanId = browseId.replaceFirst(RegExp('^(ytpl-|ytalb-|yt-)'), '');
+    if (cleanId.startsWith('MPRE')) {
+      return await album(cleanId);
+    }
     final stripped = cleanId.replaceFirst(RegExp('^VL'), '');
     final candidates = {
       if (cleanId.startsWith('VL')) ...[

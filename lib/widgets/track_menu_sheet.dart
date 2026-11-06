@@ -383,7 +383,12 @@ class TrackMenuSheet extends ConsumerWidget {
                   ),
                   onTap: () {
                     Navigator.pop(context);
-                    final url = 'https://music.youtube.com/watch?v=${track.id}';
+                    final cleanVid =
+                        track.streamId ??
+                        (track.id.startsWith('yt-')
+                            ? track.id.substring(3)
+                            : track.id);
+                    final url = 'https://music.youtube.com/watch?v=$cleanVid';
                     unawaited(Clipboard.setData(ClipboardData(text: url)));
                     unawaited(
                       SharePlus.instance.share(
