@@ -12,6 +12,7 @@ import 'package:awady_music/widgets/equalizer_sheet.dart';
 import 'package:awady_music/widgets/glass_toast.dart';
 import 'package:awady_music/widgets/large_title_scaffold.dart';
 import 'package:awady_music/widgets/section_header.dart';
+import 'package:awady_music/widgets/update_banner.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,10 +38,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _checkUpdates(L10n l10n) async {
     setState(() => _checkingUpdates = true);
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    final info = await UpdateChecker.checkForUpdate();
     if (mounted) {
       setState(() => _checkingUpdates = false);
-      _showToast(l10n.settingsUpdateLatest, LucideIcons.check);
+      if (info != null) {
+        ref.read(updateInfoProvider.notifier).updateInfo = info;
+        _showToast(
+          l10n.settingsUpdateAvailable(info.version),
+          LucideIcons.download,
+        );
+      } else {
+        _showToast(l10n.settingsUpdateLatest, LucideIcons.check);
+      }
     }
   }
 

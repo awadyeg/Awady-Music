@@ -85,12 +85,17 @@
 - Phase 6 (Import, downloads, backup) complete!
 - T-68: Accessibility pass (added tooltips to all interactive icon buttons; Semantics to Big Play/Pause and interactive controls; LiveBars reduced motion support via MediaQuery.disableAnimationsOf; resilient MediaCard text scaling with 200% font size without overflow; 4 accessibility & 200% text scale tests passing; total 417 tests green)
 - T-69: Performance pass (configured ArtworkImage with dynamic memCacheWidth and memCacheHeight clamped [64, 1024] to prevent image decoding RAM bloat; moved large JSON parsing in BackupRepository and PlaylistFileParser to background compute isolates; added automated 1,000-track playlist scrolling virtualization test confirming smooth 60 FPS performance; total 418 tests green)
+- T-70: Release config & final build (configured version 1.0.0+1; Android release signing via key.properties fallback to debug; GitHub Actions release workflow on tag v* with split APK upload; Android UpdateChecker querying GitHub releases and wired to SettingsScreen check for updates; 3 unit tests passing; total 421 tests green; release split-per-abi APKs built)
+- CHECKPOINT G: Complete! 100% of all 70 tasks across all 7 phases finished; 421 tests green; tag v1.0.0 pushed.
+
+## Done
+- All 70 tasks (T-01 through T-70) complete and verified!
 
 ## In Progress
-- T-70: Release config & final build (Phase 7: Polish & release)
+- None
 
 ## Next
-- CHECKPOINT G: Final verification, release split-per-abi APKs, v1.0.0 tag, and push
+- Production deployment and release distribution
 
 ## Left
-- 1 task remaining (T-70)
+- 0 tasks remaining (100% complete)
