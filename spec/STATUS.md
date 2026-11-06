@@ -83,12 +83,13 @@
 - T-66: Downloads (implemented lib/data/repositories/downloads_repository.dart with background downloading via Dio to documents/downloads/<sanitized Artist - Title>.m4a, atomic .part to .m4a rename, concurrency 2, Wi-Fi only restriction check, download progress streams, database integration in DownloadsDao, missing file pruning on app launch, deleteDownload; implemented lib/features/downloads/downloads_screen.dart with LargeTitleScaffold, subtitle count, active download items with progress bar and cancel, empty state, and Play all; wired into AppRouter /library/downloads, PlaylistScreen download all, and TrackMenuSheet download actions; 6 unit & widget tests passing, total 410 tests)
 - T-67: Backup export/import (implemented lib/data/repositories/backup_repository.dart creating complete single JSON backup containing liked songs, followed artists, playlists with tracks, playback statistics, and settings; implemented merge logic on import combining without duplicates; wired Export backup and Import backup tiles in SettingsScreen; unit tests in test/data/repositories/backup_repository_test.dart; 3 unit tests passing, total 413 tests)
 - Phase 6 (Import, downloads, backup) complete!
+- T-68: Accessibility pass (added tooltips to all interactive icon buttons; Semantics to Big Play/Pause and interactive controls; LiveBars reduced motion support via MediaQuery.disableAnimationsOf; resilient MediaCard text scaling with 200% font size without overflow; 4 accessibility & 200% text scale tests passing; total 417 tests green)
 
 ## In Progress
-- T-68: Accessibility pass (Phase 7: Polish & release)
-
-## Next
 - T-69: Performance pass (Phase 7: Polish & release)
 
+## Next
+- T-70: Release config & final build (Phase 7: Polish & release)
+
 ## Left
-- 3 tasks remaining (T-68 to T-70)
+- 2 tasks remaining (T-69 to T-70)

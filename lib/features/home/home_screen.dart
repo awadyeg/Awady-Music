@@ -300,8 +300,14 @@ class _CarouselSection<T> extends StatelessWidget {
             if (items.isEmpty) {
               return const SizedBox.shrink();
             }
+            final textScaler = MediaQuery.textScalerOf(context);
+            final rowHeight =
+                (170.0 + textScaler.scale(35) + textScaler.scale(25)).clamp(
+                  230.0,
+                  360.0,
+                );
             return SizedBox(
-              height: 230,
+              height: rowHeight,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),

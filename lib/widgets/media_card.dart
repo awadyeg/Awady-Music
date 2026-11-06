@@ -33,6 +33,8 @@ class MediaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).glass;
+    final textScaler = MediaQuery.textScalerOf(context);
+    final titleMaxLines = textScaler.scale(14) > 20 ? 1 : 2;
 
     return InkWell(
       onTap: onTap,
@@ -58,7 +60,7 @@ class MediaCard extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: tokens.textPrimary,
               ),
-              maxLines: 2,
+              maxLines: titleMaxLines,
               overflow: TextOverflow.ellipsis,
             ),
             if (subtitle != null && subtitle!.isNotEmpty) ...[

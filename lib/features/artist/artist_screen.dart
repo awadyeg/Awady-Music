@@ -105,6 +105,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
           stretch: true,
           backgroundColor: tokens.bg,
           leading: IconButton(
+            tooltip: 'Back',
             icon: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(

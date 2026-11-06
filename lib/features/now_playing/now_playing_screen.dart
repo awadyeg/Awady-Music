@@ -465,41 +465,47 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                             ref.read(playerControllerProvider.notifier).prev(),
                       ),
                       // Big Play/Pause accent circle button
-                      GestureDetector(
-                        onTap: () => ref
-                            .read(playerControllerProvider.notifier)
-                            .toggle(),
-                        child: Container(
-                          width: 68,
-                          height: 68,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: tokens.accent,
-                            boxShadow: [
-                              BoxShadow(
-                                color: tokens.accent.withValues(alpha: 0.3),
-                                blurRadius: 18,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: playerState.buffering
-                                ? SizedBox(
-                                    width: 28,
-                                    height: 28,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 3,
+                      Semantics(
+                        button: true,
+                        label: playerState.isPlaying
+                            ? l10n.playerPause
+                            : l10n.playerPlay,
+                        child: GestureDetector(
+                          onTap: () => ref
+                              .read(playerControllerProvider.notifier)
+                              .toggle(),
+                          child: Container(
+                            width: 68,
+                            height: 68,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: tokens.accent,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: tokens.accent.withValues(alpha: 0.3),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: playerState.buffering
+                                  ? SizedBox(
+                                      width: 28,
+                                      height: 28,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 3,
+                                        color: tokens.onAccent,
+                                      ),
+                                    )
+                                  : Icon(
+                                      playerState.isPlaying
+                                          ? LucideIcons.pause
+                                          : LucideIcons.play,
+                                      size: 34,
                                       color: tokens.onAccent,
                                     ),
-                                  )
-                                : Icon(
-                                    playerState.isPlaying
-                                        ? LucideIcons.pause
-                                        : LucideIcons.play,
-                                    size: 34,
-                                    color: tokens.onAccent,
-                                  ),
+                            ),
                           ),
                         ),
                       ),

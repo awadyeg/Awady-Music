@@ -64,6 +64,8 @@ class _LiveBarsState extends State<LiveBars>
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).glass;
     final barColor = widget.color ?? tokens.accent;
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    const staticFractions = [0.4, 0.8, 0.6, 0.9];
 
     return AnimatedBuilder(
       animation: _controller,
@@ -77,9 +79,11 @@ class _LiveBarsState extends State<LiveBars>
             final phase = (i * 0.28) + (math.sin(i * 1.5) * 0.1);
             final val = math.sin((t + phase) * 2 * math.pi);
             // Height fraction between 0.2 and 1.0 when playing, else 0.2
-            final fraction = widget.playing
-                ? 0.2 + (0.8 * ((val + 1) / 2))
-                : 0.2;
+            final fraction = disableAnimations
+                ? (widget.playing
+                      ? staticFractions[i % staticFractions.length]
+                      : 0.2)
+                : (widget.playing ? 0.2 + (0.8 * ((val + 1) / 2)) : 0.2);
             final barH = (fraction * widget.height).clamp(3.0, widget.height);
 
             return Container(

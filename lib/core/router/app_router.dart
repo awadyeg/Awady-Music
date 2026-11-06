@@ -236,6 +236,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
+              tooltip: 'Close',
               icon: const Icon(Icons.close),
               onPressed: () {
                 if (context.canPop()) {

@@ -89,6 +89,7 @@ class _LegalScreenState extends State<LegalScreen> {
                     button: true,
                     label: 'Back',
                     child: IconButton(
+                      tooltip: 'Back',
                       icon: Icon(
                         LucideIcons.chevronLeft,
                         color: tokens.textPrimary,
