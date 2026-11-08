@@ -761,7 +761,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                   // Pending matching pill
                   if (hasPending) ...[
                     const SizedBox(height: 12),
-                    GlassSurface(
+                    ContentSurface(
                       radius: 16,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(

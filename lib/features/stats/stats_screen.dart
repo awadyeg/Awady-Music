@@ -101,7 +101,7 @@ class StatsScreen extends ConsumerWidget {
 
             // Rewind button banner if available
             if (rewind != null) ...[
-              GlassSurface(
+              ContentSurface(
                 radius: 16,
                 child: InkWell(
                   onTap: () {
@@ -233,7 +233,7 @@ class StatsScreen extends ConsumerWidget {
               const SizedBox(height: 20),
 
               // 7-day Bar Chart card
-              GlassSurface(
+              ContentSurface(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -501,7 +501,7 @@ class StatsScreen extends ConsumerWidget {
                     ),
                   );
                 }),
-              const SizedBox(height: 120),
+              const SizedBox(height: GlassTokens.shellScrollPadding),
             ],
           ],
         ),
@@ -515,7 +515,7 @@ class StatsScreen extends ConsumerWidget {
     required String value,
     required GlassTokens tokens,
   }) {
-    return GlassSurface(
+    return ContentSurface(
       radius: 16,
       child: Padding(
         padding: const EdgeInsets.all(14),

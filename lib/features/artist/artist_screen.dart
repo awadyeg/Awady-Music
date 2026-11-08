@@ -510,7 +510,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GlassSurface(
+              child: ContentSurface(
                 radius: 16,
                 padding: const EdgeInsets.all(16),
                 child: Column(

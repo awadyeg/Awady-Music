@@ -136,7 +136,7 @@ class _GenreScreenState extends ConsumerState<GenreScreen> {
               return SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: GlassSurface(
+                  child: ContentSurface(
                     radius: 16,
                     padding: const EdgeInsets.all(16),
                     child: Row(
@@ -285,7 +285,7 @@ class _GenreScreenState extends ConsumerState<GenreScreen> {
           borderRadius: BorderRadius.circular(20),
           color: isSelected ? tokens.accent.withValues(alpha: 0.22) : null,
         ),
-        child: GlassSurface(
+        child: ContentSurface(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: Text(
             label,

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:awady_music/core/theme/glass.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/data/models/artwork.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -258,8 +257,8 @@ class _ArtworkImageState extends State<ArtworkImage> {
       child: SizedBox(
         width: widget.size,
         height: widget.size,
-        child: GlassSurface(
-          radius: widget.radius,
+        child: ColoredBox(
+          color: tokens.surfaceMuted,
           child: Center(
             child: Icon(
               LucideIcons.music,

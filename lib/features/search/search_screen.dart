@@ -270,7 +270,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ..._buildSearchResultsSlivers(context, tokens, l10n),
 
         // Bottom inset for player and tab bar
-        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        const SliverToBoxAdapter(
+          child: SizedBox(height: GlassTokens.shellScrollPadding),
+        ),
       ],
     );
   }
@@ -730,7 +732,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         error: (err, stack) => SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-            child: GlassSurface(
+            child: ContentSurface(
               radius: 16,
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -785,21 +787,22 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return InkWell(
       onTap: () => setState(() => _filter = filter),
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
+      borderRadius: BorderRadius.circular(22),
+      child: AnimatedContainer(
+        duration: GlassTokens.motionDefault,
+        constraints: const BoxConstraints(minHeight: 36),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: isSelected ? tokens.accent.withValues(alpha: 0.22) : null,
+          color: isSelected ? tokens.accent : tokens.surfaceMuted,
+          borderRadius: BorderRadius.circular(22),
         ),
-        child: GlassSurface(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? tokens.accent : tokens.textDim,
-            ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? tokens.onAccent : tokens.textPrimary,
           ),
         ),
       ),
@@ -908,7 +911,7 @@ class _TopResultCard extends ConsumerWidget {
               .playTrack(track, contextTracks);
         },
         borderRadius: BorderRadius.circular(20),
-        child: GlassSurface(
+        child: ContentSurface(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
@@ -969,7 +972,7 @@ class _TopResultCard extends ConsumerWidget {
           ),
         ),
         borderRadius: BorderRadius.circular(20),
-        child: GlassSurface(
+        child: ContentSurface(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
@@ -1007,7 +1010,7 @@ class _TopResultCard extends ConsumerWidget {
       return InkWell(
         onTap: () => unawaited(context.push('/playlist/${pl.id}')),
         borderRadius: BorderRadius.circular(20),
-        child: GlassSurface(
+        child: ContentSurface(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [

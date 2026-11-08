@@ -193,7 +193,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Create playlist'), findsOneWidget);
-    await tester.enterText(find.byType(TextField), 'My Chill Beats');
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+      'My Chill Beats',
+    );
     await tester.tap(find.text('Create playlist'));
     await tester.pumpAndSettle();
 
@@ -223,5 +229,88 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Workout Grooves'), findsOneWidget);
+  });
+
+  testWidgets('Search filters playlists and artists', (tester) async {
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(_buildHarness(libraryRepo: libraryRepo));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('library_search_field')),
+      'Workout',
+    );
+    await tester.pump();
+
+    expect(find.text('Workout Grooves'), findsOneWidget);
+    expect(find.text('Awady Legend'), findsNothing);
+    expect(find.text('Liked Songs'), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const Key('library_search_field')),
+      'Legend',
+    );
+    await tester.pump();
+
+    expect(find.text('Awady Legend'), findsWidgets);
+    expect(find.text('Matching songs'), findsOneWidget);
+    expect(find.text('Top Song'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('library_search_field')),
+      'zzz-no-match',
+    );
+    await tester.pump();
+
+    expect(find.text('No matches in your library'), findsOneWidget);
+    expect(find.text('Workout Grooves'), findsNothing);
+  });
+
+  testWidgets('Sorts playlists by name', (tester) async {
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    when(() => libraryRepo.playlists).thenReturn([
+      LocalPlaylist(
+        id: 'newer',
+        name: 'Zulu',
+        tracks: const [],
+        createdAt: DateTime(2026, 2),
+      ),
+      LocalPlaylist(
+        id: 'older',
+        name: 'Alpha',
+        tracks: const [sampleTrack],
+        createdAt: DateTime(2026),
+      ),
+    ]);
+
+    await tester.pumpWidget(_buildHarness(libraryRepo: libraryRepo));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('Zulu')).dy,
+      lessThan(tester.getTopLeft(find.text('Alpha')).dy),
+    );
+
+    await tester.tap(find.byKey(const Key('library_sort_button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Name').last);
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('Alpha')).dy,
+      lessThan(tester.getTopLeft(find.text('Zulu')).dy),
+    );
   });
 }

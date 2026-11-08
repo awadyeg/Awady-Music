@@ -189,13 +189,13 @@ class L10nAr extends L10n {
   String get playerQueue => 'قائمة الانتظار';
 
   @override
-  String get playerRepeatAll => 'Repeat: all';
+  String get playerRepeatAll => 'تكرار: الكل';
 
   @override
-  String get playerRepeatOff => 'Repeat: off';
+  String get playerRepeatOff => 'تكرار: إيقاف';
 
   @override
-  String get playerRepeatOne => 'Repeat: one';
+  String get playerRepeatOne => 'تكرار: مقطع واحد';
 
   @override
   String get playerSeek => 'Seek';
@@ -987,22 +987,22 @@ class L10nAr extends L10n {
 
   @override
   String get libraryEmptyPlaylists =>
-      'Create a playlist and add songs from the ··· menu on any track.';
+      'أنشئ قائمة تشغيل وأضف الأغاني من قائمة أي مقطع.';
 
   @override
-  String get libraryFollowed => 'الفنانون you follow';
+  String get libraryFollowed => 'فنانون تتابعهم';
 
   @override
-  String get libraryLikedSongs => 'Liked الأغاني';
+  String get libraryLikedSongs => 'الأغاني المفضلة';
 
   @override
-  String get libraryNewPlaylist => 'New playlist';
+  String get libraryNewPlaylist => 'قائمة تشغيل جديدة';
 
   @override
-  String get libraryPlayAll => 'تشغيل all';
+  String get libraryPlayAll => 'تشغيل الكل';
 
   @override
-  String get libraryPlaylistLabel => 'تشغيلlist';
+  String get libraryPlaylistLabel => 'قائمة تشغيل';
 
   @override
   String get libraryRecents => 'تم تشغيله مؤخراً';
@@ -1013,7 +1013,7 @@ class L10nAr extends L10n {
   }
 
   @override
-  String get libraryYourPlaylists => 'Your playlists';
+  String get libraryYourPlaylists => 'قوائم التشغيل';
 
   @override
   String get playlistAlbum => 'الألبوم';
@@ -1111,7 +1111,7 @@ class L10nAr extends L10n {
   String get playlistSaveToLibrary => 'حفظ في المكتبة';
 
   @override
-  String get playlistSort => 'Sort';
+  String get playlistSort => 'ترتيب';
 
   @override
   String get playlistSortTitle => 'Title';
@@ -1578,4 +1578,28 @@ class L10nAr extends L10n {
 
   @override
   String get sleepTimerTrackEnd => 'عند نهاية المقطع الحالي';
+
+  @override
+  String get librarySearchHint => 'ابحث في مكتبتك';
+
+  @override
+  String get librarySortRecent => 'الأحدث';
+
+  @override
+  String get librarySortName => 'الاسم';
+
+  @override
+  String get librarySortTracks => 'عدد المقاطع';
+
+  @override
+  String get libraryNoResults => 'لا توجد نتائج في مكتبتك';
+
+  @override
+  String get libraryMatchingSongs => 'مقاطع مطابقة';
+
+  @override
+  String get libraryEmptyArtists => 'لا تتابع أي فنان بعد.';
+
+  @override
+  String get libraryArtistLabel => 'فنان';
 }

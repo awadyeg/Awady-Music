@@ -1,3 +1,4 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:awady_music/data/db/app_database.dart';
 import 'package:awady_music/data/models/artist.dart';
 import 'package:awady_music/data/models/enums.dart';
@@ -372,6 +373,25 @@ void main() {
       expect(state.index, 3);
       expect(state.current?.id, 't4');
       expect(state.history, [0]);
+    });
+
+    test('publishes shuffle and repeat on the media session', () {
+      container.read(playerControllerProvider.notifier)
+        ..toggleShuffle()
+        ..cycleRepeat();
+      expect(audioHandler.sessionShuffleMode, AudioServiceShuffleMode.all);
+      expect(audioHandler.sessionRepeatMode, AudioServiceRepeatMode.all);
+      expect(container.read(playerControllerProvider).repeat, RepeatMode.all);
+    });
+
+    test('pause flushes the playback position', () async {
+      final controller = container.read(playerControllerProvider.notifier)
+        ..playContext([makeTrack('t1')], 0);
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      controller.seek(const Duration(seconds: 12));
+      await controller.toggle();
+      final raw = await db.getQueueState();
+      expect(raw, contains('"positionMs":12000'));
     });
 
     test('volume, mute, and cycleRepeat controls', () {

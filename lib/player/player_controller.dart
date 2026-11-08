@@ -98,6 +98,8 @@ class PlayerController extends Notifier<PlayerState> {
   Timer? _saveQueueDebounceTimer;
   Timer? _sleepTimer;
   AppLifecycleListener? _lifecycleListener;
+  DateTime _lastPositionPersist = DateTime.fromMillisecondsSinceEpoch(0);
+  static const Duration _positionPersistInterval = Duration(seconds: 5);
 
   // Circuit breaker & load sequence counters
   int loadSeq = 0;
@@ -141,6 +143,58 @@ class PlayerController extends Notifier<PlayerState> {
     return const PlayerState();
   }
 
+  void _publishSessionModes() {
+    _audioHandler.setSessionModes(
+      shuffleMode: state.shuffle
+          ? AudioServiceShuffleMode.all
+          : AudioServiceShuffleMode.none,
+      repeatMode: switch (state.repeat) {
+        RepeatMode.one => AudioServiceRepeatMode.one,
+        RepeatMode.all => AudioServiceRepeatMode.all,
+        RepeatMode.off => AudioServiceRepeatMode.none,
+      },
+    );
+  }
+
+  void _persistPositionThrottled() {
+    if (state.queue.isEmpty) return;
+    final now = DateTime.now();
+    if (now.difference(_lastPositionPersist) < _positionPersistInterval) {
+      return;
+    }
+    unawaited(saveQueueStateNow());
+  }
+
+  void _restoreSleepDeadline(int? sleepAtMs) {
+    if (sleepAtMs == null || state.sleepAt != null) return;
+    final deadline = DateTime.fromMillisecondsSinceEpoch(sleepAtMs);
+    final remaining = deadline.difference(DateTime.now());
+    if (remaining <= Duration.zero) {
+      unawaited(_removeSleepPref());
+      return;
+    }
+    _sleepTimer?.cancel();
+    state = state.copyWith(sleepAt: deadline);
+    _sleepTimer = Timer(remaining, () async {
+      _sleepTimer = null;
+      state = state.copyWith(sleepAt: null, isPlaying: false);
+      await _audioHandler.pausePlayer();
+      await _removeSleepPref();
+      await saveQueueStateNow();
+    });
+  }
+
+  Future<void> _removeSleepPref() async {
+    try {
+      final prefs =
+          ref.read(sharedPreferencesProvider) ??
+          await SharedPreferences.getInstance();
+      await prefs.remove('player_sleep_at_ms');
+    } on Object catch (e) {
+      Log.w('Failed clearing sleep timer: $e');
+    }
+  }
+
   void _setupLifecycleListener() {
     _lifecycleListener = AppLifecycleListener(
       onPause: () => unawaited(saveQueueStateNow()),
@@ -152,10 +206,16 @@ class PlayerController extends Notifier<PlayerState> {
   /// Restores queue, index, position, and settings from persistent storage.
   /// Audio playback is restored paused per spec.
   Future<void> restorePersistedState() async {
+    // Let build() finish initializing notifier state before we read it.
+    await Future<void>.value();
+    if (!ref.mounted) return;
+
+    int? sleepAtMs;
     try {
       final prefs =
           ref.read(sharedPreferencesProvider) ??
           await SharedPreferences.getInstance();
+      sleepAtMs = prefs.getInt('player_sleep_at_ms');
 
       final volume = prefs.getDouble('player_volume') ?? 1.0;
       final muted = prefs.getBool('player_muted') ?? false;
@@ -286,6 +346,11 @@ class PlayerController extends Notifier<PlayerState> {
       }
     } on Object catch (e, st) {
       Log.w('Failed restoring persisted player state: $e', e, st);
+    } finally {
+      if (ref.mounted) {
+        _restoreSleepDeadline(sleepAtMs);
+        _publishSessionModes();
+      }
     }
   }
 
@@ -294,6 +359,7 @@ class PlayerController extends Notifier<PlayerState> {
   Future<void> saveQueueStateNow() async {
     _saveQueueDebounceTimer?.cancel();
     _saveQueueDebounceTimer = null;
+    _lastPositionPersist = DateTime.now();
     try {
       final slimmed = sanitizeTrackList(state.queue, 300);
       final jsonMap = {
@@ -377,15 +443,20 @@ class PlayerController extends Notifier<PlayerState> {
     _sleepTimer = null;
     if (duration == null || duration <= Duration.zero) {
       state = state.copyWith(sleepAt: null);
+      unawaited(_removeSleepPref());
       return;
     }
     final target = DateTime.now().add(duration);
     state = state.copyWith(sleepAt: target);
+    unawaited(
+      _savePrefInt('player_sleep_at_ms', target.millisecondsSinceEpoch),
+    );
     _sleepTimer = Timer(duration, () async {
       _sleepTimer = null;
       state = state.copyWith(sleepAt: null, isPlaying: false);
       await _audioHandler.pausePlayer();
-      unawaited(saveQueueStateNow());
+      await _removeSleepPref();
+      await saveQueueStateNow();
     });
   }
 
@@ -483,22 +554,58 @@ class PlayerController extends Notifier<PlayerState> {
       }
       ..onPlaybackCompleted = () {
         next(auto: true);
+      }
+      ..onSeeked = (position) {
+        if (!ref.mounted || state.current == null) return;
+        state = state.copyWith(currentTime: position);
+        _scheduleSaveQueueState();
+      }
+      ..onSetShuffleMode = (mode) async {
+        final enable = mode != AudioServiceShuffleMode.none;
+        if (enable == state.shuffle) {
+          _publishSessionModes();
+          return;
+        }
+        toggleShuffle();
+      }
+      ..onSetRepeatMode = (mode) async {
+        final mapped = switch (mode) {
+          AudioServiceRepeatMode.one => RepeatMode.one,
+          AudioServiceRepeatMode.all ||
+          AudioServiceRepeatMode.group => RepeatMode.all,
+          AudioServiceRepeatMode.none => RepeatMode.off,
+        };
+        if (mapped == state.repeat) {
+          _publishSessionModes();
+          return;
+        }
+        state = state.copyWith(repeat: mapped);
+        unawaited(_savePrefString('player_repeat', mapped.name));
+        _publishSessionModes();
       };
 
     _subscriptions
       ..add(
         _audioHandler.playbackState.listen((ps) {
+          if (_audioHandler.suppressPlaybackEcho) return;
           final wasPlaying = state.isPlaying;
-          state = state.copyWith(
-            isPlaying: ps.playing,
-            buffering:
-                ps.processingState == AudioProcessingState.buffering ||
-                ps.processingState == AudioProcessingState.loading,
-            currentTime: ps.processingState == AudioProcessingState.idle
-                ? state.currentTime
-                : ps.position,
-          );
-          if (wasPlaying && !ps.playing) {
+          // Idle means the platform player has no active item. Headphone
+          // disconnect and audio-focus loss pause a ready player instead, so
+          // an idle echo must not clobber playback or start a persist.
+          final platformIdle = ps.processingState == AudioProcessingState.idle;
+          if (platformIdle) {
+            state = state.copyWith(buffering: false);
+          } else {
+            state = state.copyWith(
+              isPlaying: ps.playing,
+              buffering:
+                  ps.processingState == AudioProcessingState.buffering ||
+                  ps.processingState == AudioProcessingState.loading,
+              currentTime: ps.position,
+            );
+          }
+          if (wasPlaying && !state.isPlaying) {
+            unawaited(saveQueueStateNow());
             _statsRecorder.onTick(
               currentTrack: state.current,
               currentTimeSeconds: state.currentTime.inMilliseconds / 1000.0,
@@ -513,6 +620,9 @@ class PlayerController extends Notifier<PlayerState> {
               _audioHandler.playbackState.value.processingState !=
                   AudioProcessingState.idle) {
             state = state.copyWith(currentTime: pos);
+            if (state.isPlaying) {
+              _persistPositionThrottled();
+            }
             _checkPrefetchAt50Percent(pos);
             final dur = state.duration;
             final cur = state.current;
@@ -615,7 +725,7 @@ class PlayerController extends Notifier<PlayerState> {
     if (state.isPlaying) {
       state = state.copyWith(isPlaying: false);
       await _audioHandler.pausePlayer();
-      unawaited(saveQueueStateNow());
+      await saveQueueStateNow();
     } else {
       final ps = _audioHandler.playbackState.value.processingState;
       if (ps == AudioProcessingState.idle) {
@@ -757,6 +867,7 @@ class PlayerController extends Notifier<PlayerState> {
 
     state = state.copyWith(shuffle: newShuffle, shuffleDeck: deck);
     unawaited(_savePrefBool('player_shuffle', newShuffle));
+    _publishSessionModes();
   }
 
   void cycleRepeat() {
@@ -765,6 +876,7 @@ class PlayerController extends Notifier<PlayerState> {
     final nextMode = order[nextIdx];
     state = state.copyWith(repeat: nextMode);
     unawaited(_savePrefString('player_repeat', nextMode.name));
+    _publishSessionModes();
   }
 
   void jumpTo(int i) {

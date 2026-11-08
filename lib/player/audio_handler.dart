@@ -80,8 +80,23 @@ class AwadyAudioHandler extends BaseAudioHandler
   Future<void> Function()? onSkipToPreviousRequested;
   Future<void> Function(int index)? onSkipToQueueItemRequested;
   void Function()? onPlaybackCompleted;
+  void Function(Duration position)? onSeeked;
+  Future<void> Function(AudioServiceShuffleMode mode)? onSetShuffleMode;
+  Future<void> Function(AudioServiceRepeatMode mode)? onSetRepeatMode;
 
   int? _currentQueueIndex;
+  AudioServiceShuffleMode _sessionShuffleMode = AudioServiceShuffleMode.none;
+  AudioServiceRepeatMode _sessionRepeatMode = AudioServiceRepeatMode.none;
+  bool _suppressPlaybackEcho = false;
+
+  AudioServiceShuffleMode get sessionShuffleMode => _sessionShuffleMode;
+
+  AudioServiceRepeatMode get sessionRepeatMode => _sessionRepeatMode;
+
+  /// True while a shuffle/repeat update is being written into [playbackState].
+  ///
+  /// Those updates must not be treated as transport changes by the controller.
+  bool get suppressPlaybackEcho => _suppressPlaybackEcho;
 
   AudioPlayer get player => _player;
 
@@ -172,12 +187,33 @@ class AwadyAudioHandler extends BaseAudioHandler
         bufferedPosition: _player.bufferedPosition,
         speed: _player.speed,
         queueIndex: _currentQueueIndex,
+        shuffleMode: _sessionShuffleMode,
+        repeatMode: _sessionRepeatMode,
       ),
     );
   }
 
+  /// Publishes shuffle and repeat without pretending transport changed.
+  void setSessionModes({
+    required AudioServiceShuffleMode shuffleMode,
+    required AudioServiceRepeatMode repeatMode,
+  }) {
+    _sessionShuffleMode = shuffleMode;
+    _sessionRepeatMode = repeatMode;
+    _suppressPlaybackEcho = true;
+    playbackState.add(
+      playbackState.value.copyWith(
+        shuffleMode: shuffleMode,
+        repeatMode: repeatMode,
+      ),
+    );
+    scheduleMicrotask(() {
+      _suppressPlaybackEcho = false;
+    });
+  }
+
   Future<void> playPlayer() async {
-    unawaited(_player.play());
+    await _player.play();
     _broadcastState();
   }
 
@@ -219,7 +255,30 @@ class AwadyAudioHandler extends BaseAudioHandler
   }
 
   @override
-  Future<void> seek(Duration position) => _player.seek(position);
+  Future<void> seek(Duration position) async {
+    try {
+      await _player.seek(position);
+    } on Object catch (e, st) {
+      Log.w('Seek failed', e, st);
+    }
+    onSeeked?.call(position);
+  }
+
+  @override
+  Future<void> setShuffleMode(AudioServiceShuffleMode shuffleMode) async {
+    final handler = onSetShuffleMode;
+    if (handler != null) {
+      await handler(shuffleMode);
+    }
+  }
+
+  @override
+  Future<void> setRepeatMode(AudioServiceRepeatMode repeatMode) async {
+    final handler = onSetRepeatMode;
+    if (handler != null) {
+      await handler(repeatMode);
+    }
+  }
 
   @override
   Future<void> skipToNext() async {
@@ -269,6 +328,10 @@ class AwadyAudioHandler extends BaseAudioHandler
 }
 
 /// Initializes AudioSession for background music playback.
+///
+/// Headphone disconnect and audio-focus loss are handled by `just_audio`
+/// (`handleInterruptions` defaults to true). The player controller persists
+/// the queue when that pause is reported.
 Future<void> initAudioSession() async {
   try {
     final session = await AudioSession.instance;

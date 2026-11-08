@@ -8,6 +8,7 @@ import 'package:awady_music/features/settings/settings_screen.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/player/player_state.dart';
 import 'package:awady_music/widgets/glass_toast.dart';
+import 'package:awady_music/widgets/update_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -181,7 +182,13 @@ void main() {
 
       // App name & version
       expect(find.text('Awady Music'), findsOneWidget);
-      expect(find.text('v1.0.6 (build 6)'), findsOneWidget);
+      expect(
+        find.text(
+          'v${UpdateChecker.currentVersion} '
+          '(build ${UpdateChecker.currentBuild})',
+        ),
+        findsOneWidget,
+      );
 
       // Verify attribution, contribute on GitHub, and legal are not shown
       expect(

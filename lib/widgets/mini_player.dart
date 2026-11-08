@@ -11,6 +11,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+Widget _mirrorRtl(Widget child, {required bool mirror}) {
+  if (!mirror) return child;
+  return Transform.flip(flipX: true, child: child);
+}
+
 class MiniPlayer extends ConsumerWidget {
   const MiniPlayer({super.key});
 
@@ -64,111 +69,113 @@ class MiniPlayer extends ConsumerWidget {
           }
         },
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: SizedBox(
-            height: 60,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: GlassSurface(
-                    radius: GlassTokens.radiusCapsule,
-                    strong: true,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Row(
+            height: 64,
+            child: GlassSurface(
+              radius: GlassTokens.radiusCapsule,
+              strong: true,
+              padding: const EdgeInsets.fromLTRB(8, 8, 4, 8),
+              child: Row(
+                children: [
+                  ArtworkImage(art: track.artwork, size: 46, radius: 14),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ArtworkImage(art: track.artwork, size: 44, radius: 10),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                track.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textDirection:
-                                    Bidi.detectRtlDirectionality(track.title)
-                                    ? TextDirection.rtl
-                                    : TextDirection.ltr,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: tokens.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                track.artist.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textDirection:
-                                    Bidi.detectRtlDirectionality(
-                                      track.artist.name,
-                                    )
-                                    ? TextDirection.rtl
-                                    : TextDirection.ltr,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  color: tokens.textDim,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            playerState.isPlaying
-                                ? LucideIcons.pause
-                                : LucideIcons.play,
-                            size: 22,
+                        Text(
+                          track.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textDirection:
+                              Bidi.detectRtlDirectionality(track.title)
+                              ? TextDirection.rtl
+                              : TextDirection.ltr,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                             color: tokens.textPrimary,
                           ),
-                          tooltip: playerState.isPlaying
-                              ? l10n.playerPause
-                              : l10n.playerPlay,
-                          onPressed: () => ref
-                              .read(playerControllerProvider.notifier)
-                              .toggle(),
                         ),
-                        IconButton(
-                          icon: Icon(
-                            LucideIcons.skipForward,
-                            size: 22,
-                            color: tokens.textPrimary,
+                        const SizedBox(height: 2),
+                        Text(
+                          track.artist.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textDirection:
+                              Bidi.detectRtlDirectionality(track.artist.name)
+                              ? TextDirection.rtl
+                              : TextDirection.ltr,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: tokens.textDim,
                           ),
-                          tooltip: l10n.playerNext,
-                          onPressed: () => ref
-                              .read(playerControllerProvider.notifier)
-                              .next(),
+                        ),
+                        const SizedBox(height: 5),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(1),
+                          child: SizedBox(
+                            height: 2,
+                            width: double.infinity,
+                            child: Align(
+                              alignment: isRtl
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: FractionallySizedBox(
+                                widthFactor: progress,
+                                heightFactor: 1,
+                                child: ColoredBox(color: tokens.accent),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                // Thin progress line at the bottom edge clipped to capsule
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(GlassTokens.radiusCapsule),
-                    ),
-                    child: Container(
-                      height: 2.5,
-                      alignment: isRtl
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: FractionallySizedBox(
-                        widthFactor: progress,
-                        child: Container(color: tokens.accent),
-                      ),
-                    ),
+                  IconButton(
+                    icon: playerState.buffering
+                        ? SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              color: tokens.textPrimary,
+                            ),
+                          )
+                        : _mirrorRtl(
+                            Icon(
+                              playerState.isPlaying
+                                  ? LucideIcons.pause
+                                  : LucideIcons.play,
+                              size: 22,
+                              color: tokens.textPrimary,
+                            ),
+                            mirror: isRtl && !playerState.isPlaying,
+                          ),
+                    tooltip: playerState.isPlaying
+                        ? l10n.playerPause
+                        : l10n.playerPlay,
+                    onPressed: () =>
+                        ref.read(playerControllerProvider.notifier).toggle(),
                   ),
-                ),
-              ],
+                  IconButton(
+                    icon: _mirrorRtl(
+                      Icon(
+                        LucideIcons.skipForward,
+                        size: 22,
+                        color: tokens.textPrimary,
+                      ),
+                      mirror: isRtl,
+                    ),
+                    tooltip: l10n.playerNext,
+                    onPressed: () =>
+                        ref.read(playerControllerProvider.notifier).next(),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -1580,4 +1580,28 @@ class L10nEn extends L10n {
 
   @override
   String get sleepTimerTrackEnd => 'End of current track';
+
+  @override
+  String get librarySearchHint => 'Search your library';
+
+  @override
+  String get librarySortRecent => 'Recent';
+
+  @override
+  String get librarySortName => 'Name';
+
+  @override
+  String get librarySortTracks => 'Track count';
+
+  @override
+  String get libraryNoResults => 'No matches in your library';
+
+  @override
+  String get libraryMatchingSongs => 'Matching songs';
+
+  @override
+  String get libraryEmptyArtists => 'No followed artists yet.';
+
+  @override
+  String get libraryArtistLabel => 'Artist';
 }
