@@ -206,7 +206,7 @@ class MoodScreen extends ConsumerWidget {
           error: (err, stack) => SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: GlassSurface(
+              child: ContentSurface(
                 radius: 16,
                 padding: const EdgeInsets.all(16),
                 child: Row(

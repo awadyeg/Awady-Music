@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:awady_music/core/l10n/l10n.dart';
+import 'package:awady_music/core/theme/glass.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/core/util/format.dart';
 import 'package:awady_music/data/models/enums.dart';
@@ -208,30 +209,32 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
           child: Stack(
             children: [
               // Blurred artwork wash background
-              if (artworkUrl != null) ...[
+              if (artworkUrl != null)
                 Positioned.fill(
-                  child: Opacity(
-                    opacity: 0.28,
-                    child: ImageFiltered(
-                      imageFilter: ImageFilter.blur(sigmaX: 55, sigmaY: 55),
-                      child: ArtworkImage(
-                        art: track.artwork,
-                        size: double.infinity,
+                  child: ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 36, sigmaY: 36),
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      clipBehavior: Clip.hardEdge,
+                      child: Opacity(
+                        opacity: 0.72,
+                        child: ArtworkImage(art: track.artwork, size: 720),
                       ),
                     ),
                   ),
                 ),
-              ],
               Positioned.fill(
-                child: Container(
+                child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        tokens.bg.withValues(alpha: 0.55),
-                        tokens.bg.withValues(alpha: 0.92),
+                        tokens.bg.withValues(alpha: 0.12),
+                        tokens.bg.withValues(alpha: 0.34),
+                        tokens.bg.withValues(alpha: 0.62),
                       ],
+                      stops: const [0, 0.42, 1],
                     ),
                   ),
                 ),
@@ -412,32 +415,36 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                                     ? constraints.maxWidth
                                     : constraints.maxHeight;
                                 final artSize = size.clamp(200.0, 360.0);
+                                final reduceMotion =
+                                    MediaQuery.disableAnimationsOf(context);
                                 return AnimatedScale(
-                                  scale: playerState.isPlaying ? 1.0 : 0.92,
-                                  duration: const Duration(milliseconds: 280),
+                                  scale: playerState.isPlaying ? 1.0 : 0.94,
+                                  duration: reduceMotion
+                                      ? Duration.zero
+                                      : const Duration(milliseconds: 280),
                                   curve: Curves.easeOutCubic,
                                   child: SizedBox(
                                     width: artSize,
                                     height: artSize,
                                     child: DecoratedBox(
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(24),
+                                        borderRadius: BorderRadius.circular(28),
                                         boxShadow: [
                                           BoxShadow(
                                             color: Colors.black.withValues(
-                                              alpha: 0.35,
+                                              alpha: 0.28,
                                             ),
-                                            blurRadius: 28,
-                                            offset: const Offset(0, 14),
+                                            blurRadius: 36,
+                                            offset: const Offset(0, 18),
                                           ),
                                         ],
                                       ),
                                       child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(24),
+                                        borderRadius: BorderRadius.circular(28),
                                         child: ArtworkImage(
                                           art: track.artwork,
                                           size: artSize,
-                                          radius: 24,
+                                          radius: 28,
                                         ),
                                       ),
                                     ),
@@ -567,131 +574,139 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                     // Main Playback Controls
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          // Shuffle button
-                          IconButton(
-                            icon: Icon(
-                              LucideIcons.shuffle,
-                              color: playerState.shuffle
-                                  ? tokens.accent
-                                  : tokens.textDim,
-                              size: 24,
-                            ),
-                            tooltip: l10n.playerShuffle,
-                            onPressed: () => ref
-                                .read(playerControllerProvider.notifier)
-                                .toggleShuffle(),
-                          ),
-                          // Previous button
-                          IconButton(
-                            icon: _mirrorRtl(
-                              Icon(
-                                LucideIcons.skipBack,
-                                color: tokens.textPrimary,
-                                size: 32,
+                      child: GlassSurface(
+                        clear: true,
+                        radius: GlassTokens.radiusCapsule,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 4,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Shuffle button
+                            IconButton(
+                              icon: Icon(
+                                LucideIcons.shuffle,
+                                color: playerState.shuffle
+                                    ? tokens.accent
+                                    : tokens.textDim,
+                                size: 24,
                               ),
-                              mirror:
-                                  Directionality.of(context) ==
-                                  TextDirection.rtl,
-                            ),
-                            tooltip: l10n.playerPrev,
-                            onPressed: () => ref
-                                .read(playerControllerProvider.notifier)
-                                .prev(),
-                          ),
-                          // Play/Pause button
-                          Semantics(
-                            label: playerState.isPlaying
-                                ? l10n.playerPause
-                                : l10n.playerPlay,
-                            button: true,
-                            child: GestureDetector(
-                              onTap: () => ref
+                              tooltip: l10n.playerShuffle,
+                              onPressed: () => ref
                                   .read(playerControllerProvider.notifier)
-                                  .toggle(),
-                              child: Container(
-                                width: 72,
-                                height: 72,
-                                decoration: BoxDecoration(
-                                  color: tokens.accent,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: tokens.accent.withValues(
-                                        alpha: 0.35,
-                                      ),
-                                      blurRadius: 18,
-                                      offset: const Offset(0, 6),
-                                    ),
-                                  ],
+                                  .toggleShuffle(),
+                            ),
+                            // Previous button
+                            IconButton(
+                              icon: _mirrorRtl(
+                                Icon(
+                                  LucideIcons.skipBack,
+                                  color: tokens.textPrimary,
+                                  size: 32,
                                 ),
-                                child: Center(
-                                  child: playerState.buffering
-                                      ? SizedBox(
-                                          width: 28,
-                                          height: 28,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 3,
-                                            color: tokens.onAccent,
-                                          ),
-                                        )
-                                      : _mirrorRtl(
-                                          Icon(
-                                            playerState.isPlaying
-                                                ? LucideIcons.pause
-                                                : LucideIcons.play,
-                                            size: 34,
-                                            color: tokens.onAccent,
-                                          ),
-                                          mirror:
-                                              !playerState.isPlaying &&
-                                              Directionality.of(context) ==
-                                                  TextDirection.rtl,
+                                mirror:
+                                    Directionality.of(context) ==
+                                    TextDirection.rtl,
+                              ),
+                              tooltip: l10n.playerPrev,
+                              onPressed: () => ref
+                                  .read(playerControllerProvider.notifier)
+                                  .prev(),
+                            ),
+                            // Play/Pause button
+                            Semantics(
+                              label: playerState.isPlaying
+                                  ? l10n.playerPause
+                                  : l10n.playerPlay,
+                              button: true,
+                              child: GestureDetector(
+                                onTap: () => ref
+                                    .read(playerControllerProvider.notifier)
+                                    .toggle(),
+                                child: Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    color: tokens.accent,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: tokens.accent.withValues(
+                                          alpha: 0.35,
                                         ),
+                                        blurRadius: 18,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: playerState.buffering
+                                        ? SizedBox(
+                                            width: 28,
+                                            height: 28,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 3,
+                                              color: tokens.onAccent,
+                                            ),
+                                          )
+                                        : _mirrorRtl(
+                                            Icon(
+                                              playerState.isPlaying
+                                                  ? LucideIcons.pause
+                                                  : LucideIcons.play,
+                                              size: 34,
+                                              color: tokens.onAccent,
+                                            ),
+                                            mirror:
+                                                !playerState.isPlaying &&
+                                                Directionality.of(context) ==
+                                                    TextDirection.rtl,
+                                          ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          // Next button
-                          IconButton(
-                            icon: _mirrorRtl(
-                              Icon(
-                                LucideIcons.skipForward,
-                                color: tokens.textPrimary,
-                                size: 32,
+                            // Next button
+                            IconButton(
+                              icon: _mirrorRtl(
+                                Icon(
+                                  LucideIcons.skipForward,
+                                  color: tokens.textPrimary,
+                                  size: 32,
+                                ),
+                                mirror:
+                                    Directionality.of(context) ==
+                                    TextDirection.rtl,
                               ),
-                              mirror:
-                                  Directionality.of(context) ==
-                                  TextDirection.rtl,
+                              tooltip: l10n.playerNext,
+                              onPressed: () => ref
+                                  .read(playerControllerProvider.notifier)
+                                  .next(),
                             ),
-                            tooltip: l10n.playerNext,
-                            onPressed: () => ref
-                                .read(playerControllerProvider.notifier)
-                                .next(),
-                          ),
-                          // Repeat button (off / all / one)
-                          IconButton(
-                            icon: Icon(
-                              playerState.repeat == RepeatMode.one
-                                  ? LucideIcons.repeat1
-                                  : LucideIcons.repeat,
-                              color: playerState.repeat != RepeatMode.off
-                                  ? tokens.accent
-                                  : tokens.textDim,
-                              size: 24,
+                            // Repeat button (off / all / one)
+                            IconButton(
+                              icon: Icon(
+                                playerState.repeat == RepeatMode.one
+                                    ? LucideIcons.repeat1
+                                    : LucideIcons.repeat,
+                                color: playerState.repeat != RepeatMode.off
+                                    ? tokens.accent
+                                    : tokens.textDim,
+                                size: 24,
+                              ),
+                              tooltip: switch (playerState.repeat) {
+                                RepeatMode.all => l10n.playerRepeatAll,
+                                RepeatMode.one => l10n.playerRepeatOne,
+                                RepeatMode.off => l10n.playerRepeatOff,
+                              },
+                              onPressed: () => ref
+                                  .read(playerControllerProvider.notifier)
+                                  .cycleRepeat(),
                             ),
-                            tooltip: switch (playerState.repeat) {
-                              RepeatMode.all => l10n.playerRepeatAll,
-                              RepeatMode.one => l10n.playerRepeatOne,
-                              RepeatMode.off => l10n.playerRepeatOff,
-                            },
-                            onPressed: () => ref
-                                .read(playerControllerProvider.notifier)
-                                .cycleRepeat(),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -792,14 +807,11 @@ class _InlineLyricsPreview extends ConsumerWidget {
       key: const Key('now_playing_inline_lyrics_preview'),
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
+      child: GlassSurface(
+        clear: true,
+        radius: 22,
         margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: tokens.glassFill,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: tokens.glassStroke),
-        ),
         child: lyricsAsync.when(
           data: (lyrics) => _buildContent(context, tokens, lyrics),
           loading: () => _buildPlaceholder(tokens),

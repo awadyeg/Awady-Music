@@ -126,7 +126,7 @@ class HomeScreen extends ConsumerWidget {
                   horizontal: 16,
                   vertical: 8,
                 ),
-                child: GlassSurface(
+                child: ContentSurface(
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
@@ -222,7 +222,7 @@ class HomeScreen extends ConsumerWidget {
                           .read(playerControllerProvider.notifier)
                           .playTrack(track);
                     },
-                    child: GlassSurface(
+                    child: ContentSurface(
                       padding: const EdgeInsets.all(6),
                       child: Row(
                         children: [
@@ -331,7 +331,9 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           // Bottom padding to ensure content is above the mini player & tab bar
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: GlassTokens.shellScrollPadding),
+          ),
         ],
       ),
     );
@@ -389,7 +391,7 @@ class _CarouselSection<T> extends StatelessWidget {
           loading: () => const CardsRowSkeleton(),
           error: (err, stack) => Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GlassSurface(
+            child: ContentSurface(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [

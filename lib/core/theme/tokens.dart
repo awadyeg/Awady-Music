@@ -18,8 +18,11 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
     required this.accent,
     required this.onAccent,
     required this.danger,
-    this.blurSigmaBar = 24.0,
-    this.blurSigmaSheet = 18.0,
+    required this.surfaceFill,
+    required this.surfaceMuted,
+    required this.separator,
+    this.blurSigmaBar = 18.0,
+    this.blurSigmaSheet = 14.0,
   });
 
   final Color bg;
@@ -29,6 +32,13 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
   final Color glassStroke;
   final Color glassHighlightStart;
   final Color glassHighlightEnd;
+
+  /// Solid fill for content groups. Not a glass material.
+  final Color surfaceFill;
+
+  /// Quiet fill for search fields and unselected chips.
+  final Color surfaceMuted;
+  final Color separator;
   final Color textPrimary;
   final Color textDim;
   final Color textFaint;
@@ -59,16 +69,23 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
   static const Curve defaultCurve = Curves.easeOutCubic;
   static const Curve motionDefaultCurve = defaultCurve;
 
+  /// Space kept clear of the floating mini player and tab bar.
+  static const double shellScrollPadding = 176;
+
+  /// Lift for a screen FAB so it sits above that floating chrome.
+  static const double shellFabLift = 164;
+
   static const GlassTokens dark = GlassTokens(
     bg: Color(0xFF000000),
     bgElevated: Color(0xFF0E0E10),
     glassFill: Color(0x14FFFFFF), // white @ 8% = 0.08 * 255 = ~20 = 0x14
     glassFillStrong: Color(0x1FFFFFFF), // white @ 12% = 0.12 * 255 = ~31 = 0x1F
-    glassStroke: Color(0x24FFFFFF), // white @ 14% = 0.14 * 255 = ~36 = 0x24
-    glassHighlightStart: Color(
-      0x2EFFFFFF,
-    ), // white @ 18% = 0.18 * 255 = ~46 = 0x2E
-    glassHighlightEnd: Color(0x00FFFFFF), // white @ 0%
+    glassStroke: Color(0x1AFFFFFF),
+    glassHighlightStart: Color(0x38FFFFFF),
+    glassHighlightEnd: Color(0x00FFFFFF),
+    surfaceFill: Color(0xFF1C1C1E),
+    surfaceMuted: Color(0xFF2C2C2E),
+    separator: Color(0x1FFFFFFF),
     textPrimary: Color(0xFFFFFFFF),
     textDim: Color(0xA3FFFFFF), // white @ 64% = 0.64 * 255 = ~163 = 0xA3
     textFaint: Color(0x66FFFFFF), // white @ 40% = 0.40 * 255 = ~102 = 0x66
@@ -84,11 +101,12 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
     glassFillStrong: Color(
       0xBFFFFFFF,
     ), // white @ 75% = 0.75 * 255 = ~191 = 0xBF
-    glassStroke: Color(0x14000000), // black @ 8% = 0.08 * 255 = ~20 = 0x14
-    glassHighlightStart: Color(
-      0xE6FFFFFF,
-    ), // white @ 90% = 0.90 * 255 = ~230 = 0xE6
-    glassHighlightEnd: Color(0x00FFFFFF), // white @ 0%
+    glassStroke: Color(0x14000000),
+    glassHighlightStart: Color(0xF2FFFFFF),
+    glassHighlightEnd: Color(0x00FFFFFF),
+    surfaceFill: Color(0xFFFFFFFF),
+    surfaceMuted: Color(0xFFE5E5EA),
+    separator: Color(0x14000000),
     textPrimary: Color(0xFF0B0B0C),
     textDim: Color(0x99000000), // black @ 60% = 0.60 * 255 = ~153 = 0x99
     textFaint: Color(0x61000000), // black @ 38% = 0.38 * 255 = ~97 = 0x61
@@ -112,6 +130,9 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
     Color? accent,
     Color? onAccent,
     Color? danger,
+    Color? surfaceFill,
+    Color? surfaceMuted,
+    Color? separator,
     double? blurSigmaBar,
     double? blurSigmaSheet,
   }) {
@@ -123,6 +144,9 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
       glassStroke: glassStroke ?? this.glassStroke,
       glassHighlightStart: glassHighlightStart ?? this.glassHighlightStart,
       glassHighlightEnd: glassHighlightEnd ?? this.glassHighlightEnd,
+      surfaceFill: surfaceFill ?? this.surfaceFill,
+      surfaceMuted: surfaceMuted ?? this.surfaceMuted,
+      separator: separator ?? this.separator,
       textPrimary: textPrimary ?? this.textPrimary,
       textDim: textDim ?? this.textDim,
       textFaint: textFaint ?? this.textFaint,
@@ -157,6 +181,10 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
       accent: Color.lerp(accent, other.accent, t) ?? accent,
       onAccent: Color.lerp(onAccent, other.onAccent, t) ?? onAccent,
       danger: Color.lerp(danger, other.danger, t) ?? danger,
+      surfaceFill: Color.lerp(surfaceFill, other.surfaceFill, t) ?? surfaceFill,
+      surfaceMuted:
+          Color.lerp(surfaceMuted, other.surfaceMuted, t) ?? surfaceMuted,
+      separator: Color.lerp(separator, other.separator, t) ?? separator,
       blurSigmaBar:
           lerpDouble(blurSigmaBar, other.blurSigmaBar, t) ?? blurSigmaBar,
       blurSigmaSheet:

@@ -162,7 +162,7 @@ class _LegalScreenState extends State<LegalScreen> {
               child: SingleChildScrollView(
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-                child: GlassSurface(
+                child: ContentSurface(
                   padding: const EdgeInsets.all(20),
                   child: MarkdownBodyView(markdown: markdown, tokens: tokens),
                 ),

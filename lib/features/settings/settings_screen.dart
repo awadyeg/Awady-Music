@@ -869,9 +869,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: tokens.glassFill,
+        color: tokens.surfaceFill,
         borderRadius: BorderRadius.circular(GlassTokens.radiusCard),
-        border: Border.all(color: tokens.glassStroke),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -881,7 +880,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildDivider(GlassTokens tokens) {
-    return Divider(height: 1, thickness: 1, color: tokens.glassStroke);
+    return Divider(height: 0.5, thickness: 0.5, color: tokens.separator);
   }
 
   Widget _buildSwitchTile({

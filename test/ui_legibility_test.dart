@@ -4,7 +4,11 @@ import 'dart:ui' as ui;
 
 import 'package:awady_music/core/l10n/l10n.dart';
 import 'package:awady_music/core/theme/app_theme.dart';
+import 'package:awady_music/core/theme/glass.dart';
+import 'package:awady_music/core/theme/tokens.dart';
+import 'package:awady_music/data/models/album_ref.dart';
 import 'package:awady_music/data/models/artist.dart';
+import 'package:awady_music/data/models/artwork.dart';
 import 'package:awady_music/data/models/enums.dart';
 import 'package:awady_music/data/models/local_playlist.dart';
 import 'package:awady_music/data/models/lyrics.dart';
@@ -16,6 +20,8 @@ import 'package:awady_music/features/library/library_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/player/player_state.dart';
+import 'package:awady_music/widgets/glass_tab_bar.dart';
+import 'package:awady_music/widgets/mini_player.dart';
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -39,31 +45,45 @@ class _FakePlayer extends Notifier<PlayerState> implements PlayerController {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-const _artist = Artist(id: 'art-1', name: 'Awady Legend');
+const _artist = Artist(id: 'fixture-artist', name: 'Fixture Artist');
 
-const _track = Track(
-  id: 'tr-1',
-  title: 'Top Song',
-  artist: _artist,
-  duration: 210,
-  source: TrackSource.yt,
-);
+late Track _track;
+late List<LocalPlaylist> _playlists;
+late String _artPath;
 
-final _playlist = LocalPlaylist(
-  id: 'local-test',
-  name: 'Workout Grooves',
-  tracks: const [_track],
-  createdAt: DateTime(2026, 3),
-);
+Future<String> _writeFixtureArt() async {
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder);
+  const size = 160.0;
+  canvas
+    ..drawRect(
+      const Rect.fromLTWH(0, 0, size, size),
+      Paint()
+        ..shader = ui.Gradient.linear(
+          Offset.zero,
+          const Offset(size, size),
+          const [Color(0xFF4C1D95), Color(0xFFE11D48), Color(0xFFF59E0B)],
+          const [0, 0.55, 1],
+        ),
+    )
+    ..drawCircle(
+      const Offset(52, 56),
+      34,
+      Paint()..color = const Color(0xE6FFFFFF),
+    )
+    ..drawCircle(
+      const Offset(112, 104),
+      26,
+      Paint()..color = const Color(0xCC111827),
+    );
+  final image = await recorder.endRecording().toImage(160, 160);
+  final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+  final file = File('${Directory.systemTemp.path}/awady-fixture-art.png');
+  await file.writeAsBytes(bytes!.buffer.asUint8List(), flush: true);
+  return file.path;
+}
 
-final _older = LocalPlaylist(
-  id: 'local-old',
-  name: 'Alpha Nights',
-  tracks: const [_track, _track],
-  createdAt: DateTime(2025),
-);
-
-const _pixelRatio = 2.0;
+const _pixelRatio = 3.0;
 
 Widget _app({
   required Key appKey,
@@ -144,6 +164,35 @@ double _lumAt(ByteData bytes, int width, int x, int y) {
       (0.0722 * bytes.getUint8(i + 2));
 }
 
+int _chromaCount({
+  required ByteData bytes,
+  required int width,
+  required Rect logicalRect,
+  int threshold = 22,
+}) {
+  final height = bytes.lengthInBytes ~/ (width * 4);
+  final left = (logicalRect.left * _pixelRatio).floor().clamp(0, width - 1);
+  final right = (logicalRect.right * _pixelRatio).ceil().clamp(left + 1, width);
+  final top = (logicalRect.top * _pixelRatio).floor().clamp(0, height - 1);
+  final bottom = (logicalRect.bottom * _pixelRatio).ceil().clamp(
+    top + 1,
+    height,
+  );
+  var chroma = 0;
+  for (var y = top; y < bottom; y++) {
+    for (var x = left; x < right; x++) {
+      final i = (y * width + x) * 4;
+      final r = bytes.getUint8(i);
+      final g = bytes.getUint8(i + 1);
+      final b = bytes.getUint8(i + 2);
+      final maxC = r > g ? (r > b ? r : b) : (g > b ? g : b);
+      final minC = r < g ? (r < b ? r : b) : (g < b ? g : b);
+      if (maxC - minC > threshold) chroma++;
+    }
+  }
+  return chroma;
+}
+
 int _interiorInk({
   required ByteData bytes,
   required int width,
@@ -180,6 +229,13 @@ int _interiorInk({
 }
 
 Future<ui.Image> _raster(WidgetTester tester) async {
+  // Local artwork resolves outside fake async. Pump until it is on screen.
+  for (var i = 0; i < 6; i++) {
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 40)),
+    );
+  }
   await tester.pump();
   final boundary = tester.renderObject<RenderRepaintBoundary>(
     find.byKey(const Key('capture-root')),
@@ -224,20 +280,51 @@ void _expectReadableText(String label, _GlyphScan scan) {
 void main() {
   late MockLibraryRepository libraryRepo;
 
+  setUpAll(() async {
+    _artPath = await _writeFixtureArt();
+    _track = Track(
+      id: 'fixture-track',
+      title: 'Fixture Track',
+      artist: _artist,
+      album: const AlbumRef(id: 'fixture-album', name: 'UI fixture'),
+      artwork: Artwork(fallback: _artPath),
+      duration: 210,
+      source: TrackSource.yt,
+    );
+    _playlists = [
+      LocalPlaylist(
+        id: 'fixture-mix',
+        name: 'Fixture Mix',
+        tracks: [_track],
+        createdAt: DateTime(2026, 3),
+      ),
+      LocalPlaylist(
+        id: 'fixture-nights',
+        name: 'Fixture Nights',
+        tracks: [_track, _track],
+        createdAt: DateTime(2025),
+      ),
+      LocalPlaylist(
+        id: 'fixture-dawn',
+        name: 'Fixture Dawn',
+        tracks: [_track],
+        createdAt: DateTime(2024, 6),
+      ),
+    ];
+  });
+
   setUp(() {
     libraryRepo = MockLibraryRepository();
     when(() => libraryRepo.likedTracks).thenReturn([_track]);
     when(() => libraryRepo.recents).thenReturn([_track]);
-    when(() => libraryRepo.playlists).thenReturn([_playlist, _older]);
+    when(() => libraryRepo.playlists).thenReturn(_playlists);
     when(() => libraryRepo.followedArtists).thenReturn([_artist]);
     when(() => libraryRepo.isLiked(any())).thenReturn(false);
   });
 
   void phone(WidgetTester tester) {
-    // Tall enough that the library's floating "New playlist" button
-    // sits below the followed-artists header instead of covering it.
-    tester.view.physicalSize = const Size(840, 2200);
-    tester.view.devicePixelRatio = 2;
+    tester.view.physicalSize = const Size(1260, 3300);
+    tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
   }
@@ -245,7 +332,22 @@ void main() {
   List<dynamic> libraryOverrides() => [
     libraryRepositoryProvider.overrideWithValue(libraryRepo),
     downloadsCountProvider.overrideWith((ref) => Stream.value(7)),
+    playerControllerProvider.overrideWith(
+      () => _FakePlayer(
+        initial: PlayerState(
+          queue: [_track],
+          index: 0,
+          isPlaying: true,
+          currentTime: const Duration(seconds: 48),
+          duration: const Duration(seconds: 210),
+        ),
+      ),
+    ),
   ];
+
+  Widget libraryShell() {
+    return const Scaffold(body: _SelectableShell());
+  }
 
   testWidgets('library and now playing render real fonts and icons', (
     tester,
@@ -261,7 +363,7 @@ void main() {
       await tester.pumpWidget(
         _app(
           appKey: Key(name),
-          home: const LibraryScreen(),
+          home: libraryShell(),
           theme: theme,
           locale: locale,
           overrides: libraryOverrides(),
@@ -274,7 +376,14 @@ void main() {
             (widget.style?.fontSize ?? 0) >= 30,
       );
       expect(titleFinder, findsOneWidget);
-      expect(find.byIcon(LucideIcons.search), findsOneWidget);
+      final searchIcon = find.descendant(
+        of: find.byKey(const Key('library_search_field')),
+        matching: find.byIcon(LucideIcons.search),
+      );
+      expect(searchIcon, findsOneWidget);
+      expect(find.text('Fixture Track'), findsWidgets);
+      expect(find.byType(ContentSurface), findsWidgets);
+      expect(find.byType(GlassSurface), findsNWidgets(3));
       final image = await _raster(tester);
       final bytes = await tester.runAsync(image.toByteData);
       expect(bytes, isNotNull);
@@ -287,7 +396,7 @@ void main() {
       final iconInk = _interiorInk(
         bytes: bytes,
         width: image.width,
-        logicalRect: tester.getRect(find.byIcon(LucideIcons.search)),
+        logicalRect: tester.getRect(searchIcon),
       );
       expect(
         iconInk,
@@ -315,6 +424,79 @@ void main() {
       locale: const Locale('ar'),
     );
 
+    Future<void> captureGlassOverArt({
+      required String name,
+      required ThemeData theme,
+    }) async {
+      when(() => libraryRepo.playlists).thenReturn([
+        for (var i = 0; i < 14; i++)
+          LocalPlaylist(
+            id: 'fixture-scroll-$i',
+            name: 'Fixture Row $i',
+            tracks: [_track],
+            createdAt: DateTime(2026, 1, i + 1),
+          ),
+      ]);
+      await tester.pumpWidget(
+        _app(
+          appKey: Key(name),
+          home: libraryShell(),
+          theme: theme,
+          overrides: libraryOverrides(),
+        ),
+      );
+      expect(find.text('Fixture Row 10'), findsOneWidget);
+      final before = tester.getRect(find.text('Fixture Row 10'));
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -560));
+      await tester.pump();
+      final after = tester.getRect(find.text('Fixture Row 10'));
+      expect(
+        after.top,
+        lessThan(before.top - 200),
+        reason: '$name list did not scroll (${before.top} -> ${after.top})',
+      );
+      final image = await _raster(tester);
+      final bytes = await tester.runAsync(image.toByteData);
+      expect(bytes, isNotNull);
+      await _writePng(tester, image, name);
+      final tab = tester.getRect(find.byType(GlassTabBar));
+      final glassBody = Rect.fromLTRB(
+        tab.left + 28,
+        tab.top + 10,
+        tab.left + 118,
+        tab.bottom - 26,
+      );
+      final tint = _chromaCount(
+        bytes: bytes!,
+        width: image.width,
+        logicalRect: glassBody,
+      );
+      expect(
+        tint,
+        greaterThan(400),
+        reason:
+            '$name tab bar does not show artwork behind it '
+            '($tint chromatic px) body $glassBody',
+      );
+      final titleScan = _scanText(
+        bytes: bytes,
+        width: image.width,
+        logicalRect: tester.getRect(find.text('Fixture Track')),
+      );
+      _expectReadableText(name, titleScan);
+      await _writePng(tester, image, name);
+      image.dispose();
+    }
+
+    await captureGlassOverArt(
+      name: 'library-glass-dark',
+      theme: AppTheme.dark(),
+    );
+    await captureGlassOverArt(
+      name: 'library-glass-light',
+      theme: AppTheme.light(),
+    );
+
     await tester.pumpWidget(
       _app(
         appKey: const Key('now-playing-track'),
@@ -323,14 +505,14 @@ void main() {
         overrides: [
           playerControllerProvider.overrideWith(
             () => _FakePlayer(
-              initial: const PlayerState(
+              initial: PlayerState(
                 queue: [_track],
                 index: 0,
                 isPlaying: true,
                 shuffle: true,
                 repeat: RepeatMode.all,
-                currentTime: Duration(seconds: 48),
-                duration: Duration(seconds: 210),
+                currentTime: const Duration(seconds: 48),
+                duration: const Duration(seconds: 210),
               ),
             ),
           ),
@@ -347,14 +529,16 @@ void main() {
         ],
       ),
     );
-    expect(find.text('Top Song'), findsOneWidget);
-    expect(find.text('Awady Legend'), findsOneWidget);
+    expect(find.text('Fixture Track'), findsOneWidget);
+    expect(find.text('Fixture Artist'), findsOneWidget);
+    expect(find.text('UI fixture'), findsOneWidget);
+    expect(find.byType(GlassSurface), findsNWidgets(2));
     final image = await _raster(tester);
     final bytes = await tester.runAsync(image.toByteData);
     final titleScan = _scanText(
       bytes: bytes!,
       width: image.width,
-      logicalRect: tester.getRect(find.text('Top Song')),
+      logicalRect: tester.getRect(find.text('Fixture Track')),
     );
     _expectReadableText('now-playing-track', titleScan);
     final playInk = _interiorInk(
@@ -365,5 +549,127 @@ void main() {
     expect(playInk, greaterThan(8), reason: 'pause icon did not draw');
     await _writePng(tester, image, 'now-playing-track');
     image.dispose();
+
+    await tester.pumpWidget(
+      _app(
+        appKey: const Key('now-playing-light'),
+        home: const NowPlayingScreen(),
+        theme: AppTheme.light(),
+        overrides: [
+          playerControllerProvider.overrideWith(
+            () => _FakePlayer(
+              initial: PlayerState(
+                queue: [_track],
+                index: 0,
+                isPlaying: true,
+                shuffle: true,
+                repeat: RepeatMode.all,
+                currentTime: const Duration(seconds: 48),
+                duration: const Duration(seconds: 210),
+              ),
+            ),
+          ),
+          libraryRepositoryProvider.overrideWithValue(libraryRepo),
+          downloadedTracksProvider.overrideWith(
+            (ref) => Stream.value(const <Track>[]),
+          ),
+          downloadProgressStreamProvider.overrideWith(
+            (ref) => Stream.value(const <String, DownloadProgress>{}),
+          ),
+          lyricsForTrackProvider.overrideWith(
+            (ref, track) async => const NoLyrics(),
+          ),
+        ],
+      ),
+    );
+    expect(find.text('Fixture Track'), findsOneWidget);
+    final lightImage = await _raster(tester);
+    final lightBytes = await tester.runAsync(lightImage.toByteData);
+    final lightScan = _scanText(
+      bytes: lightBytes!,
+      width: lightImage.width,
+      logicalRect: tester.getRect(find.text('Fixture Track')),
+    );
+    _expectReadableText('now-playing-light', lightScan);
+    await _writePng(tester, lightImage, 'now-playing-light');
+    lightImage.dispose();
   });
+
+  testWidgets('chips and the tab bar change selection without a gloss border', (
+    tester,
+  ) async {
+    phone(tester);
+    await tester.pumpWidget(
+      _app(
+        appKey: const Key('material-interaction'),
+        home: const Scaffold(body: _SelectableShell()),
+        theme: AppTheme.dark(),
+        overrides: libraryOverrides(),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('Playlist'));
+    await tester.pump(const Duration(milliseconds: 220));
+    final chip = tester.widget<AnimatedContainer>(
+      find
+          .ancestor(
+            of: find.text('Playlist'),
+            matching: find.byType(AnimatedContainer),
+          )
+          .first,
+    );
+    final chipDecoration = chip.decoration! as BoxDecoration;
+    expect(chipDecoration.color, AppTheme.dark().glass.accent);
+    expect(chipDecoration.border, isNull);
+
+    await tester.tap(find.text('Home'));
+    await tester.pump(const Duration(milliseconds: 220));
+    final homePill = tester.widget<AnimatedContainer>(
+      find
+          .ancestor(
+            of: find.text('Home'),
+            matching: find.byType(AnimatedContainer),
+          )
+          .first,
+    );
+    final pillColor = (homePill.decoration! as BoxDecoration).color;
+    expect(pillColor, Colors.white.withValues(alpha: 0.16));
+  });
+}
+
+class _SelectableShell extends StatefulWidget {
+  const _SelectableShell();
+
+  @override
+  State<_SelectableShell> createState() => _SelectableShellState();
+}
+
+class _SelectableShellState extends State<_SelectableShell> {
+  int _index = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const LibraryScreen(),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const MiniPlayer(),
+              const SizedBox(height: 8),
+              GlassTabBar(
+                currentIndex: _index,
+                onTap: (index) => setState(() => _index = index),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }

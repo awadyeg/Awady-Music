@@ -182,35 +182,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           onPressed: () => context.push('/settings'),
         ),
       ],
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 70),
-        child: GlassSurface(
-          radius: 24,
-          child: InkWell(
-            onTap: () => _showCreatePlaylistDialog(context, l10n, tokens),
-            borderRadius: BorderRadius.circular(24),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(LucideIcons.plus, size: 18, color: tokens.accent),
-                  const SizedBox(width: 8),
-                  Text(
-                    l10n.libraryNewPlaylist,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: tokens.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
@@ -323,46 +294,38 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 _selectedFilter == LibraryFilter.downloads))
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: Column(
-                children: [
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: _buildPinnedGroup(
+                tokens: tokens,
+                rows: [
                   if (_selectedFilter == LibraryFilter.all ||
-                      _selectedFilter == LibraryFilter.playlists) ...[
-                    _buildPinnedRow(
+                      _selectedFilter == LibraryFilter.playlists)
+                    _PinnedSpec(
                       icon: LucideIcons.heart,
-                      iconColor: const Color(0xFFE91E63),
+                      iconColor: const Color(0xFFFF375F),
                       title: l10n.libraryLikedSongs,
                       subtitle: l10n.libraryTrackCount(likedCount.toString()),
                       onTap: () => context.push('/library/liked'),
-                      tokens: tokens,
                     ),
-                    const SizedBox(height: 8),
-                  ],
-                  if (showDownloads) ...[
-                    _buildPinnedRow(
+                  if (showDownloads)
+                    _PinnedSpec(
                       icon: LucideIcons.arrowDownToLine,
-                      iconColor: tokens.accent,
+                      iconColor: tokens.textPrimary,
                       title: l10n.sideDownloads,
                       subtitle: l10n.libraryTrackCount(
                         downloadsCount.toString(),
                       ),
                       onTap: () => context.push('/library/downloads'),
-                      tokens: tokens,
                     ),
-                    const SizedBox(height: 8),
-                  ],
                   if (_selectedFilter == LibraryFilter.all ||
-                      _selectedFilter == LibraryFilter.playlists) ...[
-                    _buildPinnedRow(
+                      _selectedFilter == LibraryFilter.playlists)
+                    _PinnedSpec(
                       icon: LucideIcons.history,
-                      iconColor: const Color(0xFF2196F3),
+                      iconColor: const Color(0xFF64D2FF),
                       title: l10n.libraryRecents,
                       subtitle: l10n.libraryTrackCount(recentsCount.toString()),
                       onTap: () => context.push('/library/recent'),
-                      tokens: tokens,
                     ),
-                    const SizedBox(height: 8),
-                  ],
                 ],
               ),
             ),
@@ -371,9 +334,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         // Your Playlists Section
         if (showPlaylists) ...[
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: SectionHeader(title: l10n.libraryYourPlaylists),
+            child: SectionHeader(
+              title: l10n.libraryYourPlaylists,
+              actionLabel: l10n.libraryNewPlaylist,
+              onAction: () => _showCreatePlaylistDialog(context, l10n, tokens),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 20, 8, 4),
             ),
           ),
           if (playlists.isEmpty && query.isEmpty)
@@ -554,7 +519,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ),
             ),
           ),
-        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        const SliverToBoxAdapter(
+          child: SizedBox(height: GlassTokens.shellScrollPadding),
+        ),
       ],
     );
   }
@@ -628,18 +595,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 icon: Icon(LucideIcons.x, size: 18, color: tokens.textDim),
               ),
         filled: true,
-        fillColor: tokens.glassFill,
+        fillColor: tokens.surfaceMuted,
         contentPadding: const EdgeInsets.symmetric(vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: tokens.glassStroke),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: tokens.glassStroke),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: tokens.accent),
         ),
       ),
@@ -677,11 +644,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? tokens.accent : tokens.glassFill,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: selected ? tokens.accent : tokens.glassStroke,
-            ),
+            color: selected ? tokens.accent : tokens.surfaceMuted,
+            borderRadius: BorderRadius.circular(22),
           ),
           child: Text(
             label,
@@ -696,59 +660,92 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
-  Widget _buildPinnedRow({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
+  Widget _buildPinnedGroup({
     required GlassTokens tokens,
+    required List<_PinnedSpec> rows,
   }) {
-    return GlassSurface(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(GlassTokens.radiusCard),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(child: Icon(icon, size: 24, color: iconColor)),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: tokens.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: TextStyle(fontSize: 13, color: tokens.textDim),
-                    ),
-                  ],
+    if (rows.isEmpty) return const SizedBox.shrink();
+    return ContentSurface(
+      child: Column(
+        children: [
+          for (var i = 0; i < rows.length; i++) ...[
+            if (i > 0)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 78),
+                child: Divider(
+                  height: 0.5,
+                  thickness: 0.5,
+                  color: tokens.separator,
                 ),
               ),
-              _forwardChevron(tokens),
-            ],
-          ),
+            _buildPinnedRow(rows[i], tokens),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPinnedRow(_PinnedSpec spec, GlassTokens tokens) {
+    return InkWell(
+      onTap: spec.onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: spec.iconColor.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Center(
+                child: Icon(spec.icon, size: 22, color: spec.iconColor),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    spec.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: tokens.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    spec.subtitle,
+                    style: TextStyle(fontSize: 13, color: tokens.textDim),
+                  ),
+                ],
+              ),
+            ),
+            _forwardChevron(tokens),
+          ],
         ),
       ),
     );
   }
+}
+
+class _PinnedSpec {
+  const _PinnedSpec({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 }

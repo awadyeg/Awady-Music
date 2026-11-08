@@ -46,6 +46,9 @@ class _GlassTabBarState extends State<GlassTabBar> {
     final theme = Theme.of(context);
     final tokens = theme.glass;
     final l10n = context.l10n;
+    final motion = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : GlassTokens.motionDefault;
     final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
 
     final items = [
@@ -79,6 +82,8 @@ class _GlassTabBarState extends State<GlassTabBar> {
                       isSelected: widget.currentIndex == i,
                       onTap: () => _handleTap(i),
                       tokens: tokens,
+                      motion: motion,
+                      isDark: theme.brightness == Brightness.dark,
                     ),
                   ),
                 ],
@@ -98,6 +103,8 @@ class _TabItem extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.tokens,
+    required this.motion,
+    required this.isDark,
   });
 
   final IconData icon;
@@ -105,6 +112,8 @@ class _TabItem extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final GlassTokens tokens;
+  final Duration motion;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -112,11 +121,13 @@ class _TabItem extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(GlassTokens.radiusCapsule),
       child: AnimatedContainer(
-        duration: GlassTokens.motionDefault,
+        duration: motion,
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           color: isSelected
-              ? tokens.accent.withValues(alpha: 0.14)
+              ? (isDark
+                    ? Colors.white.withValues(alpha: 0.16)
+                    : Colors.black.withValues(alpha: 0.08))
               : Colors.transparent,
           borderRadius: BorderRadius.circular(GlassTokens.radiusCapsule),
         ),
