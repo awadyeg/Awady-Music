@@ -2193,5 +2193,37 @@
   "sleepTimerTrackEnd": "End of current track",
   "@sleepTimerTrackEnd": {
     "description": "original key: sleepTimerTrackEnd"
+  },
+  "librarySearchHint": "Search your library",
+  "@librarySearchHint": {
+    "description": "Search field on the library screen"
+  },
+  "librarySortRecent": "Recent",
+  "@librarySortRecent": {
+    "description": "Sort playlists by newest first"
+  },
+  "librarySortName": "Name",
+  "@librarySortName": {
+    "description": "Sort playlists by name"
+  },
+  "librarySortTracks": "Track count",
+  "@librarySortTracks": {
+    "description": "Sort playlists by number of tracks"
+  },
+  "libraryNoResults": "No matches in your library",
+  "@libraryNoResults": {
+    "description": "Empty state when library search has no matches"
+  },
+  "libraryMatchingSongs": "Matching songs",
+  "@libraryMatchingSongs": {
+    "description": "Liked songs that match the library search"
+  },
+  "libraryEmptyArtists": "No followed artists yet.",
+  "@libraryEmptyArtists": {
+    "description": "Empty state for followed artists"
+  },
+  "libraryArtistLabel": "Artist",
+  "@libraryArtistLabel": {
+    "description": "Subtitle for a followed artist row"
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:awady_music/core/l10n/l10n.dart';
 import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/core/util/tv_detector.dart';
@@ -20,8 +21,10 @@ import 'package:awady_music/features/stats/stats_screen.dart';
 import 'package:awady_music/features/tv/tv_home_screen.dart';
 import 'package:awady_music/player/connect_receiver.dart';
 import 'package:awady_music/player/player_controller.dart';
+import 'package:awady_music/player/player_notices.dart';
 import 'package:awady_music/widgets/equalizer_sheet.dart';
 import 'package:awady_music/widgets/glass_tab_bar.dart';
+import 'package:awady_music/widgets/glass_toast.dart';
 import 'package:awady_music/widgets/import_sheet.dart';
 import 'package:awady_music/widgets/mini_player.dart';
 import 'package:awady_music/widgets/offline_banner.dart';
@@ -72,6 +75,13 @@ class AppShell extends ConsumerWidget {
       }
     });
 
+    ref.listen(playerControllerProvider.select((s) => s.notice), (prev, next) {
+      if (next == null || next == prev) return;
+      final text = playerNoticeMessage(context.l10n, next);
+      if (text == null || text.isEmpty) return;
+      ref.read(toastProvider.notifier).show(text);
+    });
+
     final isTv = ref.watch(isTvModeProvider);
     if (isTv) {
       return TvHomeScreen(
@@ -84,6 +94,7 @@ class AppShell extends ConsumerWidget {
     final hasTrack = ref.watch(
       playerControllerProvider.select((s) => s.current != null),
     );
+    final hasToast = ref.watch(toastProvider) != null;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -91,6 +102,18 @@ class AppShell extends ConsumerWidget {
         children: [
           Positioned.fill(child: navigationShell),
           const Positioned(left: 0, right: 0, top: 0, child: OfflineBanner()),
+          if (hasToast)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: hasTrack ? 148 : 96,
+              child: const IgnorePointer(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: GlassToast(),
+                ),
+              ),
+            ),
           Positioned(
             left: 0,
             right: 0,

@@ -1588,4 +1588,28 @@ class L10nEs extends L10n {
 
   @override
   String get sleepTimerTrackEnd => 'Al final de la canción actual';
+
+  @override
+  String get librarySearchHint => 'Buscar en tu biblioteca';
+
+  @override
+  String get librarySortRecent => 'Recientes';
+
+  @override
+  String get librarySortName => 'Nombre';
+
+  @override
+  String get librarySortTracks => 'Número de canciones';
+
+  @override
+  String get libraryNoResults => 'Nada coincide en tu biblioteca';
+
+  @override
+  String get libraryMatchingSongs => 'Canciones coincidentes';
+
+  @override
+  String get libraryEmptyArtists => 'Aún no sigues a ningún artista.';
+
+  @override
+  String get libraryArtistLabel => 'Artista';
 }

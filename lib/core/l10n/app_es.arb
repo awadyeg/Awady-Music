@@ -479,5 +479,13 @@
   "sleepTimer30": "30 minutos",
   "sleepTimer45": "45 minutos",
   "sleepTimer60": "60 minutos",
-  "sleepTimerTrackEnd": "Al final de la canción actual"
+  "sleepTimerTrackEnd": "Al final de la canción actual",
+  "librarySearchHint": "Buscar en tu biblioteca",
+  "librarySortRecent": "Recientes",
+  "librarySortName": "Nombre",
+  "librarySortTracks": "Número de canciones",
+  "libraryNoResults": "Nada coincide en tu biblioteca",
+  "libraryMatchingSongs": "Canciones coincidentes",
+  "libraryEmptyArtists": "Aún no sigues a ningún artista.",
+  "libraryArtistLabel": "Artista"
 }

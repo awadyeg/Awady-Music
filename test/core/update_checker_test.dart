@@ -1,9 +1,22 @@
+import 'dart:io';
+
 import 'package:awady_music/widgets/update_banner.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
 
 void main() {
+  test('current version matches pubspec', () {
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    expect(
+      pubspec,
+      contains(
+        'version: ${UpdateChecker.currentVersion}+'
+        '${UpdateChecker.currentBuild}',
+      ),
+    );
+  });
+
   group('UpdateChecker tests', () {
     late Dio dio;
     late DioAdapter dioAdapter;

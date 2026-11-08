@@ -11,6 +11,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+Widget _mirrorRtl(Widget child, {required bool mirror}) {
+  if (!mirror) return child;
+  return Transform.flip(flipX: true, child: child);
+}
+
 class MiniPlayer extends ConsumerWidget {
   const MiniPlayer({super.key});
 
@@ -118,13 +123,25 @@ class MiniPlayer extends ConsumerWidget {
                           ),
                         ),
                         IconButton(
-                          icon: Icon(
-                            playerState.isPlaying
-                                ? LucideIcons.pause
-                                : LucideIcons.play,
-                            size: 22,
-                            color: tokens.textPrimary,
-                          ),
+                          icon: playerState.buffering
+                              ? SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                    color: tokens.textPrimary,
+                                  ),
+                                )
+                              : _mirrorRtl(
+                                  Icon(
+                                    playerState.isPlaying
+                                        ? LucideIcons.pause
+                                        : LucideIcons.play,
+                                    size: 22,
+                                    color: tokens.textPrimary,
+                                  ),
+                                  mirror: isRtl && !playerState.isPlaying,
+                                ),
                           tooltip: playerState.isPlaying
                               ? l10n.playerPause
                               : l10n.playerPlay,
@@ -133,10 +150,13 @@ class MiniPlayer extends ConsumerWidget {
                               .toggle(),
                         ),
                         IconButton(
-                          icon: Icon(
-                            LucideIcons.skipForward,
-                            size: 22,
-                            color: tokens.textPrimary,
+                          icon: _mirrorRtl(
+                            Icon(
+                              LucideIcons.skipForward,
+                              size: 22,
+                              color: tokens.textPrimary,
+                            ),
+                            mirror: isRtl,
                           ),
                           tooltip: l10n.playerNext,
                           onPressed: () => ref

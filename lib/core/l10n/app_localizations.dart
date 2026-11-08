@@ -2978,6 +2978,54 @@ abstract class L10n {
   /// In en, this message translates to:
   /// **'End of current track'**
   String get sleepTimerTrackEnd;
+
+  /// Search field on the library screen
+  ///
+  /// In en, this message translates to:
+  /// **'Search your library'**
+  String get librarySearchHint;
+
+  /// Sort playlists by newest first
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get librarySortRecent;
+
+  /// Sort playlists by name
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get librarySortName;
+
+  /// Sort playlists by number of tracks
+  ///
+  /// In en, this message translates to:
+  /// **'Track count'**
+  String get librarySortTracks;
+
+  /// Empty state when library search has no matches
+  ///
+  /// In en, this message translates to:
+  /// **'No matches in your library'**
+  String get libraryNoResults;
+
+  /// Liked songs that match the library search
+  ///
+  /// In en, this message translates to:
+  /// **'Matching songs'**
+  String get libraryMatchingSongs;
+
+  /// Empty state for followed artists
+  ///
+  /// In en, this message translates to:
+  /// **'No followed artists yet.'**
+  String get libraryEmptyArtists;
+
+  /// Subtitle for a followed artist row
+  ///
+  /// In en, this message translates to:
+  /// **'Artist'**
+  String get libraryArtistLabel;
 }
 
 class _L10nDelegate extends LocalizationsDelegate<L10n> {

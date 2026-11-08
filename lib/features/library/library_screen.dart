@@ -4,8 +4,12 @@ import 'package:awady_music/core/l10n/l10n.dart';
 import 'package:awady_music/core/theme/glass.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/data/db/app_database.dart';
+import 'package:awady_music/data/models/artist.dart';
 import 'package:awady_music/data/models/artwork.dart';
+import 'package:awady_music/data/models/local_playlist.dart';
+import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
+import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
 import 'package:awady_music/widgets/collage_cover.dart';
 import 'package:awady_music/widgets/import_sheet.dart';
@@ -19,6 +23,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Available filter categories on the Library screen.
 enum LibraryFilter { all, playlists, artists, downloads }
+
+/// Sort order for playlists on the Library screen.
+enum LibrarySort { recent, name, count }
 
 /// Provider for the number of downloaded tracks.
 final downloadsCountProvider = StreamProvider<int>((ref) {
@@ -37,6 +44,15 @@ class LibraryScreen extends ConsumerStatefulWidget {
 
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   LibraryFilter _selectedFilter = LibraryFilter.all;
+  LibrarySort _sort = LibrarySort.recent;
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   TextDirection _detectDirection(String text) {
     return intl.Bidi.detectRtlDirectionality(text)
@@ -81,7 +97,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text('Cancel', style: TextStyle(color: tokens.textDim)),
+                child: Text(
+                  l10n.cancel,
+                  style: TextStyle(color: tokens.textDim),
+                ),
               ),
               TextButton(
                 onPressed: () {
@@ -119,8 +138,20 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
     final likedCount = libraryRepo.likedTracks.length;
     final recentsCount = libraryRepo.recents.length;
-    final playlists = libraryRepo.playlists;
-    final followedArtists = libraryRepo.followedArtists;
+    final query = _query.trim().toLowerCase();
+    final playlists = _visiblePlaylists(libraryRepo.playlists, query);
+    final followedArtists = _visibleArtists(libraryRepo.followedArtists, query);
+    final matchedTracks = query.isEmpty
+        ? const <Track>[]
+        : libraryRepo.likedTracks
+              .where(
+                (track) =>
+                    track.title.toLowerCase().contains(query) ||
+                    track.artist.name.toLowerCase().contains(query) ||
+                    (track.album?.name.toLowerCase().contains(query) ?? false),
+              )
+              .take(30)
+              .toList();
 
     final showPlaylists =
         _selectedFilter == LibraryFilter.all ||
@@ -131,6 +162,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final showDownloads =
         _selectedFilter == LibraryFilter.all ||
         _selectedFilter == LibraryFilter.downloads;
+    final showMatches =
+        query.isNotEmpty &&
+        _selectedFilter != LibraryFilter.artists &&
+        _selectedFilter != LibraryFilter.downloads;
 
     return LargeTitleScaffold(
       title: l10n.sideYourLibrary,
@@ -177,6 +212,44 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         ),
       ),
       slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+            child: Row(
+              children: [
+                Expanded(child: _buildSearchField(tokens, l10n)),
+                PopupMenuButton<LibrarySort>(
+                  key: const Key('library_sort_button'),
+                  tooltip: l10n.playlistSort,
+                  initialValue: _sort,
+                  onSelected: (value) => setState(() => _sort = value),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: LibrarySort.recent,
+                      child: Text(l10n.librarySortRecent),
+                    ),
+                    PopupMenuItem(
+                      value: LibrarySort.name,
+                      child: Text(l10n.librarySortName),
+                    ),
+                    PopupMenuItem(
+                      value: LibrarySort.count,
+                      child: Text(l10n.librarySortTracks),
+                    ),
+                  ],
+                  child: SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Icon(
+                      LucideIcons.arrowUpDown,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         // Filter Chips row
         SliverToBoxAdapter(
           child: Padding(
@@ -186,7 +259,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               child: Row(
                 children: [
                   _buildFilterChip(
-                    label: 'All',
+                    label: l10n.allFilter,
                     selected: _selectedFilter == LibraryFilter.all,
                     onTap: () {
                       setState(() {
@@ -211,7 +284,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   ),
                   const SizedBox(width: 8),
                   _buildFilterChip(
-                    label: 'Artists',
+                    label: l10n.artistsFilter,
                     selected: _selectedFilter == LibraryFilter.artists,
                     onTap: () {
                       setState(() {
@@ -244,9 +317,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         ),
 
         // Pinned Rows Section (Liked Songs, Downloads, Recently played)
-        if (_selectedFilter == LibraryFilter.all ||
-            _selectedFilter == LibraryFilter.playlists ||
-            _selectedFilter == LibraryFilter.downloads)
+        if (query.isEmpty &&
+            (_selectedFilter == LibraryFilter.all ||
+                _selectedFilter == LibraryFilter.playlists ||
+                _selectedFilter == LibraryFilter.downloads))
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -302,7 +376,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               child: SectionHeader(title: l10n.libraryYourPlaylists),
             ),
           ),
-          if (playlists.isEmpty)
+          if (playlists.isEmpty && query.isEmpty)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -350,11 +424,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     '${l10n.libraryTrackCount(p.tracks.length.toString())}',
                     style: TextStyle(fontSize: 13, color: tokens.textDim),
                   ),
-                  trailing: Icon(
-                    LucideIcons.chevronRight,
-                    size: 18,
-                    color: tokens.textFaint,
-                  ),
+                  trailing: _forwardChevron(tokens),
                   onTap: () => context.push('/playlist/${p.id}'),
                 );
               },
@@ -369,7 +439,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               child: SectionHeader(title: l10n.libraryFollowed),
             ),
           ),
-          if (followedArtists.isEmpty)
+          if (followedArtists.isEmpty && query.isEmpty)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -377,7 +447,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   vertical: 12,
                 ),
                 child: Text(
-                  'No followed artists yet.',
+                  l10n.libraryEmptyArtists,
                   style: TextStyle(fontSize: 14, color: tokens.textDim),
                 ),
               ),
@@ -411,14 +481,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Text(
-                    'Artist',
+                    l10n.libraryArtistLabel,
                     style: TextStyle(fontSize: 13, color: tokens.textDim),
                   ),
-                  trailing: Icon(
-                    LucideIcons.chevronRight,
-                    size: 18,
-                    color: tokens.textFaint,
-                  ),
+                  trailing: _forwardChevron(tokens),
                   onTap: () {
                     final rawId = (artist.id.isNotEmpty && artist.id != 'yt-')
                         ? artist.id
@@ -434,9 +500,162 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
         ],
 
+        if (showMatches && matchedTracks.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: SectionHeader(title: l10n.libraryMatchingSongs),
+            ),
+          ),
+          SliverList.builder(
+            itemCount: matchedTracks.length,
+            itemBuilder: (context, index) {
+              final track = matchedTracks[index];
+              return ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                minVerticalPadding: 10,
+                leading: ArtworkImage(art: track.artwork),
+                title: Text(
+                  track.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textDirection: _detectDirection(track.title),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  track.artist.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textDirection: _detectDirection(track.artist.name),
+                  style: TextStyle(fontSize: 13, color: tokens.textDim),
+                ),
+                onTap: () => ref
+                    .read(playerControllerProvider.notifier)
+                    .playTrack(track, matchedTracks),
+              );
+            },
+          ),
+        ],
+        if (query.isNotEmpty &&
+            !(showPlaylists && playlists.isNotEmpty) &&
+            !(showArtists && followedArtists.isNotEmpty) &&
+            !(showMatches && matchedTracks.isNotEmpty))
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+              child: Text(
+                l10n.libraryNoResults,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 15, color: tokens.textDim),
+              ),
+            ),
+          ),
         const SliverToBoxAdapter(child: SizedBox(height: 120)),
       ],
     );
+  }
+
+  List<LocalPlaylist> _visiblePlaylists(
+    List<LocalPlaylist> playlists,
+    String query,
+  ) {
+    final filtered = query.isEmpty
+        ? [...playlists]
+        : playlists.where((playlist) {
+            if (playlist.name.toLowerCase().contains(query)) return true;
+            return playlist.tracks.any(
+              (track) =>
+                  track.title.toLowerCase().contains(query) ||
+                  track.artist.name.toLowerCase().contains(query),
+            );
+          }).toList();
+    switch (_sort) {
+      case LibrarySort.name:
+        filtered.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
+      case LibrarySort.count:
+        filtered.sort((a, b) {
+          final byCount = b.tracks.length.compareTo(a.tracks.length);
+          if (byCount != 0) return byCount;
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        });
+      case LibrarySort.recent:
+        filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
+    return filtered;
+  }
+
+  List<Artist> _visibleArtists(List<Artist> artists, String query) {
+    final filtered = query.isEmpty
+        ? [...artists]
+        : artists
+              .where((artist) => artist.name.toLowerCase().contains(query))
+              .toList();
+    if (_sort == LibrarySort.name) {
+      filtered.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
+    }
+    return filtered;
+  }
+
+  Widget _buildSearchField(GlassTokens tokens, L10n l10n) {
+    return TextField(
+      key: const Key('library_search_field'),
+      controller: _searchController,
+      textInputAction: TextInputAction.search,
+      style: TextStyle(color: tokens.textPrimary, fontSize: 15),
+      cursorColor: tokens.accent,
+      onChanged: (value) => setState(() => _query = value),
+      decoration: InputDecoration(
+        isDense: true,
+        hintText: l10n.librarySearchHint,
+        hintStyle: TextStyle(color: tokens.textDim),
+        prefixIcon: Icon(LucideIcons.search, size: 18, color: tokens.textDim),
+        suffixIcon: _query.isEmpty
+            ? null
+            : IconButton(
+                tooltip: l10n.cancel,
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _query = '');
+                },
+                icon: Icon(LucideIcons.x, size: 18, color: tokens.textDim),
+              ),
+        filled: true,
+        fillColor: tokens.glassFill,
+        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: tokens.glassStroke),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: tokens.glassStroke),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: tokens.accent),
+        ),
+      ),
+    );
+  }
+
+  Widget _forwardChevron(GlassTokens tokens) {
+    final icon = Icon(
+      LucideIcons.chevronRight,
+      size: 18,
+      color: tokens.textFaint,
+    );
+    if (Directionality.of(context) == TextDirection.rtl) {
+      return Transform.flip(flipX: true, child: icon);
+    }
+    return icon;
   }
 
   Widget _buildFilterChip({
@@ -445,25 +664,32 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     required VoidCallback onTap,
     required GlassTokens tokens,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? tokens.accent : tokens.glassFill,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? tokens.accent : tokens.glassStroke,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? tokens.accent : tokens.glassFill,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? tokens.accent : tokens.glassStroke,
+            ),
           ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-            color: selected ? Colors.black : tokens.textPrimary,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+              color: selected ? tokens.onAccent : tokens.textPrimary,
+            ),
           ),
         ),
       ),
@@ -518,7 +744,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   ],
                 ),
               ),
-              Icon(LucideIcons.chevronRight, size: 18, color: tokens.textFaint),
+              _forwardChevron(tokens),
             ],
           ),
         ),

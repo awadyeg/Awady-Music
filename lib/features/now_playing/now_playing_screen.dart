@@ -41,6 +41,11 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
   bool _showLyrics = false;
   double _dragOffsetY = 0;
 
+  Widget _mirrorRtl(Widget child, {required bool mirror}) {
+    if (!mirror) return child;
+    return Transform.flip(flipX: true, child: child);
+  }
+
   Widget _buildDownloadButton(
     Track track,
     GlassTokens tokens,
@@ -581,10 +586,15 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                           ),
                           // Previous button
                           IconButton(
-                            icon: Icon(
-                              LucideIcons.skipBack,
-                              color: tokens.textPrimary,
-                              size: 32,
+                            icon: _mirrorRtl(
+                              Icon(
+                                LucideIcons.skipBack,
+                                color: tokens.textPrimary,
+                                size: 32,
+                              ),
+                              mirror:
+                                  Directionality.of(context) ==
+                                  TextDirection.rtl,
                             ),
                             tooltip: l10n.playerPrev,
                             onPressed: () => ref
@@ -627,12 +637,18 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                                             color: tokens.onAccent,
                                           ),
                                         )
-                                      : Icon(
-                                          playerState.isPlaying
-                                              ? LucideIcons.pause
-                                              : LucideIcons.play,
-                                          size: 34,
-                                          color: tokens.onAccent,
+                                      : _mirrorRtl(
+                                          Icon(
+                                            playerState.isPlaying
+                                                ? LucideIcons.pause
+                                                : LucideIcons.play,
+                                            size: 34,
+                                            color: tokens.onAccent,
+                                          ),
+                                          mirror:
+                                              !playerState.isPlaying &&
+                                              Directionality.of(context) ==
+                                                  TextDirection.rtl,
                                         ),
                                 ),
                               ),
@@ -640,10 +656,15 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                           ),
                           // Next button
                           IconButton(
-                            icon: Icon(
-                              LucideIcons.skipForward,
-                              color: tokens.textPrimary,
-                              size: 32,
+                            icon: _mirrorRtl(
+                              Icon(
+                                LucideIcons.skipForward,
+                                color: tokens.textPrimary,
+                                size: 32,
+                              ),
+                              mirror:
+                                  Directionality.of(context) ==
+                                  TextDirection.rtl,
                             ),
                             tooltip: l10n.playerNext,
                             onPressed: () => ref
@@ -706,7 +727,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                                   : tokens.textDim,
                               size: 22,
                             ),
-                            tooltip: 'Sleep timer',
+                            tooltip: l10n.sleepTimerTitle,
                             onPressed: () {
                               unawaited(SleepTimerSheet.show(context));
                             },
@@ -721,7 +742,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                                     : tokens.textDim,
                                 size: 22,
                               ),
-                              tooltip: 'Equalizer',
+                              tooltip: l10n.equalizerTitle,
                               onPressed: () {
                                 unawaited(EqualizerSheet.show(context));
                               },

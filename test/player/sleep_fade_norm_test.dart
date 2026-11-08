@@ -197,14 +197,47 @@ void main() {
         controller.setSleepTimer(10);
         expect(container.read(playerControllerProvider).sleepAt, isNotNull);
 
-        // Cancel it
         controller.setSleepTimer(null);
         expect(container.read(playerControllerProvider).sleepAt, isNull);
 
-        // Advance 15 minutes - should NOT pause
+        // Advance past the original deadline. Playback must keep going.
         async.elapse(const Duration(minutes: 15));
         expect(container.read(playerControllerProvider).isPlaying, isTrue);
       });
+    });
+
+    test('sleep deadline survives a new player controller', () async {
+      container.read(playerControllerProvider.notifier).setSleepTimer(30);
+      expect(container.read(playerControllerProvider).sleepAt, isNotNull);
+      int? stored;
+      for (var i = 0; i < 20; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        stored = prefs.getInt('player_sleep_at_ms');
+        if (stored != null) break;
+      }
+      expect(stored, isNotNull);
+
+      final restored = ProviderContainer(
+        overrides: [
+          audioHandlerProvider.overrideWithValue(audioHandler),
+          streamResolverProvider.overrideWithValue(FakeStreamResolver()),
+          audiusClientProvider.overrideWithValue(FakeAudiusClient()),
+          innertubeClientProvider.overrideWithValue(FakeInnertubeClient()),
+          deezerClientProvider.overrideWithValue(FakeDeezerClient()),
+          appDatabaseProvider.overrideWithValue(db),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(restored.dispose);
+
+      DateTime? sleepAt;
+      for (var i = 0; i < 20; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        sleepAt = restored.read(playerControllerProvider).sleepAt;
+        if (sleepAt != null) break;
+      }
+      expect(sleepAt, isNotNull);
+      expect(sleepAt!.millisecondsSinceEpoch, stored);
     });
   });
 
