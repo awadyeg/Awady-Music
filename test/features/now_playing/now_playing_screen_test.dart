@@ -1,5 +1,6 @@
 import 'package:awady_music/core/l10n/l10n.dart';
 import 'package:awady_music/core/theme/app_theme.dart';
+import 'package:awady_music/core/theme/glass.dart';
 import 'package:awady_music/data/models/artist.dart';
 import 'package:awady_music/data/models/enums.dart';
 import 'package:awady_music/data/models/lyrics.dart';
@@ -9,6 +10,7 @@ import 'package:awady_music/data/repositories/lyrics_repository.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/player/player_state.dart';
+import 'package:awady_music/widgets/artwork_image.dart';
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -285,6 +287,45 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(NowPlayingScreen), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'inline lyrics preview renders with GlassSurface and matches artwork '
+      'width',
+      (tester) async {
+        final fake = FakePlayerController(
+          initial: const PlayerState(
+            queue: [sampleTrack],
+            index: 0,
+            isPlaying: true,
+            duration: Duration(seconds: 286),
+          ),
+        );
+
+        await tester.pumpWidget(
+          _buildHarness(playerController: fake, libraryRepo: libraryRepo),
+        );
+        await tester.pumpAndSettle();
+
+        final lyricsPreviewFinder = find.byKey(
+          const Key('now_playing_inline_lyrics_preview'),
+        );
+        expect(lyricsPreviewFinder, findsOneWidget);
+
+        // Verify it contains a GlassSurface
+        final glassFinder = find.descendant(
+          of: lyricsPreviewFinder,
+          matching: find.byType(GlassSurface),
+        );
+        expect(glassFinder, findsOneWidget);
+
+        // Verify the width matches the artwork's width
+        final previewSize = tester.getSize(lyricsPreviewFinder);
+        final artworkFinder = find.byType(ArtworkImage);
+        expect(artworkFinder, findsWidgets);
+        final artworkSize = tester.getSize(artworkFinder.first);
+        expect(previewSize.width, equals(artworkSize.width));
       },
     );
   });

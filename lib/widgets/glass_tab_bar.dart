@@ -65,7 +65,7 @@ class _GlassTabBarState extends State<GlassTabBar> {
       child: SizedBox(
         height: 64,
         child: GlassSurface(
-          radius: GlassTokens.radiusCapsule,
+          borderRadius: BorderRadius.circular(32),
           strong: true,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -116,9 +116,22 @@ class _TabItem extends StatelessWidget {
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           color: isSelected
-              ? tokens.accent.withValues(alpha: 0.14)
+              ? tokens.accent.withValues(alpha: 0.16)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(GlassTokens.radiusCapsule),
+          borderRadius: BorderRadius.circular(26),
+          border: isSelected
+              ? Border.all(color: tokens.glassStroke, width: 0.8)
+              : null,
+          gradient: isSelected
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    tokens.glassHighlightStart.withValues(alpha: 0.22),
+                    tokens.accent.withValues(alpha: 0.10),
+                  ],
+                )
+              : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:awady_music/core/l10n/l10n.dart';
+import 'package:awady_music/core/theme/glass.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/core/util/format.dart';
 import 'package:awady_music/data/models/enums.dart';
@@ -395,59 +396,76 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                         ),
                       ),
                     ] else ...[
-                      // Artwork with animated scale on play/pause
+                      // Artwork with animated scale on play/pause & matching-width lyrics preview
                       Expanded(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 32),
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final size =
-                                    constraints.maxWidth < constraints.maxHeight
-                                    ? constraints.maxWidth
-                                    : constraints.maxHeight;
-                                final artSize = size.clamp(200.0, 360.0);
-                                return AnimatedScale(
-                                  scale: playerState.isPlaying ? 1.0 : 0.92,
-                                  duration: const Duration(milliseconds: 280),
-                                  curve: Curves.easeOutCubic,
-                                  child: SizedBox(
-                                    width: artSize,
-                                    height: artSize,
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(24),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.35,
-                                            ),
-                                            blurRadius: 28,
-                                            offset: const Offset(0, 14),
-                                          ),
-                                        ],
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final artMaxWidth = (constraints.maxWidth - 64)
+                                .clamp(200.0, 360.0);
+                            final artMaxHeight = (constraints.maxHeight - 88)
+                                .clamp(200.0, 360.0);
+                            final artSize =
+                                (artMaxWidth < artMaxHeight
+                                        ? artMaxWidth
+                                        : artMaxHeight)
+                                    .clamp(200.0, 360.0);
+
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Center(
+                                    child: AnimatedScale(
+                                      scale: playerState.isPlaying ? 1.0 : 0.92,
+                                      duration: const Duration(
+                                        milliseconds: 280,
                                       ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(24),
-                                        child: ArtworkImage(
-                                          art: track.artwork,
-                                          size: artSize,
-                                          radius: 24,
+                                      curve: Curves.easeOutCubic,
+                                      child: SizedBox(
+                                        width: artSize,
+                                        height: artSize,
+                                        child: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                              24,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.35,
+                                                ),
+                                                blurRadius: 28,
+                                                offset: const Offset(0, 14),
+                                              ),
+                                            ],
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              24,
+                                            ),
+                                            child: ArtworkImage(
+                                              art: track.artwork,
+                                              size: artSize,
+                                              radius: 24,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                );
-                              },
-                            ),
-                          ),
+                                ),
+                                const SizedBox(height: 8),
+                                _InlineLyricsPreview(
+                                  track: track,
+                                  currentTime: playerState.currentTime,
+                                  width: artSize,
+                                  onTap: () =>
+                                      setState(() => _showLyrics = true),
+                                ),
+                              ],
+                            );
+                          },
                         ),
-                      ),
-                      // 3-Row live lyrics preview between art and song label
-                      _InlineLyricsPreview(
-                        track: track,
-                        currentTime: playerState.currentTime,
-                        onTap: () => setState(() => _showLyrics = true),
                       ),
                       const SizedBox(height: 8),
                       // Track Info & Action buttons (Download + Favorite)
@@ -756,29 +774,26 @@ class _InlineLyricsPreview extends ConsumerWidget {
     required this.track,
     required this.currentTime,
     required this.onTap,
+    this.width,
   });
 
   final Track track;
   final Duration currentTime;
   final VoidCallback onTap;
+  final double? width;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).glass;
     final lyricsAsync = ref.watch(lyricsForTrackProvider(track));
 
-    return GestureDetector(
+    Widget content = GestureDetector(
       key: const Key('now_playing_inline_lyrics_preview'),
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: tokens.glassFill,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: tokens.glassStroke),
-        ),
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(20),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         child: lyricsAsync.when(
           data: (lyrics) => _buildContent(context, tokens, lyrics),
           loading: () => _buildPlaceholder(tokens),
@@ -786,6 +801,17 @@ class _InlineLyricsPreview extends ConsumerWidget {
         ),
       ),
     );
+
+    if (width != null) {
+      content = SizedBox(width: width, child: content);
+    } else {
+      content = Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+        child: content,
+      );
+    }
+
+    return content;
   }
 
   Widget _buildContent(
@@ -820,6 +846,7 @@ class _InlineLyricsPreview extends ConsumerWidget {
 
       return Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             prevText.isNotEmpty ? prevText : ' ',
@@ -868,6 +895,7 @@ class _InlineLyricsPreview extends ConsumerWidget {
 
       return Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < rawLines.length; i++) ...[
             Text(
@@ -892,9 +920,11 @@ class _InlineLyricsPreview extends ConsumerWidget {
   Widget _buildPlaceholder(GlassTokens tokens) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           '♪ ♪ ♪',
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 11,
             color: tokens.textDim.withValues(alpha: 0.4),
@@ -903,6 +933,7 @@ class _InlineLyricsPreview extends ConsumerWidget {
         const SizedBox(height: 2),
         Text(
           'Lyrics',
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -912,6 +943,7 @@ class _InlineLyricsPreview extends ConsumerWidget {
         const SizedBox(height: 2),
         Text(
           '• • •',
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 11,
             color: tokens.textDim.withValues(alpha: 0.4),

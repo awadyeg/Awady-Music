@@ -563,7 +563,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'v1.0.6 (build 6)',
+                                  'v1.0.7 (build 7)',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: tokens.textDim,

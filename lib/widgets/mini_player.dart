@@ -71,7 +71,7 @@ class MiniPlayer extends ConsumerWidget {
               children: [
                 Positioned.fill(
                   child: GlassSurface(
-                    radius: GlassTokens.radiusCapsule,
+                    borderRadius: BorderRadius.circular(22),
                     strong: true,
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Row(
@@ -154,7 +154,7 @@ class MiniPlayer extends ConsumerWidget {
                   bottom: 0,
                   child: ClipRRect(
                     borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(GlassTokens.radiusCapsule),
+                      bottom: Radius.circular(22),
                     ),
                     child: Container(
                       height: 2.5,

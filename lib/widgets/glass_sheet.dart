@@ -27,7 +27,9 @@ class GlassSheet extends StatelessWidget {
           top: Radius.circular(GlassTokens.radiusSheet),
         ),
         child: GlassSurface(
-          radius: 0,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(GlassTokens.radiusSheet),
+          ),
           strong: true,
           child: SafeArea(
             top: false,

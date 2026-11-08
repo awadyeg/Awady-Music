@@ -18,8 +18,8 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
     required this.accent,
     required this.onAccent,
     required this.danger,
-    this.blurSigmaBar = 24.0,
-    this.blurSigmaSheet = 18.0,
+    this.blurSigmaBar = 38.0,
+    this.blurSigmaSheet = 28.0,
   });
 
   final Color bg;
@@ -62,13 +62,11 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
   static const GlassTokens dark = GlassTokens(
     bg: Color(0xFF000000),
     bgElevated: Color(0xFF0E0E10),
-    glassFill: Color(0x14FFFFFF), // white @ 8% = 0.08 * 255 = ~20 = 0x14
-    glassFillStrong: Color(0x1FFFFFFF), // white @ 12% = 0.12 * 255 = ~31 = 0x1F
-    glassStroke: Color(0x24FFFFFF), // white @ 14% = 0.14 * 255 = ~36 = 0x24
-    glassHighlightStart: Color(
-      0x2EFFFFFF,
-    ), // white @ 18% = 0.18 * 255 = ~46 = 0x2E
-    glassHighlightEnd: Color(0x00FFFFFF), // white @ 0%
+    glassFill: Color(0x14FFFFFF), // white @ 8%
+    glassFillStrong: Color(0x22FFFFFF), // white @ 13.5%
+    glassStroke: Color(0x28FFFFFF), // white @ 16% specular hairline
+    glassHighlightStart: Color(0x1FFFFFFF), // white @ 12% specular catchlight
+    glassHighlightEnd: Color(0x08FFFFFF), // white @ 3% ambient refraction
     textPrimary: Color(0xFFFFFFFF),
     textDim: Color(0xA3FFFFFF), // white @ 64% = 0.64 * 255 = ~163 = 0xA3
     textFaint: Color(0x66FFFFFF), // white @ 40% = 0.40 * 255 = ~102 = 0x66
@@ -80,15 +78,11 @@ class GlassTokens extends ThemeExtension<GlassTokens> {
   static const GlassTokens light = GlassTokens(
     bg: Color(0xFFF2F2F7),
     bgElevated: Color(0xFFFFFFFF),
-    glassFill: Color(0x9EFFFFFF), // white @ 62% = 0.62 * 255 = ~158 = 0x9E
-    glassFillStrong: Color(
-      0xBFFFFFFF,
-    ), // white @ 75% = 0.75 * 255 = ~191 = 0xBF
-    glassStroke: Color(0x14000000), // black @ 8% = 0.08 * 255 = ~20 = 0x14
-    glassHighlightStart: Color(
-      0xE6FFFFFF,
-    ), // white @ 90% = 0.90 * 255 = ~230 = 0xE6
-    glassHighlightEnd: Color(0x00FFFFFF), // white @ 0%
+    glassFill: Color(0x8CFFFFFF), // white @ 55%
+    glassFillStrong: Color(0xB3FFFFFF), // white @ 70%
+    glassStroke: Color(0x66FFFFFF), // white @ 40% specular rim
+    glassHighlightStart: Color(0x80FFFFFF), // white @ 50%
+    glassHighlightEnd: Color(0x1AFFFFFF), // white @ 10%
     textPrimary: Color(0xFF0B0B0C),
     textDim: Color(0x99000000), // black @ 60% = 0.60 * 255 = ~153 = 0x99
     textFaint: Color(0x61000000), // black @ 38% = 0.38 * 255 = ~97 = 0x61
