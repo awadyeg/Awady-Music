@@ -55,34 +55,36 @@ class _GlassTabBarState extends State<GlassTabBar> {
       (icon: LucideIcons.chartColumn, label: l10n.navStats),
     ];
 
-    return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(
-        16,
-        0,
-        16,
-        bottomPadding > 0 ? bottomPadding : 16,
-      ),
-      child: SizedBox(
-        height: 64,
-        child: GlassSurface(
-          borderRadius: BorderRadius.circular(32),
-          strong: true,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            child: Row(
-              children: [
-                for (var i = 0; i < items.length; i++) ...[
-                  Expanded(
-                    child: _TabItem(
-                      icon: items[i].icon,
-                      label: items[i].label,
-                      isSelected: widget.currentIndex == i,
-                      onTap: () => _handleTap(i),
-                      tokens: tokens,
+    return RepaintBoundary(
+      child: Padding(
+        padding: EdgeInsetsDirectional.fromSTEB(
+          16,
+          0,
+          16,
+          bottomPadding > 0 ? bottomPadding : 16,
+        ),
+        child: SizedBox(
+          height: 64,
+          child: GlassSurface(
+            borderRadius: BorderRadius.circular(32),
+            strong: true,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Row(
+                children: [
+                  for (var i = 0; i < items.length; i++) ...[
+                    Expanded(
+                      child: _TabItem(
+                        icon: items[i].icon,
+                        label: items[i].label,
+                        isSelected: widget.currentIndex == i,
+                        onTap: () => _handleTap(i),
+                        tokens: tokens,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

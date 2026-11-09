@@ -38,9 +38,16 @@ class NowPlayingScreen extends ConsumerStatefulWidget {
 }
 
 class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
-  double? _scrubPositionMs;
+  late final ValueNotifier<double> _dragOffsetNotifier = ValueNotifier<double>(
+    0,
+  );
   bool _showLyrics = false;
-  double _dragOffsetY = 0;
+
+  @override
+  void dispose() {
+    _dragOffsetNotifier.dispose();
+    super.dispose();
+  }
 
   Widget _buildDownloadButton(
     Track track,
@@ -95,8 +102,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final playerState = ref.watch(playerControllerProvider);
-    final track = playerState.current;
+    final track = ref.watch(playerControllerProvider.select((s) => s.current));
     final tokens = Theme.of(context).glass;
     final l10n = context.l10n;
 
@@ -144,27 +150,26 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
       );
     }
 
+    final isPlaying = ref.watch(
+      playerControllerProvider.select((s) => s.isPlaying),
+    );
+    final buffering = ref.watch(
+      playerControllerProvider.select((s) => s.buffering),
+    );
+    final shuffle = ref.watch(
+      playerControllerProvider.select((s) => s.shuffle),
+    );
+    final repeat = ref.watch(playerControllerProvider.select((s) => s.repeat));
+    final hasSleepTimer = ref.watch(
+      playerControllerProvider.select((s) => s.sleepAt != null),
+    );
+    final hasEq = ref.watch(
+      playerControllerProvider.select((s) => s.eq.any((g) => g != 0)),
+    );
+
     final isLiked = ref.watch(
       libraryRepositoryProvider.select((repo) => repo.isLiked(track.id)),
     );
-
-    final durationSecs = playerState.duration.inSeconds > 0
-        ? playerState.duration.inSeconds
-        : track.duration;
-    final durationMs = durationSecs * 1000;
-    final currentMs =
-        _scrubPositionMs ?? playerState.currentTime.inMilliseconds.toDouble();
-    final clampedCurrentMs = currentMs.clamp(
-      0.0,
-      durationMs > 0 ? durationMs.toDouble() : 0.0,
-    );
-
-    final elapsedLabel = FormatUtils.formatDuration(
-      (clampedCurrentMs / 1000).toInt(),
-    );
-    final remainingSecs = durationSecs - (clampedCurrentMs / 1000).toInt();
-    final remainingLabel =
-        '-${FormatUtils.formatDuration(remainingSecs > 0 ? remainingSecs : 0)}';
 
     final artworkUrl =
         track.artwork?.s1000 ?? track.artwork?.s480 ?? track.artwork?.fallback;
@@ -177,346 +182,188 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
         onVerticalDragUpdate: _showLyrics
             ? null
             : (details) {
-                if (details.delta.dy > 0 || _dragOffsetY > 0) {
-                  setState(() {
-                    _dragOffsetY = math.max(0, _dragOffsetY + details.delta.dy);
-                  });
+                if (details.delta.dy > 0 || _dragOffsetNotifier.value > 0) {
+                  _dragOffsetNotifier.value = math.max(
+                    0,
+                    _dragOffsetNotifier.value + details.delta.dy,
+                  );
                 }
               },
         onVerticalDragEnd: _showLyrics
             ? null
             : (details) {
                 final velocity = details.primaryVelocity ?? 0.0;
-                if (_dragOffsetY > 100 || velocity > 450) {
+                if (_dragOffsetNotifier.value > 100 || velocity > 450) {
                   context.pop();
                 } else {
-                  setState(() {
-                    _dragOffsetY = 0.0;
-                  });
+                  _dragOffsetNotifier.value = 0.0;
                 }
               },
-        child: AnimatedContainer(
-          duration: _dragOffsetY == 0.0
-              ? const Duration(milliseconds: 220)
-              : Duration.zero,
-          curve: Curves.easeOutCubic,
-          transform: Matrix4.translationValues(0, _dragOffsetY, 0),
-          child: Stack(
-            children: [
-              // Blurred artwork wash background
-              if (artworkUrl != null) ...[
+        child: ValueListenableBuilder<double>(
+          valueListenable: _dragOffsetNotifier,
+          builder: (context, dragOffset, child) {
+            return AnimatedContainer(
+              duration: dragOffset == 0.0
+                  ? const Duration(milliseconds: 220)
+                  : Duration.zero,
+              curve: Curves.easeOutCubic,
+              transform: Matrix4.translationValues(0, dragOffset, 0),
+              child: child,
+            );
+          },
+          child: RepaintBoundary(
+            child: Stack(
+              children: [
+                // Blurred artwork wash background
                 Positioned.fill(
-                  child: Opacity(
-                    opacity: 0.28,
-                    child: ImageFiltered(
-                      imageFilter: ImageFilter.blur(sigmaX: 55, sigmaY: 55),
-                      child: ArtworkImage(
-                        art: track.artwork,
-                        size: double.infinity,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        tokens.bg.withValues(alpha: 0.55),
-                        tokens.bg.withValues(alpha: 0.92),
+                  child: RepaintBoundary(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (artworkUrl != null)
+                          ImageFiltered(
+                            imageFilter: ImageFilter.blur(
+                              sigmaX: 45,
+                              sigmaY: 45,
+                            ),
+                            child: ArtworkImage(art: track.artwork, size: 160),
+                          ),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                tokens.bg.withValues(alpha: 0.68),
+                                tokens.bg.withValues(alpha: 0.94),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
-              ),
-              // Content
-              SafeArea(
-                child: Column(
-                  children: [
-                    // Top bar
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              LucideIcons.chevronDown,
-                              color: tokens.textPrimary,
-                            ),
-                            tooltip: 'Close',
-                            onPressed: () => context.pop(),
-                          ),
-                          Expanded(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  l10n.playerNowPlaying.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 1.2,
-                                    color: tokens.textFaint,
-                                  ),
-                                ),
-                                if (track.album?.name != null &&
-                                    track.album!.name.isNotEmpty) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    track.album!.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      color: tokens.textDim,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              LucideIcons.cast,
-                              color: isCasting
-                                  ? tokens.accent
-                                  : tokens.textPrimary,
-                            ),
-                            tooltip: 'Cast',
-                            onPressed: () {
-                              unawaited(showCastSheet(context));
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              LucideIcons.ellipsis,
-                              color: tokens.textPrimary,
-                            ),
-                            tooltip: 'More options',
-                            onPressed: () {
-                              unawaited(
-                                showTrackMenuSheet(
-                                  context: context,
-                                  track: track,
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_showLyrics) ...[
-                      // Shrunken artwork header row
+                // Content
+                SafeArea(
+                  child: Column(
+                    children: [
+                      // Top bar
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 6,
+                          horizontal: 16,
+                          vertical: 8,
                         ),
                         child: Row(
                           children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: ArtworkImage(art: track.artwork, size: 52),
+                            IconButton(
+                              icon: Icon(
+                                LucideIcons.chevronDown,
+                                color: tokens.textPrimary,
+                              ),
+                              tooltip: 'Close',
+                              onPressed: () => context.pop(),
                             ),
-                            const SizedBox(width: 14),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    track.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textDirection:
-                                        Bidi.detectRtlDirectionality(
-                                          track.title,
-                                        )
-                                        ? TextDirection.rtl
-                                        : TextDirection.ltr,
+                                    l10n.playerNowPlaying.toUpperCase(),
                                     style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w700,
-                                      color: tokens.textPrimary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 1.2,
+                                      color: tokens.textFaint,
                                     ),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    track.artist.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textDirection:
-                                        Bidi.detectRtlDirectionality(
-                                          track.artist.name,
-                                        )
-                                        ? TextDirection.rtl
-                                        : TextDirection.ltr,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: tokens.textDim,
+                                  if (track.album?.name != null &&
+                                      track.album!.name.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      track.album!.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: tokens.textDim,
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
                             ),
-                            _buildDownloadButton(track, tokens, l10n, size: 22),
-                            AnimatedFavoriteButton(
-                              isLiked: isLiked,
-                              size: 22,
-                              tooltip: isLiked
-                                  ? l10n.playerUnlike
-                                  : l10n.playerLike,
-                              unlikedColor: tokens.textDim,
-                              onTap: () {
-                                ref
-                                    .read(libraryRepositoryProvider)
-                                    .toggleLike(track);
-                                setState(() {});
+                            IconButton(
+                              icon: Icon(
+                                LucideIcons.cast,
+                                color: isCasting
+                                    ? tokens.accent
+                                    : tokens.textPrimary,
+                              ),
+                              tooltip: 'Cast',
+                              onPressed: () {
+                                unawaited(showCastSheet(context));
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                LucideIcons.ellipsis,
+                                color: tokens.textPrimary,
+                              ),
+                              tooltip: 'More options',
+                              onPressed: () {
+                                unawaited(
+                                  showTrackMenuSheet(
+                                    context: context,
+                                    track: track,
+                                  ),
+                                );
                               },
                             ),
                           ],
                         ),
                       ),
-                      // Lyrics View
-                      Expanded(
-                        child: LyricsView(
-                          track: track,
-                          currentTime: playerState.currentTime,
-                          onSeek: (pos) => ref
-                              .read(playerControllerProvider.notifier)
-                              .seek(pos),
-                        ),
-                      ),
-                    ] else ...[
-                      // Artwork with animated scale on play/pause & matching-width lyrics preview
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final artMaxWidth = (constraints.maxWidth - 64)
-                                .clamp(200.0, 360.0);
-                            final artMaxHeight = (constraints.maxHeight - 88)
-                                .clamp(200.0, 360.0);
-                            final artSize =
-                                (artMaxWidth < artMaxHeight
-                                        ? artMaxWidth
-                                        : artMaxHeight)
-                                    .clamp(200.0, 360.0);
-
-                            return Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Center(
-                                    child: AnimatedScale(
-                                      scale: playerState.isPlaying ? 1.0 : 0.92,
-                                      duration: const Duration(
-                                        milliseconds: 280,
-                                      ),
-                                      curve: Curves.easeOutCubic,
-                                      child: SizedBox(
-                                        width: artSize,
-                                        height: artSize,
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                              24,
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.35,
-                                                ),
-                                                blurRadius: 28,
-                                                offset: const Offset(0, 14),
-                                              ),
-                                            ],
-                                          ),
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                              24,
-                                            ),
-                                            child: ArtworkImage(
-                                              art: track.artwork,
-                                              size: artSize,
-                                              radius: 24,
-                                            ),
-                                          ),
-                                        ),
+                      if (_showLyrics) ...[
+                        // Shrunken artwork header row
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 6,
+                          ),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: ArtworkImage(
+                                  art: track.artwork,
+                                  size: 52,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      track.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textDirection:
+                                          Bidi.detectRtlDirectionality(
+                                            track.title,
+                                          )
+                                          ? TextDirection.rtl
+                                          : TextDirection.ltr,
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w700,
+                                        color: tokens.textPrimary,
                                       ),
                                     ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                _InlineLyricsPreview(
-                                  track: track,
-                                  currentTime: playerState.currentTime,
-                                  width: artSize,
-                                  onTap: () =>
-                                      setState(() => _showLyrics = true),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Track Info & Action buttons (Download + Favorite)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    track.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textDirection:
-                                        Bidi.detectRtlDirectionality(
-                                          track.title,
-                                        )
-                                        ? TextDirection.rtl
-                                        : TextDirection.ltr,
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w700,
-                                      color: tokens.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () {
-                                      final rawId =
-                                          (track.artist.id.isNotEmpty &&
-                                              track.artist.id != 'yt-')
-                                          ? track.artist.id
-                                          : 'yt-${track.artist.name}';
-                                      if (rawId.isNotEmpty && rawId != 'yt-') {
-                                        final encodedId = Uri.encodeComponent(
-                                          rawId,
-                                        );
-                                        final encodedName = Uri.encodeComponent(
-                                          track.artist.name,
-                                        );
-                                        unawaited(
-                                          context.push(
-                                            '/artist/$encodedId?n=$encodedName',
-                                          ),
-                                        );
-                                      }
-                                    },
-                                    child: Text(
+                                    const SizedBox(height: 2),
+                                    Text(
                                       track.artist.name,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -527,243 +374,470 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                                           ? TextDirection.rtl
                                           : TextDirection.ltr,
                                       style: TextStyle(
-                                        fontSize: 16,
+                                        fontSize: 14,
                                         fontWeight: FontWeight.w500,
                                         color: tokens.textDim,
                                       ),
                                     ),
+                                  ],
+                                ),
+                              ),
+                              _buildDownloadButton(
+                                track,
+                                tokens,
+                                l10n,
+                                size: 22,
+                              ),
+                              AnimatedFavoriteButton(
+                                isLiked: isLiked,
+                                size: 22,
+                                tooltip: isLiked
+                                    ? l10n.playerUnlike
+                                    : l10n.playerLike,
+                                unlikedColor: tokens.textDim,
+                                onTap: () {
+                                  ref
+                                      .read(libraryRepositoryProvider)
+                                      .toggleLike(track);
+                                  setState(() {});
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Lyrics View
+                        Expanded(
+                          child: Consumer(
+                            builder: (context, ref, _) {
+                              final currentTime = ref.watch(
+                                playerControllerProvider.select(
+                                  (s) => s.currentTime,
+                                ),
+                              );
+                              return LyricsView(
+                                track: track,
+                                currentTime: currentTime,
+                                onSeek: (pos) => ref
+                                    .read(playerControllerProvider.notifier)
+                                    .seek(pos),
+                              );
+                            },
+                          ),
+                        ),
+                      ] else ...[
+                        // Artwork with animated scale on play/pause & matching-width lyrics preview
+                        Expanded(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final artMaxWidth = (constraints.maxWidth - 64)
+                                  .clamp(200.0, 360.0);
+                              final artMaxHeight = (constraints.maxHeight - 88)
+                                  .clamp(200.0, 360.0);
+                              final artSize =
+                                  (artMaxWidth < artMaxHeight
+                                          ? artMaxWidth
+                                          : artMaxHeight)
+                                      .clamp(200.0, 360.0);
+
+                              return Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Center(
+                                      child: AnimatedScale(
+                                        scale: isPlaying ? 1.0 : 0.92,
+                                        duration: const Duration(
+                                          milliseconds: 280,
+                                        ),
+                                        curve: Curves.easeOutCubic,
+                                        child: SizedBox(
+                                          width: artSize,
+                                          height: artSize,
+                                          child: DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(24),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.35),
+                                                  blurRadius: 28,
+                                                  offset: const Offset(0, 14),
+                                                ),
+                                              ],
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(24),
+                                              child: ArtworkImage(
+                                                art: track.artwork,
+                                                size: artSize,
+                                                radius: 24,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _InlineLyricsPreview(
+                                    track: track,
+                                    width: artSize,
+                                    onTap: () =>
+                                        setState(() => _showLyrics = true),
                                   ),
                                 ],
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Track Info & Action buttons (Download + Favorite)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      track.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textDirection:
+                                          Bidi.detectRtlDirectionality(
+                                            track.title,
+                                          )
+                                          ? TextDirection.rtl
+                                          : TextDirection.ltr,
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w700,
+                                        color: tokens.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        final rawId =
+                                            (track.artist.id.isNotEmpty &&
+                                                track.artist.id != 'yt-')
+                                            ? track.artist.id
+                                            : 'yt-${track.artist.name}';
+                                        if (rawId.isNotEmpty &&
+                                            rawId != 'yt-') {
+                                          final encodedId = Uri.encodeComponent(
+                                            rawId,
+                                          );
+                                          final encodedName =
+                                              Uri.encodeComponent(
+                                                track.artist.name,
+                                              );
+                                          unawaited(
+                                            context.push(
+                                              '/artist/$encodedId?n=$encodedName',
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      child: Text(
+                                        track.artist.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textDirection:
+                                            Bidi.detectRtlDirectionality(
+                                              track.artist.name,
+                                            )
+                                            ? TextDirection.rtl
+                                            : TextDirection.ltr,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: tokens.textDim,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              _buildDownloadButton(
+                                track,
+                                tokens,
+                                l10n,
+                                size: 26,
+                              ),
+                              AnimatedFavoriteButton(
+                                isLiked: isLiked,
+                                tooltip: isLiked
+                                    ? l10n.playerUnlike
+                                    : l10n.playerLike,
+                                unlikedColor: tokens.textDim,
+                                onTap: () {
+                                  ref
+                                      .read(libraryRepositoryProvider)
+                                      .toggleLike(track);
+                                  setState(() {});
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      // Scrubber (GlassSlider)
+                      _NowPlayingScrubber(trackDurationSecs: track.duration),
+                      const SizedBox(height: 8),
+                      // Main Playback Controls
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Shuffle button
+                            IconButton(
+                              icon: Icon(
+                                LucideIcons.shuffle,
+                                color: shuffle ? tokens.accent : tokens.textDim,
+                                size: 24,
+                              ),
+                              tooltip: l10n.playerShuffle,
+                              onPressed: () => ref
+                                  .read(playerControllerProvider.notifier)
+                                  .toggleShuffle(),
+                            ),
+                            // Previous button
+                            IconButton(
+                              icon: Icon(
+                                LucideIcons.skipBack,
+                                color: tokens.textPrimary,
+                                size: 32,
+                              ),
+                              tooltip: l10n.playerPrev,
+                              onPressed: () => ref
+                                  .read(playerControllerProvider.notifier)
+                                  .prev(),
+                            ),
+                            // Play/Pause button
+                            Semantics(
+                              label: isPlaying
+                                  ? l10n.playerPause
+                                  : l10n.playerPlay,
+                              button: true,
+                              child: GestureDetector(
+                                onTap: () => ref
+                                    .read(playerControllerProvider.notifier)
+                                    .toggle(),
+                                child: Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    color: tokens.accent,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: tokens.accent.withValues(
+                                          alpha: 0.35,
+                                        ),
+                                        blurRadius: 18,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: buffering
+                                        ? SizedBox(
+                                            width: 28,
+                                            height: 28,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 3,
+                                              color: tokens.onAccent,
+                                            ),
+                                          )
+                                        : Icon(
+                                            isPlaying
+                                                ? LucideIcons.pause
+                                                : LucideIcons.play,
+                                            size: 34,
+                                            color: tokens.onAccent,
+                                          ),
+                                  ),
+                                ),
                               ),
                             ),
-                            _buildDownloadButton(track, tokens, l10n, size: 26),
-                            AnimatedFavoriteButton(
-                              isLiked: isLiked,
-                              tooltip: isLiked
-                                  ? l10n.playerUnlike
-                                  : l10n.playerLike,
-                              unlikedColor: tokens.textDim,
-                              onTap: () {
-                                ref
-                                    .read(libraryRepositoryProvider)
-                                    .toggleLike(track);
-                                setState(() {});
+                            // Next button
+                            IconButton(
+                              icon: Icon(
+                                LucideIcons.skipForward,
+                                color: tokens.textPrimary,
+                                size: 32,
+                              ),
+                              tooltip: l10n.playerNext,
+                              onPressed: () => ref
+                                  .read(playerControllerProvider.notifier)
+                                  .next(),
+                            ),
+                            // Repeat button (off / all / one)
+                            IconButton(
+                              icon: Icon(
+                                repeat == RepeatMode.one
+                                    ? LucideIcons.repeat1
+                                    : LucideIcons.repeat,
+                                color: repeat != RepeatMode.off
+                                    ? tokens.accent
+                                    : tokens.textDim,
+                                size: 24,
+                              ),
+                              tooltip: switch (repeat) {
+                                RepeatMode.all => l10n.playerRepeatAll,
+                                RepeatMode.one => l10n.playerRepeatOne,
+                                RepeatMode.off => l10n.playerRepeatOff,
                               },
+                              onPressed: () => ref
+                                  .read(playerControllerProvider.notifier)
+                                  .cycleRepeat(),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                    const SizedBox(height: 12),
-                    // Scrubber (GlassSlider)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: GlassSlider(
-                        value: clampedCurrentMs,
-                        max: durationMs > 0 ? durationMs.toDouble() : 1.0,
-                        elapsedLabel: elapsedLabel,
-                        remainingLabel: remainingLabel,
-                        onChanged: (val) {
-                          setState(() {
-                            _scrubPositionMs = val;
-                          });
-                        },
-                        onChangeEnd: (val) {
-                          _scrubPositionMs = null;
-                          ref
-                              .read(playerControllerProvider.notifier)
-                              .seek(Duration(milliseconds: val.toInt()));
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Main Playback Controls
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          // Shuffle button
-                          IconButton(
-                            icon: Icon(
-                              LucideIcons.shuffle,
-                              color: playerState.shuffle
-                                  ? tokens.accent
-                                  : tokens.textDim,
-                              size: 24,
-                            ),
-                            tooltip: l10n.playerShuffle,
-                            onPressed: () => ref
-                                .read(playerControllerProvider.notifier)
-                                .toggleShuffle(),
-                          ),
-                          // Previous button
-                          IconButton(
-                            icon: Icon(
-                              LucideIcons.skipBack,
-                              color: tokens.textPrimary,
-                              size: 32,
-                            ),
-                            tooltip: l10n.playerPrev,
-                            onPressed: () => ref
-                                .read(playerControllerProvider.notifier)
-                                .prev(),
-                          ),
-                          // Play/Pause button
-                          Semantics(
-                            label: playerState.isPlaying
-                                ? l10n.playerPause
-                                : l10n.playerPlay,
-                            button: true,
-                            child: GestureDetector(
-                              onTap: () => ref
-                                  .read(playerControllerProvider.notifier)
-                                  .toggle(),
-                              child: Container(
-                                width: 72,
-                                height: 72,
-                                decoration: BoxDecoration(
-                                  color: tokens.accent,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: tokens.accent.withValues(
-                                        alpha: 0.35,
-                                      ),
-                                      blurRadius: 18,
-                                      offset: const Offset(0, 6),
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: playerState.buffering
-                                      ? SizedBox(
-                                          width: 28,
-                                          height: 28,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 3,
-                                            color: tokens.onAccent,
-                                          ),
-                                        )
-                                      : Icon(
-                                          playerState.isPlaying
-                                              ? LucideIcons.pause
-                                              : LucideIcons.play,
-                                          size: 34,
-                                          color: tokens.onAccent,
-                                        ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Next button
-                          IconButton(
-                            icon: Icon(
-                              LucideIcons.skipForward,
-                              color: tokens.textPrimary,
-                              size: 32,
-                            ),
-                            tooltip: l10n.playerNext,
-                            onPressed: () => ref
-                                .read(playerControllerProvider.notifier)
-                                .next(),
-                          ),
-                          // Repeat button (off / all / one)
-                          IconButton(
-                            icon: Icon(
-                              playerState.repeat == RepeatMode.one
-                                  ? LucideIcons.repeat1
-                                  : LucideIcons.repeat,
-                              color: playerState.repeat != RepeatMode.off
-                                  ? tokens.accent
-                                  : tokens.textDim,
-                              size: 24,
-                            ),
-                            tooltip: switch (playerState.repeat) {
-                              RepeatMode.all => l10n.playerRepeatAll,
-                              RepeatMode.one => l10n.playerRepeatOne,
-                              RepeatMode.off => l10n.playerRepeatOff,
-                            },
-                            onPressed: () => ref
-                                .read(playerControllerProvider.notifier)
-                                .cycleRepeat(),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Bottom bar: Lyrics, Sleep timer, EQ (Android), Queue
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Lyrics toggle
-                          IconButton(
-                            key: const Key('now_playing_lyrics_toggle'),
-                            icon: Icon(
-                              LucideIcons.mic,
-                              color: _showLyrics
-                                  ? tokens.accent
-                                  : tokens.textDim,
-                              size: 22,
-                            ),
-                            tooltip: l10n.npLyrics,
-                            onPressed: () {
-                              setState(() {
-                                _showLyrics = !_showLyrics;
-                              });
-                            },
-                          ),
-                          // Sleep timer sheet
-                          IconButton(
-                            icon: Icon(
-                              LucideIcons.timer,
-                              color: playerState.sleepAt != null
-                                  ? tokens.accent
-                                  : tokens.textDim,
-                              size: 22,
-                            ),
-                            tooltip: 'Sleep timer',
-                            onPressed: () {
-                              unawaited(SleepTimerSheet.show(context));
-                            },
-                          ),
-                          // Equalizer (Android only)
-                          if (defaultTargetPlatform == TargetPlatform.android)
+                      const SizedBox(height: 16),
+                      // Bottom bar: Lyrics, Sleep timer, EQ (Android), Queue
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Lyrics toggle
                             IconButton(
+                              key: const Key('now_playing_lyrics_toggle'),
                               icon: Icon(
-                                LucideIcons.sliders,
-                                color: playerState.eq.any((g) => g != 0)
+                                LucideIcons.mic,
+                                color: _showLyrics
                                     ? tokens.accent
                                     : tokens.textDim,
                                 size: 22,
                               ),
-                              tooltip: 'Equalizer',
+                              tooltip: l10n.npLyrics,
                               onPressed: () {
-                                unawaited(EqualizerSheet.show(context));
+                                setState(() {
+                                  _showLyrics = !_showLyrics;
+                                });
                               },
                             ),
-                          // Queue sheet
-                          IconButton(
-                            icon: Icon(
-                              LucideIcons.listMusic,
-                              color: tokens.textDim,
-                              size: 22,
+                            // Sleep timer sheet
+                            IconButton(
+                              icon: Icon(
+                                LucideIcons.timer,
+                                color: hasSleepTimer
+                                    ? tokens.accent
+                                    : tokens.textDim,
+                                size: 22,
+                              ),
+                              tooltip: 'Sleep timer',
+                              onPressed: () {
+                                unawaited(SleepTimerSheet.show(context));
+                              },
                             ),
-                            tooltip: l10n.playerQueue,
-                            onPressed: () => context.push('/queue'),
-                          ),
-                        ],
+                            // Equalizer (Android only)
+                            if (defaultTargetPlatform == TargetPlatform.android)
+                              IconButton(
+                                icon: Icon(
+                                  LucideIcons.sliders,
+                                  color: hasEq ? tokens.accent : tokens.textDim,
+                                  size: 22,
+                                ),
+                                tooltip: 'Equalizer',
+                                onPressed: () {
+                                  unawaited(EqualizerSheet.show(context));
+                                },
+                              ),
+                            // Queue sheet
+                            IconButton(
+                              icon: Icon(
+                                LucideIcons.listMusic,
+                                color: tokens.textDim,
+                                size: 22,
+                              ),
+                              tooltip: l10n.playerQueue,
+                              onPressed: () => context.push('/queue'),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
+                      const SizedBox(height: 12),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _NowPlayingScrubber extends ConsumerStatefulWidget {
+  const _NowPlayingScrubber({required this.trackDurationSecs});
+
+  final int trackDurationSecs;
+
+  @override
+  ConsumerState<_NowPlayingScrubber> createState() =>
+      _NowPlayingScrubberState();
+}
+
+class _NowPlayingScrubberState extends ConsumerState<_NowPlayingScrubber> {
+  double? _scrubPositionMs;
+
+  @override
+  Widget build(BuildContext context) {
+    final playerDuration = ref.watch(
+      playerControllerProvider.select((s) => s.duration),
+    );
+    final currentTime = ref.watch(
+      playerControllerProvider.select((s) => s.currentTime),
+    );
+
+    final durationSecs = playerDuration.inSeconds > 0
+        ? playerDuration.inSeconds
+        : widget.trackDurationSecs;
+    final durationMs = durationSecs * 1000;
+    final currentMs = _scrubPositionMs ?? currentTime.inMilliseconds.toDouble();
+    final clampedCurrentMs = currentMs.clamp(
+      0.0,
+      durationMs > 0 ? durationMs.toDouble() : 0.0,
+    );
+
+    final elapsedLabel = FormatUtils.formatDuration(
+      (clampedCurrentMs / 1000).toInt(),
+    );
+    final remainingSecs = durationSecs - (clampedCurrentMs / 1000).toInt();
+    final remainingLabel =
+        '-${FormatUtils.formatDuration(remainingSecs > 0 ? remainingSecs : 0)}';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: GlassSlider(
+        value: clampedCurrentMs,
+        max: durationMs > 0 ? durationMs.toDouble() : 1.0,
+        elapsedLabel: elapsedLabel,
+        remainingLabel: remainingLabel,
+        onChanged: (val) {
+          setState(() {
+            _scrubPositionMs = val;
+          });
+        },
+        onChangeEnd: (val) {
+          setState(() {
+            _scrubPositionMs = null;
+          });
+          ref
+              .read(playerControllerProvider.notifier)
+              .seek(Duration(milliseconds: val.toInt()));
+        },
       ),
     );
   }
@@ -772,19 +846,20 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
 class _InlineLyricsPreview extends ConsumerWidget {
   const _InlineLyricsPreview({
     required this.track,
-    required this.currentTime,
     required this.onTap,
     this.width,
   });
 
   final Track track;
-  final Duration currentTime;
   final VoidCallback onTap;
   final double? width;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).glass;
+    final currentTime = ref.watch(
+      playerControllerProvider.select((s) => s.currentTime),
+    );
     final lyricsAsync = ref.watch(lyricsForTrackProvider(track));
 
     Widget content = GestureDetector(
@@ -792,10 +867,11 @@ class _InlineLyricsPreview extends ConsumerWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: GlassSurface(
+        enableBlur: false,
         borderRadius: BorderRadius.circular(20),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         child: lyricsAsync.when(
-          data: (lyrics) => _buildContent(context, tokens, lyrics),
+          data: (lyrics) => _buildContent(context, tokens, lyrics, currentTime),
           loading: () => _buildPlaceholder(tokens),
           error: (_, _) => _buildPlaceholder(tokens),
         ),
@@ -811,19 +887,20 @@ class _InlineLyricsPreview extends ConsumerWidget {
       );
     }
 
-    return content;
+    return RepaintBoundary(child: content);
   }
 
   Widget _buildContent(
     BuildContext context,
     GlassTokens tokens,
     Lyrics lyrics,
+    Duration effectiveTime,
   ) {
     if (lyrics is SyncedLyrics) {
       final lines = lyrics.lines;
       if (lines.isEmpty) return _buildPlaceholder(tokens);
 
-      final currentMs = currentTime.inMilliseconds;
+      final currentMs = effectiveTime.inMilliseconds;
       final adjMs = currentMs - lyrics.autoOffsetMs;
       const lookaheadMs = 150;
 

@@ -13,6 +13,7 @@ import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/sources/audius/audius_client.dart';
 import 'package:awady_music/data/sources/innertube/innertube_client.dart';
 import 'package:awady_music/data/sources/innertube/matcher.dart';
+import 'package:flutter/foundation.dart';
 
 export 'package:awady_music/data/models/ai_mix_playlist.dart';
 
@@ -531,9 +532,107 @@ class CatalogRepositoryImpl implements CatalogRepository {
     }
 
     final combined = [...fresh, ...familiar];
+    final interleaved = interleaveByArtist(combined);
     return CatalogList(
-      combined.length > 24 ? combined.sublist(0, 24) : combined,
+      interleaved.length > 24 ? interleaved.sublist(0, 24) : interleaved,
     );
+  }
+
+  /// Normalizes an artist name for grouping and mixing.
+  /// Lowercases, trims, and strips feat/collab/topic tokens.
+  @visibleForTesting
+  static String normalizeArtist(String name) {
+    var cleaned = name.toLowerCase().trim();
+    if (cleaned.isEmpty) return '';
+    cleaned = cleaned
+        .replaceAll(RegExp(r'\s*-\s*topic\b'), '')
+        .replaceAll(RegExp(r'\s*official\b'), '')
+        .replaceAll(RegExp(r'\s*vevo\b'), '');
+    final splitIndex = cleaned.indexOf(
+      RegExp(r'\s+(feat\.?|ft\.?|and|&|x)\s+|,\s*', caseSensitive: false),
+    );
+    if (splitIndex > 0) {
+      cleaned = cleaned.substring(0, splitIndex);
+    }
+    return cleaned.trim();
+  }
+
+  /// Interleaves a list of tracks so that no two adjacent tracks share the
+  /// same normalized artist name whenever another artist is available.
+  @visibleForTesting
+  static List<Track> interleaveByArtist(List<Track> tracks) {
+    if (tracks.length <= 1) return tracks;
+
+    // Deduplicate by track ID while maintaining first seen order
+    final seenIds = <String>{};
+    final unique = <Track>[];
+    for (final t in tracks) {
+      if (seenIds.add(t.id)) {
+        unique.add(t);
+      }
+    }
+    if (unique.length <= 1) return unique;
+
+    // Group tracks by normalized artist key (preserving internal track order)
+    final groups = <String, List<Track>>{};
+    for (final t in unique) {
+      final key = normalizeArtist(t.artist.name);
+      groups.putIfAbsent(key, () => []).add(t);
+    }
+
+    final result = <Track>[];
+    String? lastArtistKey;
+
+    while (groups.isNotEmpty) {
+      // Find candidate groups with artist != lastArtistKey
+      final eligible = groups.entries
+          .where((e) => e.key != lastArtistKey && e.value.isNotEmpty)
+          .toList();
+
+      if (eligible.isNotEmpty) {
+        // Pick group with largest remaining count
+        eligible.sort((a, b) => b.value.length.compareTo(a.value.length));
+        final chosen = eligible.first;
+        final track = chosen.value.removeAt(0);
+        result.add(track);
+        lastArtistKey = chosen.key;
+
+        if (chosen.value.isEmpty) {
+          groups.remove(chosen.key);
+        }
+      } else {
+        // Only groups matching lastArtistKey remain
+        final remainingTracks = <Track>[];
+        groups.values.forEach(remainingTracks.addAll);
+        groups.clear();
+
+        // For each remaining track, try to insert into an earlier
+        // non-adjacent slot
+        for (final track in remainingTracks) {
+          final key = normalizeArtist(track.artist.name);
+          var inserted = false;
+          for (var i = 0; i <= result.length; i++) {
+            final prevKey = i > 0
+                ? normalizeArtist(result[i - 1].artist.name)
+                : null;
+            final nextKey = i < result.length
+                ? normalizeArtist(result[i].artist.name)
+                : null;
+            if (prevKey != key && nextKey != key) {
+              result.insert(i, track);
+              inserted = true;
+              break;
+            }
+          }
+          if (!inserted) {
+            result.add(track);
+          }
+        }
+        break;
+      }
+    }
+
+    return result;
   }
 
   @override
@@ -546,41 +645,157 @@ class CatalogRepositoryImpl implements CatalogRepository {
     final likedSet = likedTracks.map((t) => t.id).toSet();
     final mixes = <AiMixPlaylist>[];
 
-    Future<List<Track>> getSuggestions(Track seed, int count) async {
-      final vid =
-          seed.streamId ??
-          (seed.id.startsWith('yt-') ? seed.id.substring(3) : '');
-      if (vid.isNotEmpty) {
-        try {
-          final res = await upNext(vid, limit: count + 8);
-          final filtered = res
-              .where((t) => !likedSet.contains(t.id))
-              .take(count)
-              .toList();
-          if (filtered.isNotEmpty) return filtered;
-        } on Object catch (_) {}
+    Future<List<Track>> getDiverseSuggestions(
+      List<Track> seeds,
+      int count, {
+      String? fallbackGenreQuery,
+    }) async {
+      final futures = <Future<List<Track>>>[];
+      final distinctSeedArtists = <String>{};
+      final chosenSeeds = <Track>[];
+
+      for (final s in seeds) {
+        final key = normalizeArtist(s.artist.name);
+        if (key.isNotEmpty && distinctSeedArtists.add(key)) {
+          chosenSeeds.add(s);
+          if (chosenSeeds.length >= 3) break;
+        }
       }
-      try {
-        final res = await search(seed.artist.name);
-        return res.songs
-            .where((t) => !likedSet.contains(t.id))
-            .take(count)
-            .toList();
-      } on Object catch (_) {
-        return const [];
+
+      for (final seed in chosenSeeds) {
+        final vid =
+            seed.streamId ??
+            (seed.id.startsWith('yt-') ? seed.id.substring(3) : '');
+        if (vid.isNotEmpty) {
+          futures.add(
+            upNext(vid, limit: 12)
+                .then(
+                  (res) => res.where((t) => !likedSet.contains(t.id)).toList(),
+                )
+                .catchError((Object _) => const <Track>[]),
+          );
+        } else {
+          futures.add(
+            search('${seed.artist.name} mix')
+                .then(
+                  (res) =>
+                      res.songs.where((t) => !likedSet.contains(t.id)).toList(),
+                )
+                .catchError((Object _) => const <Track>[]),
+          );
+        }
       }
+
+      if (followedArtists.isNotEmpty) {
+        for (final fa in followedArtists) {
+          final faKey = normalizeArtist(fa.name);
+          if (faKey.isNotEmpty && distinctSeedArtists.add(faKey)) {
+            futures.add(
+              search('${fa.name} mix')
+                  .then(
+                    (res) => res.songs
+                        .where((t) => !likedSet.contains(t.id))
+                        .toList(),
+                  )
+                  .catchError((Object _) => const <Track>[]),
+            );
+            if (distinctSeedArtists.length >= 5) break;
+          }
+        }
+      }
+
+      if (fallbackGenreQuery != null && futures.length < 3) {
+        futures.add(
+          search(fallbackGenreQuery)
+              .then(
+                (res) =>
+                    res.songs.where((t) => !likedSet.contains(t.id)).toList(),
+              )
+              .catchError((Object _) => const <Track>[]),
+        );
+      }
+
+      if (futures.isEmpty && seeds.isNotEmpty) {
+        futures.add(
+          search(seeds.first.artist.name)
+              .then(
+                (res) =>
+                    res.songs.where((t) => !likedSet.contains(t.id)).toList(),
+              )
+              .catchError((Object _) => const <Track>[]),
+        );
+      }
+
+      final resolved = await Future.wait(futures);
+      final rawCandidates = <Track>[];
+      final artistCapped = <String, int>{};
+
+      for (final list in resolved) {
+        for (final track in list) {
+          final aKey = normalizeArtist(track.artist.name);
+          final current = artistCapped[aKey] ?? 0;
+          if (current < 2) {
+            artistCapped[aKey] = current + 1;
+            rawCandidates.add(track);
+          }
+        }
+      }
+
+      final interleaved = interleaveByArtist(rawCandidates);
+      return interleaved.length > count
+          ? interleaved.sublist(0, count)
+          : interleaved;
+    }
+
+    List<Track> weaveAndInterleave(List<Track> liked, List<Track> suggested) {
+      if (suggested.isEmpty) return interleaveByArtist(liked);
+      if (liked.isEmpty) return interleaveByArtist(suggested);
+
+      final interleavedLiked = interleaveByArtist(liked);
+      final interleavedSuggested = interleaveByArtist(suggested);
+
+      final half = (interleavedLiked.length / 2).ceil();
+      final firstHalf = interleavedLiked.take(half).toList();
+      final secondHalf = interleavedLiked.skip(half).toList();
+      final combined = [...firstHalf, ...interleavedSuggested, ...secondHalf];
+
+      for (var i = 0; i < combined.length - 1; i++) {
+        final a1 = normalizeArtist(combined[i].artist.name);
+        final a2 = normalizeArtist(combined[i + 1].artist.name);
+        if (a1 == a2) {
+          var swapped = false;
+          final afterTarget = (i + 2 < combined.length)
+              ? normalizeArtist(combined[i + 2].artist.name)
+              : null;
+          for (var j = i + 2; j < combined.length; j++) {
+            final cand = normalizeArtist(combined[j].artist.name);
+            final prevCand = normalizeArtist(combined[j - 1].artist.name);
+            final nextCand = (j + 1 < combined.length)
+                ? normalizeArtist(combined[j + 1].artist.name)
+                : null;
+            if (cand != a1 &&
+                cand != afterTarget &&
+                prevCand != a1 &&
+                nextCand != a1) {
+              final temp = combined[i + 1];
+              combined[i + 1] = combined[j];
+              combined[j] = temp;
+              swapped = true;
+              break;
+            }
+          }
+          if (!swapped) {
+            return interleaveByArtist(combined);
+          }
+        }
+      }
+
+      return combined;
     }
 
     // 1. Overall Mix: All Likes AI Mix
-    final overallHalf = (likedTracks.length / 2).ceil();
-    final overallFirst = likedTracks.take(overallHalf).toList();
-    final overallSecond = likedTracks.skip(overallHalf).toList();
-    final overallSuggested = await getSuggestions(likedTracks.first, 8);
-    final overallTracks = [
-      ...overallFirst,
-      ...overallSuggested,
-      ...overallSecond,
-    ];
+    final overallSuggested = await getDiverseSuggestions(likedTracks, 8);
+    final overallTracks = weaveAndInterleave(likedTracks, overallSuggested);
     mixes.add(
       AiMixPlaylist(
         id: 'ai-mix-overall',
@@ -593,7 +808,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
       ),
     );
 
-    // 2. Partition by category/genre/artist for Mix 1, Mix 2, Mix 3
+    // 2. Multi-artist category partitions
     final arabicTracks = likedTracks.where((t) {
       final text = '${t.title} ${t.artist.name}';
       return RegExp(r'[\u0600-\u06FF]').hasMatch(text);
@@ -602,52 +817,75 @@ class CatalogRepositoryImpl implements CatalogRepository {
       final text = '${t.title} ${t.artist.name}';
       return !RegExp(r'[\u0600-\u06FF]').hasMatch(text);
     }).toList();
+    final chillTracks = likedTracks.where((t) => t.duration >= 210).toList();
+    final upbeatTracks = likedTracks
+        .where((t) => t.duration > 0 && t.duration < 210)
+        .toList();
 
-    final categories = <String, List<Track>>{};
-    if (arabicTracks.isNotEmpty) {
-      categories['Arabic & Tarab'] = arabicTracks;
-    }
+    // Group liked tracks by artist to create a multi-artist favorites mix
     final artistGroups = <String, List<Track>>{};
-    for (final t in (categories.isEmpty ? likedTracks : nonArabicTracks)) {
-      artistGroups.putIfAbsent(t.artist.name, () => []).add(t);
+    for (final t in likedTracks) {
+      final aKey = normalizeArtist(t.artist.name);
+      if (aKey.isNotEmpty) {
+        artistGroups.putIfAbsent(aKey, () => []).add(t);
+      }
     }
     final sortedArtistGroups = artistGroups.entries.toList()
       ..sort((a, b) => b.value.length.compareTo(a.value.length));
-
+    final favoritesMulti = <Track>[];
     for (final entry in sortedArtistGroups) {
-      if (categories.length >= 3) break;
-      categories['${entry.key} & Similar'] = entry.value;
+      favoritesMulti.addAll(entry.value.take(2));
     }
 
-    if (categories.length < 3 && likedTracks.length >= 4) {
-      final chill = likedTracks.where((t) => t.duration >= 220).toList();
-      final upbeat = likedTracks.where((t) => t.duration < 220).toList();
-      if (chill.isNotEmpty && !categories.containsKey('Chill & Slow')) {
-        categories['Chill & Slow'] = chill;
-      }
-      if (categories.length < 3 &&
-          upbeat.isNotEmpty &&
-          !categories.containsKey('Upbeat Energy')) {
-        categories['Upbeat Energy'] = upbeat;
-      }
+    final categories = <String, ({List<Track> tracks, String fallbackQuery})>{};
+    if (arabicTracks.isNotEmpty) {
+      categories['Arabic & Tarab'] = (
+        tracks: arabicTracks,
+        fallbackQuery: 'Arabic Tarab mix',
+      );
+    }
+    if (nonArabicTracks.isNotEmpty) {
+      categories['Global & Pop Vibes'] = (
+        tracks: nonArabicTracks,
+        fallbackQuery: 'Global pop hits mix',
+      );
+    }
+    if (chillTracks.length >= 2) {
+      categories['Chill & Late Night'] = (
+        tracks: chillTracks,
+        fallbackQuery: 'Chill acoustic evening mix',
+      );
+    }
+    if (upbeatTracks.length >= 2 && categories.length < 3) {
+      categories['Upbeat & Energy'] = (
+        tracks: upbeatTracks,
+        fallbackQuery: 'Upbeat workout dance mix',
+      );
+    }
+    if (favoritesMulti.length >= 2 && categories.length < 3) {
+      categories['Favorites Discovery'] = (
+        tracks: favoritesMulti,
+        fallbackQuery: 'Popular hits mix',
+      );
     }
 
     var mixIndex = 1;
     for (final entry in categories.entries) {
       if (mixIndex > 3) break;
-      final catTracks = entry.value;
-      final catHalf = (catTracks.length / 2).ceil();
-      final catFirst = catTracks.take(catHalf).toList();
-      final catSecond = catTracks.skip(catHalf).toList();
-      final catSuggested = await getSuggestions(catTracks.first, 6);
-      final woven = [...catFirst, ...catSuggested, ...catSecond];
+      final catTracks = entry.value.tracks;
+      final catSuggested = await getDiverseSuggestions(
+        catTracks,
+        6,
+        fallbackGenreQuery: entry.value.fallbackQuery,
+      );
+      final woven = weaveAndInterleave(catTracks, catSuggested);
 
       mixes.add(
         AiMixPlaylist(
           id: 'ai-mix-$mixIndex',
           title: '${entry.key} Mix',
           subtitle:
-              '${entry.value.length} liked · '
+              '${catTracks.length} liked · '
               '${catSuggested.length} suggested in middle',
           badge: 'Mix $mixIndex',
           category: entry.key,

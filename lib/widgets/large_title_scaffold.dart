@@ -74,15 +74,24 @@ class LargeTitleScaffold extends StatelessWidget {
               return Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Glass background that fades in as user scrolls
-                  Opacity(
-                    opacity: scrollRatio,
-                    child: const GlassSurface(
-                      radius: 0,
-                      strong: true,
-                      child: SizedBox.expand(),
-                    ),
-                  ),
+                  // Glass background that activates as user scrolls
+                  if (scrollRatio > 0.01)
+                    if (scrollRatio <= 0.15)
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: tokens.bgElevated.withValues(
+                            alpha: (scrollRatio / 0.15) * 0.45,
+                          ),
+                        ),
+                      )
+                    else
+                      const RepaintBoundary(
+                        child: GlassSurface(
+                          radius: 0,
+                          strong: true,
+                          child: SizedBox.expand(),
+                        ),
+                      ),
                   // Compact title (centered or aligned) fading in on collapse
                   Positioned(
                     top: topPadding,

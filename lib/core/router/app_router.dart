@@ -270,8 +270,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
-          transitionDuration: const Duration(milliseconds: 360),
-          reverseTransitionDuration: const Duration(milliseconds: 320),
+          transitionDuration: const Duration(milliseconds: 280),
+          reverseTransitionDuration: const Duration(milliseconds: 240),
           child: const NowPlayingScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             final curved = CurvedAnimation(
@@ -284,7 +284,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 begin: const Offset(0, 1),
                 end: Offset.zero,
               ).animate(curved),
-              child: child,
+              child: RepaintBoundary(child: child),
             );
           },
         ),

@@ -78,6 +78,7 @@ class GlassSurface extends ConsumerWidget {
     this.padding,
     this.margin,
     this.tintColor,
+    this.enableBlur = true,
   });
 
   final Widget child;
@@ -87,6 +88,7 @@ class GlassSurface extends ConsumerWidget {
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
   final Color? tintColor;
+  final bool enableBlur;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -125,6 +127,46 @@ class GlassSurface extends ConsumerWidget {
         ? Color.alphaBlend(tintColor!, fill)
         : fill;
 
+    Widget inner = CustomPaint(
+      foregroundPainter: _AppleLiquidGlassRimPainter(
+        borderRadius: effectiveBorderRadius,
+        strokeColor: tokens.glassStroke,
+        highlightColor: tokens.glassHighlightStart,
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: effectiveBorderRadius,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color.alphaBlend(tokens.glassHighlightStart, baseColor),
+              baseColor,
+              Color.alphaBlend(tokens.glassHighlightEnd, baseColor),
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: content,
+      ),
+    );
+
+    if (enableBlur) {
+      inner = BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+        child: inner,
+      );
+    }
+
+    Widget clipped = ClipRRect(
+      borderRadius: effectiveBorderRadius,
+      child: inner,
+    );
+
+    if (enableBlur) {
+      clipped = RepaintBoundary(child: clipped);
+    }
+
     Widget glass = DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: effectiveBorderRadius,
@@ -137,35 +179,7 @@ class GlassSurface extends ConsumerWidget {
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: effectiveBorderRadius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-          child: CustomPaint(
-            foregroundPainter: _AppleLiquidGlassRimPainter(
-              borderRadius: effectiveBorderRadius,
-              strokeColor: tokens.glassStroke,
-              highlightColor: tokens.glassHighlightStart,
-            ),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: effectiveBorderRadius,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color.alphaBlend(tokens.glassHighlightStart, baseColor),
-                    baseColor,
-                    Color.alphaBlend(tokens.glassHighlightEnd, baseColor),
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-              ),
-              child: content,
-            ),
-          ),
-        ),
-      ),
+      child: clipped,
     );
 
     if (margin != null) {

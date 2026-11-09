@@ -127,6 +127,7 @@ class HomeScreen extends ConsumerWidget {
                   vertical: 8,
                 ),
                 child: GlassSurface(
+                  enableBlur: false,
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
@@ -223,6 +224,7 @@ class HomeScreen extends ConsumerWidget {
                           .playTrack(track);
                     },
                     child: GlassSurface(
+                      enableBlur: false,
                       padding: const EdgeInsets.all(6),
                       child: Row(
                         children: [
@@ -390,6 +392,7 @@ class _CarouselSection<T> extends StatelessWidget {
           error: (err, stack) => Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: GlassSurface(
+              enableBlur: false,
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [

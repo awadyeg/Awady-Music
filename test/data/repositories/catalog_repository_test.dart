@@ -444,5 +444,162 @@ void main() {
       expect(res.first.id, equals('yt-rec-1'));
       expect(res.any((t) => t.id == 'yt-rec-2'), isTrue);
     });
+
+    test('normalizeArtist cleans suffixes, collabs, and case', () {
+      expect(
+        CatalogRepositoryImpl.normalizeArtist('Amr Diab - Topic'),
+        equals('amr diab'),
+      );
+      expect(
+        CatalogRepositoryImpl.normalizeArtist('Adele Official'),
+        equals('adele'),
+      );
+      expect(
+        CatalogRepositoryImpl.normalizeArtist('Amr Diab feat. Cheb Khaled'),
+        equals('amr diab'),
+      );
+      expect(
+        CatalogRepositoryImpl.normalizeArtist('Amr Diab ft. Cheb Khaled'),
+        equals('amr diab'),
+      );
+      expect(
+        CatalogRepositoryImpl.normalizeArtist('Amr Diab & Mohamed Mounir'),
+        equals('amr diab'),
+      );
+      expect(
+        CatalogRepositoryImpl.normalizeArtist('Amr Diab, Mohamed Mounir'),
+        equals('amr diab'),
+      );
+    });
+
+    test(
+      'interleaveByArtist prevents adjacent tracks from the same artist',
+      () {
+        const a1 = Track(
+          id: 'a1',
+          title: 'Song A1',
+          artist: Artist(id: 'a', name: 'Amr Diab'),
+        );
+        const a2 = Track(
+          id: 'a2',
+          title: 'Song A2',
+          artist: Artist(id: 'a', name: 'Amr Diab - Topic'),
+        );
+        const a3 = Track(
+          id: 'a3',
+          title: 'Song A3',
+          artist: Artist(id: 'a', name: 'Amr Diab feat. Khaled'),
+        );
+        const b1 = Track(
+          id: 'b1',
+          title: 'Song B1',
+          artist: Artist(id: 'b', name: 'Adele'),
+        );
+        const b2 = Track(
+          id: 'b2',
+          title: 'Song B2',
+          artist: Artist(id: 'b', name: 'Adele Official'),
+        );
+        const c1 = Track(
+          id: 'c1',
+          title: 'Song C1',
+          artist: Artist(id: 'c', name: 'Coldplay'),
+        );
+
+        final mixed = CatalogRepositoryImpl.interleaveByArtist([
+          a1,
+          a2,
+          a3,
+          b1,
+          b2,
+          c1,
+        ]);
+
+        expect(mixed.length, equals(6));
+        for (var i = 0; i < mixed.length - 1; i++) {
+          final currentArtist = CatalogRepositoryImpl.normalizeArtist(
+            mixed[i].artist.name,
+          );
+          final nextArtist = CatalogRepositoryImpl.normalizeArtist(
+            mixed[i + 1].artist.name,
+          );
+          expect(
+            currentArtist,
+            isNot(equals(nextArtist)),
+            reason: 'Tracks at $i and ${i + 1} share artist: $currentArtist',
+          );
+        }
+      },
+    );
+
+    test(
+      'aiMixesFromLikes creates multi-artist mixes with artist interleaving',
+      () async {
+        fakeYt
+          ..trendingData = const [
+            Track(
+              id: 'sug-1',
+              title: 'Suggested 1',
+              artist: Artist(id: 's1', name: 'Tamer Hosny'),
+            ),
+            Track(
+              id: 'sug-2',
+              title: 'Suggested 2',
+              artist: Artist(id: 's2', name: 'Hamaki'),
+            ),
+          ]
+          ..searchResults = const SearchResults(
+            songs: [
+              Track(
+                id: 'sug-3',
+                title: 'Suggested 3',
+                artist: Artist(id: 's3', name: 'Angham'),
+              ),
+            ],
+          );
+
+        const amr1 = Track(
+          id: 'amr1',
+          title: 'نور العين',
+          artist: Artist(id: 'a1', name: 'Amr Diab'),
+          duration: 240,
+        );
+        const amr2 = Track(
+          id: 'amr2',
+          title: 'تملي معاك',
+          artist: Artist(id: 'a1', name: 'Amr Diab'),
+          duration: 250,
+        );
+        const adele1 = Track(
+          id: 'adele1',
+          title: 'Hello',
+          artist: Artist(id: 'ad1', name: 'Adele'),
+          duration: 290,
+        );
+
+        final mixes = await repo.aiMixesFromLikes([amr1, amr2, adele1]);
+
+        expect(mixes, isNotEmpty);
+        for (final mix in mixes) {
+          expect(mix.tracks, isNotEmpty);
+          // Verify no two adjacent tracks share the same artist
+          for (var i = 0; i < mix.tracks.length - 1; i++) {
+            final cur = CatalogRepositoryImpl.normalizeArtist(
+              mix.tracks[i].artist.name,
+            );
+            final next = CatalogRepositoryImpl.normalizeArtist(
+              mix.tracks[i + 1].artist.name,
+            );
+            expect(
+              cur,
+              isNot(equals(next)),
+              reason:
+                  'Mix ${mix.title} has consecutive songs by '
+                  '$cur at $i and ${i + 1}',
+            );
+          }
+        }
+      },
+    );
   });
 }
