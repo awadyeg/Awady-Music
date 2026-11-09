@@ -744,7 +744,19 @@ class InnertubeClient {
 
   /// Fetches upNext / autoplay radio tracks for [videoId].
   Future<List<Track>> upNext(String videoId, {int limit = 40}) async {
-    final res = await post('next', {'videoId': videoId});
+    final cleanId = videoId.replaceFirst(RegExp('^(?:yt-|ytpl-|ytalb-)'), '');
+    try {
+      final res = await post('next', {
+        'videoId': cleanId,
+        'playlistId': 'RDAMVM$cleanId',
+        'isAudioOnly': true,
+      });
+      final tracks = _browseParser.parseUpNext(res, limit: limit);
+      if (tracks.isNotEmpty) return tracks;
+    } on Object catch (e) {
+      Log.w('Automix upNext with RDAMVM failed for $cleanId: $e');
+    }
+    final res = await post('next', {'videoId': cleanId});
     return _browseParser.parseUpNext(res, limit: limit);
   }
 

@@ -55,9 +55,25 @@ class PlaceholderScreen extends StatelessWidget {
 }
 
 class AppShell extends ConsumerWidget {
-  const AppShell({required this.navigationShell, super.key});
+  const AppShell({required this.child, required this.currentPath, super.key});
 
-  final StatefulNavigationShell navigationShell;
+  final Widget child;
+  final String currentPath;
+
+  int _calculateIndex(String path) {
+    if (path.startsWith('/search') ||
+        path.startsWith('/genre') ||
+        path.startsWith('/mood')) {
+      return 1;
+    }
+    if (path.startsWith('/library') || path.startsWith('/import')) {
+      return 2;
+    }
+    if (path.startsWith('/stats')) {
+      return 3;
+    }
+    return 0;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -85,44 +101,54 @@ class AppShell extends ConsumerWidget {
       playerControllerProvider.select((s) => s.current != null),
     );
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          Positioned.fill(child: navigationShell),
-          const Positioned(left: 0, right: 0, top: 0, child: OfflineBanner()),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (hasTrack) ...[
-                  const MiniPlayer(),
-                  const SizedBox(height: 8),
+    final currentIndex = _calculateIndex(currentPath);
+
+    return RepaintBoundary(
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: Stack(
+          children: [
+            Positioned.fill(child: child),
+            const Positioned(left: 0, right: 0, top: 0, child: OfflineBanner()),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hasTrack) ...[
+                    const MiniPlayer(),
+                    const SizedBox(height: 8),
+                  ],
+                  GlassTabBar(
+                    currentIndex: currentIndex,
+                    onTap: (index) {
+                      if (index == 1 && currentIndex == 1) {
+                        ref.read(searchFocusTriggerProvider.notifier).trigger();
+                      }
+                      switch (index) {
+                        case 0:
+                          context.go('/home');
+                        case 1:
+                          context.go('/search');
+                        case 2:
+                          context.go('/library');
+                        case 3:
+                          context.go('/stats');
+                      }
+                    },
+                    onDoubleTap: (index) {
+                      if (index == 1) {
+                        ref.read(searchFocusTriggerProvider.notifier).trigger();
+                      }
+                    },
+                  ),
                 ],
-                GlassTabBar(
-                  currentIndex: navigationShell.currentIndex,
-                  onTap: (index) {
-                    if (index == 1 && navigationShell.currentIndex == 1) {
-                      ref.read(searchFocusTriggerProvider.notifier).trigger();
-                    }
-                    navigationShell.goBranch(
-                      index,
-                      initialLocation: index == navigationShell.currentIndex,
-                    );
-                  },
-                  onDoubleTap: (index) {
-                    if (index == 1) {
-                      ref.read(searchFocusTriggerProvider.notifier).trigger();
-                    }
-                  },
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -139,117 +165,157 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) {
-          return AppShell(navigationShell: navigationShell);
+      ShellRoute(
+        builder: (context, state, child) {
+          return AppShell(currentPath: state.uri.path, child: child);
         },
-        branches: [
-          // Branch 0: Home
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/home',
-                builder: (context, state) => const HomeScreen(),
+        routes: [
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) {
+              return navigationShell;
+            },
+            branches: [
+              // Branch 0: Home
+              StatefulShellBranch(
                 routes: [
                   GoRoute(
-                    path: 'rewind/:month',
-                    parentNavigatorKey: rootNavigatorKey,
-                    builder: (context, state) =>
-                        RewindScreen(month: state.pathParameters['month']),
+                    path: '/home',
+                    builder: (context, state) => const HomeScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'rewind/:month',
+                        parentNavigatorKey: rootNavigatorKey,
+                        builder: (context, state) =>
+                            RewindScreen(month: state.pathParameters['month']),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              // Branch 1: Search
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/search',
+                    builder: (context, state) => const SearchScreen(),
+                  ),
+                ],
+              ),
+              // Branch 2: Library
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/library',
+                    builder: (context, state) => const LibraryScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'liked',
+                        builder: (context, state) => const PlaylistScreen(
+                          id: 'liked',
+                          kind: PlaylistKind.liked,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'downloads',
+                        builder: (context, state) => const DownloadsScreen(),
+                      ),
+                      GoRoute(
+                        path: 'recent',
+                        builder: (context, state) => const PlaylistScreen(
+                          id: 'recent',
+                          kind: PlaylistKind.recent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              // Branch 3: Stats
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/stats',
+                    builder: (context, state) => const StatsScreen(),
                   ),
                 ],
               ),
             ],
           ),
-          // Branch 1: Search
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/search',
-                builder: (context, state) => const SearchScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'genre/:name',
-                    builder: (context, state) =>
-                        GenreScreen(name: state.pathParameters['name'] ?? ''),
-                  ),
-                  GoRoute(
-                    path: 'mood/:params',
-                    builder: (context, state) => MoodScreen(
-                      params: state.pathParameters['params'] ?? '',
-                      name: state.extra as String?,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          // Shared routes (now inside the shell, so MiniPlayer and
+          // GlassTabBar are permanently visible)
+          GoRoute(
+            path: '/artist/:id',
+            builder: (context, state) => ArtistScreen(
+              id: state.pathParameters['id'] ?? '',
+              nameHint: state.uri.queryParameters['n'],
+            ),
           ),
-          // Branch 2: Library
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/library',
-                builder: (context, state) => const LibraryScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'liked',
-                    builder: (context, state) => const PlaylistScreen(
-                      id: 'liked',
-                      kind: PlaylistKind.liked,
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'downloads',
-                    builder: (context, state) => const DownloadsScreen(),
-                  ),
-                  GoRoute(
-                    path: 'recent',
-                    builder: (context, state) => const PlaylistScreen(
-                      id: 'recent',
-                      kind: PlaylistKind.recent,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          GoRoute(
+            path: '/playlist/:id',
+            builder: (context, state) => PlaylistScreen(
+              id: state.pathParameters['id'] ?? '',
+              kind: state.extra as PlaylistKind?,
+            ),
           ),
-          // Branch 3: Stats
-          StatefulShellBranch(
+          GoRoute(
+            path: '/genre/:name',
+            builder: (context, state) =>
+                GenreScreen(name: state.pathParameters['name'] ?? ''),
+          ),
+          GoRoute(
+            path: '/mood/:params',
+            builder: (context, state) => MoodScreen(
+              params: state.pathParameters['params'] ?? '',
+              name: state.extra as String?,
+            ),
+          ),
+          GoRoute(
+            path: '/queue',
+            builder: (context, state) => const QueueScreen(),
+          ),
+          GoRoute(
+            path: '/import',
+            builder: (context, state) => Scaffold(
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                leading: IconButton(
+                  tooltip: 'Close',
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/library');
+                    }
+                  },
+                ),
+              ),
+              body: SafeArea(
+                child: ImportSheet(
+                  initialUrl: state.uri.queryParameters['url'],
+                ),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) => const SettingsScreen(),
             routes: [
               GoRoute(
-                path: '/stats',
-                builder: (context, state) => const StatsScreen(),
+                path: 'eq',
+                parentNavigatorKey: rootNavigatorKey,
+                builder: (context, state) =>
+                    const Scaffold(body: SafeArea(child: EqualizerSheet())),
+              ),
+              GoRoute(
+                path: 'legal',
+                parentNavigatorKey: rootNavigatorKey,
+                builder: (context, state) => const LegalScreen(),
               ),
             ],
           ),
         ],
-      ),
-      // Shared routes (pushed within tabs)
-      GoRoute(
-        path: '/artist/:id',
-        builder: (context, state) => ArtistScreen(
-          id: state.pathParameters['id'] ?? '',
-          nameHint: state.uri.queryParameters['n'],
-        ),
-      ),
-      GoRoute(
-        path: '/playlist/:id',
-        builder: (context, state) => PlaylistScreen(
-          id: state.pathParameters['id'] ?? '',
-          kind: state.extra as PlaylistKind?,
-        ),
-      ),
-      GoRoute(
-        path: '/genre/:name',
-        builder: (context, state) =>
-            GenreScreen(name: state.pathParameters['name'] ?? ''),
-      ),
-      GoRoute(
-        path: '/mood/:params',
-        builder: (context, state) => MoodScreen(
-          params: state.pathParameters['params'] ?? '',
-          name: state.extra as String?,
-        ),
       ),
       GoRoute(
         path: '/tv',
@@ -270,6 +336,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
+          opaque: false,
+          barrierColor: Colors.black54,
           transitionDuration: const Duration(milliseconds: 280),
           reverseTransitionDuration: const Duration(milliseconds: 240),
           child: const NowPlayingScreen(),
@@ -288,53 +356,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             );
           },
         ),
-      ),
-      GoRoute(
-        path: '/queue',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const QueueScreen(),
-      ),
-      GoRoute(
-        path: '/import',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => Scaffold(
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              tooltip: 'Close',
-              icon: const Icon(Icons.close),
-              onPressed: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go('/library');
-                }
-              },
-            ),
-          ),
-          body: SafeArea(
-            child: ImportSheet(initialUrl: state.uri.queryParameters['url']),
-          ),
-        ),
-      ),
-      GoRoute(
-        path: '/settings',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const SettingsScreen(),
-        routes: [
-          GoRoute(
-            path: 'eq',
-            parentNavigatorKey: rootNavigatorKey,
-            builder: (context, state) =>
-                const Scaffold(body: SafeArea(child: EqualizerSheet())),
-          ),
-          GoRoute(
-            path: 'legal',
-            parentNavigatorKey: rootNavigatorKey,
-            builder: (context, state) => const LegalScreen(),
-          ),
-        ],
       ),
     ],
   );

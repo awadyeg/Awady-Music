@@ -264,8 +264,8 @@ class _GenreScreenState extends ConsumerState<GenreScreen> {
           },
         ),
 
-        // Bottom padding for player bar
-        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        // Bottom padding for permanent MiniPlayer + GlassTabBar
+        const SliverToBoxAdapter(child: SizedBox(height: 140)),
       ],
     );
   }

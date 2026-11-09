@@ -1055,7 +1055,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                 );
               },
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          const SliverToBoxAdapter(child: SizedBox(height: 140)),
         ],
       ),
     );

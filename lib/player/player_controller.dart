@@ -10,6 +10,7 @@ import 'package:awady_music/data/db/app_database.dart';
 import 'package:awady_music/data/models/enums.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/models/track_validator.dart';
+import 'package:awady_music/data/repositories/catalog_repository.dart';
 import 'package:awady_music/data/repositories/stats_repository.dart';
 import 'package:awady_music/data/sources/audius/audius_client.dart';
 import 'package:awady_music/data/sources/deezer/deezer_client.dart';
@@ -19,6 +20,7 @@ import 'package:awady_music/data/sources/ytstream/client_constants.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_impl.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_provider.dart';
 import 'package:awady_music/player/audio_handler.dart';
+import 'package:awady_music/player/chromecast_client.dart';
 import 'package:awady_music/player/eq.dart';
 import 'package:awady_music/player/loudness.dart';
 import 'package:awady_music/player/player_state.dart';
@@ -612,17 +614,28 @@ class PlayerController extends Notifier<PlayerState> {
     final current = state.current;
     if (current == null) return;
 
+    final isCast = ref.read(chromecastClientProvider).isConnected;
+
     if (state.isPlaying) {
       state = state.copyWith(isPlaying: false);
-      await _audioHandler.pausePlayer();
+      if (isCast) {
+        ref.read(chromecastClientProvider.notifier).pause();
+      } else {
+        await _audioHandler.pausePlayer();
+      }
       unawaited(saveQueueStateNow());
     } else {
-      final ps = _audioHandler.playbackState.value.processingState;
-      if (ps == AudioProcessingState.idle) {
-        await loadAt(state.index, startPos: state.currentTime);
-      } else {
+      if (isCast) {
         state = state.copyWith(isPlaying: true);
-        await _audioHandler.playPlayer();
+        ref.read(chromecastClientProvider.notifier).play();
+      } else {
+        final ps = _audioHandler.playbackState.value.processingState;
+        if (ps == AudioProcessingState.idle) {
+          await loadAt(state.index, startPos: state.currentTime);
+        } else {
+          state = state.copyWith(isPlaying: true);
+          await _audioHandler.playPlayer();
+        }
       }
     }
   }
@@ -727,7 +740,11 @@ class PlayerController extends Notifier<PlayerState> {
               : (position > maxDur ? maxDur : position))
         : (position < Duration.zero ? Duration.zero : position);
 
-    unawaited(_audioHandler.seek(clamped));
+    if (ref.read(chromecastClientProvider).isConnected) {
+      ref.read(chromecastClientProvider.notifier).seek(clamped);
+    } else {
+      unawaited(_audioHandler.seek(clamped));
+    }
     state = state.copyWith(currentTime: clamped);
     _scheduleSaveQueueState();
   }
@@ -991,38 +1008,85 @@ class PlayerController extends Notifier<PlayerState> {
   }
 
   Future<List<Track>> _genreMix(String vid, Track seed) async {
-    List<Track> more;
-    try {
-      more = await _innertubeClient.upNext(vid);
-    } on Object catch (_) {
-      more = const [];
+    final cleanVid = vid.replaceFirst(RegExp('^(?:yt-|ytpl-|ytalb-)'), '');
+
+    Future<List<Track>> safeUpNext() async {
+      try {
+        return await _innertubeClient.upNext(cleanVid);
+      } on Object catch (_) {
+        return const <Track>[];
+      }
     }
 
-    if (more.length < 8 &&
-        seed.artist.name.isNotEmpty &&
-        seed.artist.name != 'Unknown artist') {
+    Future<List<Track>> safeDeezer() async {
+      if (seed.artist.name.isEmpty || seed.artist.name == 'Unknown artist') {
+        return const <Track>[];
+      }
       try {
-        final searchRes = await _innertubeClient.search(seed.artist.name);
-        final seen = more.map((t) => t.streamId ?? t.id).toSet();
-        final extra = searchRes.songs
-            .where((t) => !seen.contains(t.streamId ?? t.id))
-            .toList();
-        more = [...more, ...extra];
-        if (more.length > 40) more = more.sublist(0, 40);
-      } on Object catch (_) {}
+        return await _deezerClient.radio(
+          seed.artist.name,
+          seed.title,
+          limit: 15,
+          innertubeClient: _innertubeClient,
+        );
+      } on Object catch (_) {
+        return const <Track>[];
+      }
     }
+
+    Future<List<Track>> safeSearch() async {
+      if (seed.artist.name.isEmpty || seed.artist.name == 'Unknown artist') {
+        return const <Track>[];
+      }
+      try {
+        final res = await _innertubeClient.search('${seed.artist.name} radio');
+        return res.songs;
+      } on Object catch (_) {
+        return const <Track>[];
+      }
+    }
+
+    final results = await Future.wait([
+      safeUpNext(),
+      safeDeezer(),
+      safeSearch(),
+    ]);
+    final rawCandidates = <Track>[...results[0], ...results[1], ...results[2]];
 
     final seedTitle = normTitle(seed.title);
-    final titles = <String>{};
-    return more.where((t) {
+    final seenIds = <String>{seed.id};
+    if (seed.streamId != null) seenIds.add(seed.streamId!);
+    final seenTitles = <String>{seedTitle};
+
+    final deduplicated = <Track>[];
+    for (final t in rawCandidates) {
+      final tStreamId = t.streamId ?? (t.id.startsWith('yt-') ? t.id : null);
+      if (tStreamId == null) continue;
+
       final n = normTitle(t.title);
-      final streamId = t.streamId ?? (t.id.startsWith('yt-') ? t.id : null);
-      if (streamId == null || n == seedTitle || titles.contains(n)) {
-        return false;
+      final tid = t.streamId ?? t.id;
+      if (seenIds.contains(tid) || seenTitles.contains(n)) continue;
+
+      seenIds.add(tid);
+      seenTitles.add(n);
+      deduplicated.add(t);
+    }
+
+    // Cap any single artist to <= 2 tracks so radio is diverse across artists
+    final artistCounts = <String, int>{};
+    final capped = <Track>[];
+    for (final t in deduplicated) {
+      final aKey = CatalogRepositoryImpl.normalizeArtist(t.artist.name);
+      final count = artistCounts[aKey] ?? 0;
+      if (count < 2) {
+        artistCounts[aKey] = count + 1;
+        capped.add(t);
       }
-      titles.add(n);
-      return true;
-    }).toList();
+    }
+
+    // Interleave tracks by artist so the same artist never plays back-to-back
+    final interleaved = CatalogRepositoryImpl.interleaveByArtist(capped);
+    return interleaved.take(40).toList();
   }
 
   List<Track> _pickRadioSeeds() {
@@ -1161,11 +1225,13 @@ class PlayerController extends Notifier<PlayerState> {
     }
     seed ??= state.current;
     if (seed == null) return;
-    final vid = seed.streamId ?? (seed.id.startsWith('yt-') ? seed.id : null);
+    final rawVid =
+        seed.streamId ?? (seed.id.startsWith('yt-') ? seed.id : null);
+    final vid = rawVid?.replaceFirst(RegExp('^(?:yt-|ytpl-|ytalb-)'), '');
 
     try {
       var mix = <Track>[];
-      if (vid != null && seed.source == TrackSource.yt) {
+      if (vid != null && vid.isNotEmpty && seed.source == TrackSource.yt) {
         mix = await _genreMix(vid, seed);
       }
       if (mix.isEmpty) {
@@ -1262,6 +1328,15 @@ class PlayerController extends Notifier<PlayerState> {
       duration: Duration(seconds: track.duration),
     );
     _scheduleSaveQueueState();
+
+    if (ref.read(chromecastClientProvider).isConnected) {
+      unawaited(
+        ref
+            .read(chromecastClientProvider.notifier)
+            .loadTrack(track, startPos ?? Duration.zero),
+      );
+      return;
+    }
 
     _audioHandler
       ..setCurrentQueueIndex(index)

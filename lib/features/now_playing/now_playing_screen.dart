@@ -1,11 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:awady_music/core/l10n/l10n.dart';
 import 'package:awady_music/core/theme/glass.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/core/util/format.dart';
+import 'package:awady_music/data/models/artwork.dart';
 import 'package:awady_music/data/models/enums.dart';
 import 'package:awady_music/data/models/lyrics.dart';
 import 'package:awady_music/data/models/track.dart';
@@ -23,6 +24,7 @@ import 'package:awady_music/widgets/glass_slider.dart';
 import 'package:awady_music/widgets/glass_toast.dart';
 import 'package:awady_music/widgets/sleep_timer_sheet.dart';
 import 'package:awady_music/widgets/track_menu_sheet.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,16 +39,64 @@ class NowPlayingScreen extends ConsumerStatefulWidget {
   ConsumerState<NowPlayingScreen> createState() => _NowPlayingScreenState();
 }
 
-class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
+class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen>
+    with SingleTickerProviderStateMixin {
   late final ValueNotifier<double> _dragOffsetNotifier = ValueNotifier<double>(
     0,
   );
+  AnimationController? _dismissController;
   bool _showLyrics = false;
 
   @override
   void dispose() {
+    _dismissController?.dispose();
     _dragOffsetNotifier.dispose();
     super.dispose();
+  }
+
+  void _onDragEnd(DragEndDetails details, double screenHeight) {
+    if (_showLyrics) return;
+    final velocity = details.primaryVelocity ?? 0.0;
+    final currentOffset = _dragOffsetNotifier.value;
+
+    if (currentOffset > 90 || velocity > 380) {
+      _dismissController?.dispose();
+      final controller = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 180),
+      );
+      _dismissController = controller;
+      final animation = Tween<double>(begin: currentOffset, end: screenHeight)
+          .animate(
+            CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
+          );
+      animation.addListener(() {
+        _dragOffsetNotifier.value = animation.value;
+      });
+
+      unawaited(
+        controller.forward().then((_) {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        }),
+      );
+    } else {
+      _dismissController?.dispose();
+      final controller = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 180),
+      );
+      _dismissController = controller;
+      final animation = Tween<double>(begin: currentOffset, end: 0).animate(
+        CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
+      );
+      animation.addListener(() {
+        _dragOffsetNotifier.value = animation.value;
+      });
+
+      controller.forward();
+    }
   }
 
   Widget _buildDownloadButton(
@@ -171,9 +221,8 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
       libraryRepositoryProvider.select((repo) => repo.isLiked(track.id)),
     );
 
-    final artworkUrl =
-        track.artwork?.s1000 ?? track.artwork?.s480 ?? track.artwork?.fallback;
     final isCasting = ref.watch(castProvider.select((s) => s.isCasting));
+    final screenHeight = MediaQuery.sizeOf(context).height;
 
     return Scaffold(
       backgroundColor: tokens.bg,
@@ -191,57 +240,23 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
               },
         onVerticalDragEnd: _showLyrics
             ? null
-            : (details) {
-                final velocity = details.primaryVelocity ?? 0.0;
-                if (_dragOffsetNotifier.value > 100 || velocity > 450) {
-                  context.pop();
-                } else {
-                  _dragOffsetNotifier.value = 0.0;
-                }
-              },
+            : (details) => _onDragEnd(details, screenHeight),
         child: ValueListenableBuilder<double>(
           valueListenable: _dragOffsetNotifier,
           builder: (context, dragOffset, child) {
-            return AnimatedContainer(
-              duration: dragOffset == 0.0
-                  ? const Duration(milliseconds: 220)
-                  : Duration.zero,
-              curve: Curves.easeOutCubic,
-              transform: Matrix4.translationValues(0, dragOffset, 0),
+            return Transform.translate(
+              offset: Offset(0, dragOffset),
               child: child,
             );
           },
           child: RepaintBoundary(
             child: Stack(
               children: [
-                // Blurred artwork wash background
+                // Bilinear low-res ambient artwork wash background
                 Positioned.fill(
-                  child: RepaintBoundary(
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        if (artworkUrl != null)
-                          ImageFiltered(
-                            imageFilter: ImageFilter.blur(
-                              sigmaX: 45,
-                              sigmaY: 45,
-                            ),
-                            child: ArtworkImage(art: track.artwork, size: 160),
-                          ),
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                tokens.bg.withValues(alpha: 0.68),
-                                tokens.bg.withValues(alpha: 0.94),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  child: _AmbientArtworkWash(
+                    artwork: track.artwork,
+                    tokens: tokens,
                   ),
                 ),
                 // Content
@@ -401,6 +416,9 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                                       .toggleLike(track);
                                   setState(() {});
                                 },
+                                onLongPress: () => unawaited(
+                                  showAddToPlaylistSheet(context, ref, track),
+                                ),
                               ),
                             ],
                           ),
@@ -581,6 +599,9 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                                       .toggleLike(track);
                                   setState(() {});
                                 },
+                                onLongPress: () => unawaited(
+                                  showAddToPlaylistSheet(context, ref, track),
+                                ),
                               ),
                             ],
                           ),
@@ -1024,6 +1045,63 @@ class _InlineLyricsPreview extends ConsumerWidget {
           style: TextStyle(
             fontSize: 11,
             color: tokens.textDim.withValues(alpha: 0.4),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AmbientArtworkWash extends StatelessWidget {
+  const _AmbientArtworkWash({required this.artwork, required this.tokens});
+
+  final Artwork? artwork;
+  final GlassTokens tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary =
+        artwork?.s150 ?? artwork?.s480 ?? artwork?.s1000 ?? artwork?.fallback;
+
+    Widget? imageWidget;
+    if (primary != null && primary.isNotEmpty) {
+      if (ArtworkImage.isLocalPath(primary)) {
+        final filePath = primary.replaceFirst('file://', '');
+        imageWidget = Image.file(
+          File(filePath),
+          fit: BoxFit.cover,
+          cacheWidth: 24,
+          cacheHeight: 24,
+          errorBuilder: (_, _, _) => const SizedBox.shrink(),
+        );
+      } else {
+        imageWidget = CachedNetworkImage(
+          imageUrl: primary,
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.medium,
+          memCacheWidth: 24,
+          memCacheHeight: 24,
+          errorWidget: (_, _, _) => const SizedBox.shrink(),
+        );
+      }
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ?imageWidget,
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                tokens.bg.withValues(alpha: 0.72),
+                tokens.bg.withValues(alpha: 0.92),
+                tokens.bg,
+              ],
+              stops: const [0.0, 0.6, 1.0],
+            ),
           ),
         ),
       ],

@@ -549,8 +549,8 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
           ),
         ],
 
-        // Bottom inset
-        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        // Bottom inset for permanent MiniPlayer + GlassTabBar
+        const SliverToBoxAdapter(child: SizedBox(height: 140)),
       ],
     );
   }

@@ -237,7 +237,7 @@ class QueueScreen extends ConsumerWidget {
                     },
                   ),
                 ],
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                const SliverToBoxAdapter(child: SizedBox(height: 140)),
               ],
             ),
           ),

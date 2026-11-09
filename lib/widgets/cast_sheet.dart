@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/player/cast_service.dart';
+import 'package:awady_music/player/chromecast_client.dart';
 import 'package:awady_music/player/connect_client.dart';
 import 'package:awady_music/widgets/glass_sheet.dart';
 import 'package:flutter/material.dart';
@@ -39,7 +40,15 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
     final castNotifier = ref.read(castProvider.notifier);
     final connectState = ref.watch(connectClientProvider);
     final connectNotifier = ref.read(connectClientProvider.notifier);
+    final chromecastState = ref.watch(chromecastClientProvider);
+    final chromecastNotifier = ref.read(chromecastClientProvider.notifier);
     final connected = castState.connectedDevice;
+
+    final isAwadyConnect = connectState.isConnected;
+    final isChromecast = chromecastState.isConnected;
+    final statusText = isAwadyConnect
+        ? 'Awady Connect • Playing on TV'
+        : (isChromecast ? 'Chromecast • Playing on TV' : 'Connected');
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -107,9 +116,7 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          connectState.isConnected
-                              ? 'Awady Connect • Playing on TV'
-                              : 'Connected',
+                          statusText,
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF10B981),
@@ -123,6 +130,7 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
                     onPressed: () {
                       castNotifier.disconnect();
                       connectNotifier.disconnect();
+                      chromecastNotifier.disconnect();
                     },
                     child: const Text('Disconnect'),
                   ),
@@ -174,6 +182,8 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
                   castNotifier.connect(device);
                   if (device.model == 'Awady TV Receiver') {
                     unawaited(connectNotifier.connectTo(device));
+                  } else {
+                    unawaited(chromecastNotifier.connectTo(device));
                   }
                   Navigator.of(context).pop();
                 },
@@ -181,6 +191,23 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
             ],
             const SizedBox(height: 12),
           ],
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: tokens.textPrimary,
+              side: BorderSide(color: tokens.glassStroke),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 13),
+            ),
+            icon: const Icon(LucideIcons.globe, size: 18),
+            label: const Text(
+              'Connect via IP Address',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            onPressed: _showManualIpDialog,
+          ),
+          const SizedBox(height: 8),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: tokens.bgElevated,
@@ -204,5 +231,53 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
         ],
       ),
     );
+  }
+
+  Future<void> _showManualIpDialog() async {
+    final controller = TextEditingController();
+    final ip = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final tokens = Theme.of(ctx).glass;
+        return AlertDialog(
+          backgroundColor: tokens.bgElevated,
+          title: Text(
+            'Connect to Smart TV / Cast IP',
+            style: TextStyle(color: tokens.textPrimary, fontSize: 16),
+          ),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.url,
+            style: TextStyle(color: tokens.textPrimary),
+            decoration: InputDecoration(
+              hintText: '192.168.1.50',
+              hintStyle: TextStyle(color: tokens.textDim),
+              labelText: 'IP Address',
+              labelStyle: TextStyle(color: tokens.accent),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+              child: const Text('Connect'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (ip != null && ip.isNotEmpty && mounted) {
+      final device = CastDevice(id: ip, name: 'Cast TV ($ip)', host: ip);
+      ref.read(castProvider.notifier).connect(device);
+      unawaited(ref.read(chromecastClientProvider.notifier).connectTo(device));
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    }
   }
 }

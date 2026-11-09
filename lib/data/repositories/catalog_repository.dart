@@ -13,7 +13,6 @@ import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/sources/audius/audius_client.dart';
 import 'package:awady_music/data/sources/innertube/innertube_client.dart';
 import 'package:awady_music/data/sources/innertube/matcher.dart';
-import 'package:flutter/foundation.dart';
 
 export 'package:awady_music/data/models/ai_mix_playlist.dart';
 
@@ -540,7 +539,6 @@ class CatalogRepositoryImpl implements CatalogRepository {
 
   /// Normalizes an artist name for grouping and mixing.
   /// Lowercases, trims, and strips feat/collab/topic tokens.
-  @visibleForTesting
   static String normalizeArtist(String name) {
     var cleaned = name.toLowerCase().trim();
     if (cleaned.isEmpty) return '';
@@ -559,7 +557,6 @@ class CatalogRepositoryImpl implements CatalogRepository {
 
   /// Interleaves a list of tracks so that no two adjacent tracks share the
   /// same normalized artist name whenever another artist is available.
-  @visibleForTesting
   static List<Track> interleaveByArtist(List<Track> tracks) {
     if (tracks.length <= 1) return tracks;
 

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// A delight-driven favorite button featuring a solid vivid red heart,
 /// an elastic scale bounce, and a 650ms fantasy burst animation on like.
@@ -12,6 +14,7 @@ class AnimatedFavoriteButton extends StatefulWidget {
     this.size = 26.0,
     this.tooltip,
     this.unlikedColor,
+    this.onLongPress,
   });
 
   final bool isLiked;
@@ -19,6 +22,7 @@ class AnimatedFavoriteButton extends StatefulWidget {
   final double size;
   final String? tooltip;
   final Color? unlikedColor;
+  final VoidCallback? onLongPress;
 
   static const Color likedColor = Color(0xFFFF1744);
 
@@ -103,6 +107,12 @@ class _AnimatedFavoriteButtonState extends State<AnimatedFavoriteButton>
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _handleTap,
+        onLongPress: widget.onLongPress != null
+            ? () {
+                unawaited(HapticFeedback.mediumImpact());
+                widget.onLongPress!();
+              }
+            : null,
         child: SizedBox(
           width: widget.size + 20,
           height: widget.size + 20,

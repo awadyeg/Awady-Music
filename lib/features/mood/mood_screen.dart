@@ -244,8 +244,8 @@ class MoodScreen extends ConsumerWidget {
           ),
         ),
 
-        // Bottom space for mini player and navigation bar
-        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        // Bottom space for permanent mini player and navigation bar
+        const SliverToBoxAdapter(child: SizedBox(height: 140)),
       ],
     );
   }

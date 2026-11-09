@@ -18,6 +18,166 @@ import 'package:intl/intl.dart' as intl;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:share_plus/share_plus.dart';
 
+/// Shows the "Add to Playlist" bottom sheet for a track.
+Future<void> showAddToPlaylistSheet(
+  BuildContext context,
+  WidgetRef ref,
+  Track track,
+) {
+  final tokens = Theme.of(context).glass;
+  final l10n = context.l10n;
+  final libraryRepo = ref.read(libraryRepositoryProvider);
+  final toastNotifier = ref.read(toastProvider.notifier);
+  final playlists = libraryRepo.playlists;
+
+  return showGlassBottomSheet<void>(
+    context: context,
+    builder: (ctx) {
+      return Material(
+        color: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Text(
+                  l10n.tableAddPlaylist,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: tokens.glassFill,
+                  child: Icon(
+                    LucideIcons.plus,
+                    color: tokens.textPrimary,
+                    size: 20,
+                  ),
+                ),
+                title: Text(
+                  l10n.tableNewPlaylist,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final nameController = TextEditingController();
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (dCtx) => AlertDialog(
+                      backgroundColor: tokens.bgElevated,
+                      title: Text(
+                        l10n.createPlaylist,
+                        style: TextStyle(color: tokens.textPrimary),
+                      ),
+                      content: TextField(
+                        controller: nameController,
+                        autofocus: true,
+                        style: TextStyle(color: tokens.textPrimary),
+                        decoration: InputDecoration(
+                          hintText: l10n.playlistNamePlaceholder,
+                          hintStyle: TextStyle(color: tokens.textFaint),
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dCtx, false),
+                          child: Text(
+                            l10n.cancel,
+                            style: TextStyle(color: tokens.textDim),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(dCtx, true),
+                          child: Text(
+                            l10n.createPlaylist,
+                            style: TextStyle(color: tokens.accent),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true && context.mounted) {
+                    final name = nameController.text.trim();
+                    final id = libraryRepo.createPlaylist(
+                      name.isNotEmpty ? name : null,
+                    );
+                    libraryRepo.addToPlaylist(id, track);
+                    toastNotifier.show(l10n.tableAddedNewPlaylist);
+                  }
+                },
+              ),
+              const Divider(height: 1),
+              if (playlists.isEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Center(
+                    child: Text(
+                      l10n.playlistEmpty,
+                      style: TextStyle(color: tokens.textDim),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: playlists.length,
+                    itemBuilder: (c, idx) {
+                      final pl = playlists[idx];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: tokens.glassFill,
+                          child: Icon(
+                            LucideIcons.listMusic,
+                            color: tokens.textDim,
+                            size: 18,
+                          ),
+                        ),
+                        title: Text(
+                          pl.name,
+                          style: TextStyle(
+                            color: tokens.textPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${pl.tracks.length} tracks',
+                          style: TextStyle(
+                            color: tokens.textFaint,
+                            fontSize: 12,
+                          ),
+                        ),
+                        onTap: () {
+                          libraryRepo.addToPlaylist(pl.id, track);
+                          Navigator.pop(ctx);
+                          toastNotifier.show(
+                            l10n.tableAddedToPlaylist(pl.name),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 class TrackMenuSheet extends ConsumerWidget {
   const TrackMenuSheet({required this.track, super.key, this.localPlaylistId});
 
@@ -31,163 +191,7 @@ class TrackMenuSheet extends ConsumerWidget {
   }
 
   void _showAddToPlaylistSubSheet(BuildContext context, WidgetRef ref) {
-    final tokens = Theme.of(context).glass;
-    final l10n = context.l10n;
-    final libraryRepo = ref.read(libraryRepositoryProvider);
-    final toastNotifier = ref.read(toastProvider.notifier);
-    final playlists = libraryRepo.playlists;
-
-    unawaited(
-      showGlassBottomSheet<void>(
-        context: context,
-        builder: (ctx) {
-          return Material(
-            color: Colors.transparent,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      l10n.tableAddPlaylist,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: tokens.textPrimary,
-                      ),
-                    ),
-                  ),
-                  ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: tokens.glassFill,
-                      child: Icon(
-                        LucideIcons.plus,
-                        color: tokens.textPrimary,
-                        size: 20,
-                      ),
-                    ),
-                    title: Text(
-                      l10n.tableNewPlaylist,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: tokens.textPrimary,
-                      ),
-                    ),
-                    onTap: () async {
-                      Navigator.pop(ctx);
-                      final nameController = TextEditingController();
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (dCtx) => AlertDialog(
-                          backgroundColor: tokens.bgElevated,
-                          title: Text(
-                            l10n.createPlaylist,
-                            style: TextStyle(color: tokens.textPrimary),
-                          ),
-                          content: TextField(
-                            controller: nameController,
-                            autofocus: true,
-                            style: TextStyle(color: tokens.textPrimary),
-                            decoration: InputDecoration(
-                              hintText: l10n.playlistNamePlaceholder,
-                              hintStyle: TextStyle(color: tokens.textFaint),
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(dCtx, false),
-                              child: Text(
-                                l10n.cancel,
-                                style: TextStyle(color: tokens.textDim),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(dCtx, true),
-                              child: Text(
-                                l10n.createPlaylist,
-                                style: TextStyle(color: tokens.accent),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-
-                      if (confirmed == true && context.mounted) {
-                        final name = nameController.text.trim();
-                        final id = libraryRepo.createPlaylist(
-                          name.isNotEmpty ? name : null,
-                        );
-                        libraryRepo.addToPlaylist(id, track);
-                        toastNotifier.show(l10n.tableAddedNewPlaylist);
-                      }
-                    },
-                  ),
-                  const Divider(height: 1),
-                  if (playlists.isEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Center(
-                        child: Text(
-                          l10n.playlistEmpty,
-                          style: TextStyle(color: tokens.textDim),
-                        ),
-                      ),
-                    ),
-                  ] else ...[
-                    Flexible(
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: playlists.length,
-                        itemBuilder: (c, idx) {
-                          final pl = playlists[idx];
-                          return ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: tokens.glassFill,
-                              child: Icon(
-                                LucideIcons.listMusic,
-                                color: tokens.textDim,
-                                size: 18,
-                              ),
-                            ),
-                            title: Text(
-                              pl.name,
-                              style: TextStyle(
-                                color: tokens.textPrimary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            subtitle: Text(
-                              '${pl.tracks.length} tracks',
-                              style: TextStyle(
-                                color: tokens.textFaint,
-                                fontSize: 12,
-                              ),
-                            ),
-                            onTap: () {
-                              libraryRepo.addToPlaylist(pl.id, track);
-                              Navigator.pop(ctx);
-                              toastNotifier.show(
-                                l10n.tableAddedToPlaylist(pl.name),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
+    unawaited(showAddToPlaylistSheet(context, ref, track));
   }
 
   @override
