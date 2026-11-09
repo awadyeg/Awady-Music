@@ -198,6 +198,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: '/search',
                     builder: (context, state) => const SearchScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'genre/:name',
+                        builder: (context, state) => GenreScreen(
+                          name: state.pathParameters['name'] ?? '',
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'mood/:params',
+                        builder: (context, state) => MoodScreen(
+                          params: state.pathParameters['params'] ?? '',
+                          name: state.extra as String?,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

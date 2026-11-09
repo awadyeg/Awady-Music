@@ -205,7 +205,7 @@ class _GenreScreenState extends ConsumerState<GenreScreen> {
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: tokens.accent,
-                          foregroundColor: Colors.white,
+                          foregroundColor: tokens.onAccent,
                           shape: const StadiumBorder(),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
@@ -217,16 +217,17 @@ class _GenreScreenState extends ConsumerState<GenreScreen> {
                               .read(playerControllerProvider.notifier)
                               .playTrack(tracks.first, tracks);
                         },
-                        icon: const Icon(
+                        icon: Icon(
                           LucideIcons.play,
                           size: 18,
-                          color: Colors.white,
+                          color: tokens.onAccent,
                         ),
                         label: Text(
                           l10n.genrePlay,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
+                            color: tokens.onAccent,
                           ),
                         ),
                       ),

@@ -2,9 +2,11 @@ import 'package:awady_music/app.dart';
 import 'package:awady_music/core/router/app_router.dart';
 import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/features/artist/artist_screen.dart';
+import 'package:awady_music/features/genre/genre_screen.dart';
 import 'package:awady_music/features/home/home_screen.dart';
 import 'package:awady_music/features/legal/legal_screen.dart';
 import 'package:awady_music/features/library/library_screen.dart';
+import 'package:awady_music/features/mood/mood_screen.dart';
 import 'package:awady_music/features/now_playing/now_playing_screen.dart';
 import 'package:awady_music/features/search/search_screen.dart';
 import 'package:awady_music/features/settings/settings_screen.dart';
@@ -95,6 +97,37 @@ void main() {
     testRef.read(appRouterProvider).go('/settings/legal');
     await tester.pumpAndSettle();
     expect(find.byType(LegalScreen), findsOneWidget);
+  });
+
+  testWidgets('Navigating to /search/mood and /search/genre resolves screens and keeps '
+      'GlassTabBar mounted', (tester) async {
+    late WidgetRef testRef;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: Consumer(
+          builder: (context, ref, child) {
+            testRef = ref;
+            return const AwadyMusicApp();
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Navigate to /search/genre/Pop
+    testRef.read(appRouterProvider).go('/search/genre/Pop');
+    await tester.pumpAndSettle();
+    expect(find.byType(GenreScreen), findsOneWidget);
+    expect(find.byType(GlassTabBar), findsOneWidget);
+
+    // Navigate to /search/mood/...
+    const moodPath =
+        '/search/mood/custom%3A%F0%9F%87%AA%F0%9F%87%AC%20Egypt%20Hits%7Ctop%20music%20Egypt';
+    testRef.read(appRouterProvider).go(moodPath);
+    await tester.pumpAndSettle();
+    expect(find.byType(MoodScreen), findsOneWidget);
+    expect(find.byType(GlassTabBar), findsOneWidget);
   });
 
   testWidgets('SettingsProvider updates theme and locale', (tester) async {
