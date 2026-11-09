@@ -224,6 +224,18 @@ class _TvHomeScreenState extends ConsumerState<TvHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<int>(
+      connectReceiverProvider.select((s) => s.lastSyncTimestamp),
+      (prev, next) {
+        if (next > 0 && next != prev && mounted) {
+          setState(() {
+            _previousTab = _currentTab;
+            _currentTab = TvTab.nowPlaying;
+          });
+        }
+      },
+    );
+
     final tokens = Theme.of(context).glass;
     final ps = ref.watch(playerControllerProvider);
     final player = ref.read(playerControllerProvider.notifier);

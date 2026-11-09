@@ -8,6 +8,7 @@ import 'package:awady_music/player/connect_protocol.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/player/player_state.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 @immutable
@@ -18,6 +19,7 @@ class ConnectReceiverState {
     this.connectedClients = 0,
     this.activeControllerName,
     this.receiverName = 'Awady TV',
+    this.lastSyncTimestamp = 0,
   });
 
   final bool isRunning;
@@ -25,6 +27,7 @@ class ConnectReceiverState {
   final int connectedClients;
   final String? activeControllerName;
   final String receiverName;
+  final int lastSyncTimestamp;
 
   ConnectReceiverState copyWith({
     bool? isRunning,
@@ -32,6 +35,7 @@ class ConnectReceiverState {
     int? connectedClients,
     String? Function()? activeControllerName,
     String? receiverName,
+    int? lastSyncTimestamp,
   }) {
     return ConnectReceiverState(
       isRunning: isRunning ?? this.isRunning,
@@ -41,6 +45,7 @@ class ConnectReceiverState {
           ? activeControllerName()
           : this.activeControllerName,
       receiverName: receiverName ?? this.receiverName,
+      lastSyncTimestamp: lastSyncTimestamp ?? this.lastSyncTimestamp,
     );
   }
 }
@@ -186,7 +191,14 @@ class ConnectReceiverNotifier extends Notifier<ConnectReceiverState> {
         if (msg.queue != null && msg.queue!.isNotEmpty) {
           state = state.copyWith(
             activeControllerName: () => msg.senderName ?? 'Phone',
+            lastSyncTimestamp: DateTime.now().millisecondsSinceEpoch,
           );
+          try {
+            unawaited(
+              const MethodChannel('com.awady.awady_music/tv')
+                  .invokeMethod<void>('bringToFront'),
+            );
+          } on Object catch (_) {}
           final index = msg.index ?? 0;
           player.playContext(msg.queue!, index);
           if (msg.positionMs != null && msg.positionMs! > 0) {

@@ -267,5 +267,32 @@ void main() {
 
       expect(find.text('أنت عمري'), findsWidgets);
     });
+
+    testWidgets(
+      'header displays Cast and Settings icons without TV Mode button',
+      (tester) async {
+        await tester.pumpWidget(
+          _buildHarness(
+            libraryRepo: libraryRepo,
+            statsRepo: statsRepo,
+            playerController: playerController,
+            overrides: [
+              trendingTracksProvider.overrideWith(
+                (ref) async => CatalogList([]),
+              ),
+              newReleasesProvider.overrideWith((ref) async => CatalogList([])),
+              homePlaylistsProvider.overrideWith(
+                (ref) async => CatalogList([]),
+              ),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byIcon(LucideIcons.cast), findsOneWidget);
+        expect(find.byIcon(LucideIcons.settings), findsOneWidget);
+        expect(find.byIcon(LucideIcons.tv), findsNothing);
+      },
+    );
   });
 }

@@ -13,18 +13,18 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 Future<void> showCastSheet(BuildContext context) {
   return showGlassBottomSheet<void>(
     context: context,
-    builder: (ctx) => const _CastSheetContent(),
+    builder: (ctx) => const CastSheetContent(),
   );
 }
 
-class _CastSheetContent extends ConsumerStatefulWidget {
-  const _CastSheetContent();
+class CastSheetContent extends ConsumerStatefulWidget {
+  const CastSheetContent({super.key});
 
   @override
-  ConsumerState<_CastSheetContent> createState() => _CastSheetContentState();
+  ConsumerState<CastSheetContent> createState() => _CastSheetContentState();
 }
 
-class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
+class _CastSheetContentState extends ConsumerState<CastSheetContent> {
   @override
   void initState() {
     super.initState();
@@ -46,9 +46,9 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
 
     final isAwadyConnect = connectState.isConnected;
     final isChromecast = chromecastState.isConnected;
-    final statusText = isAwadyConnect
-        ? 'Awady Connect • Playing on TV'
-        : (isChromecast ? 'Chromecast • Playing on TV' : 'Connected');
+    final statusText = (isAwadyConnect || isChromecast)
+        ? 'Awady Music • Playing on TV'
+        : 'Connected';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -153,7 +153,8 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(
-                  device.model == 'Awady TV Receiver'
+                  device.model == 'Awady Music' ||
+                          device.model == 'Awady TV Receiver'
                       ? LucideIcons.tv
                       : LucideIcons.cast,
                   color: tokens.accent,
@@ -178,14 +179,20 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
                         size: 18,
                       )
                     : null,
-                onTap: () {
+                onTap: () async {
                   castNotifier.connect(device);
-                  if (device.model == 'Awady TV Receiver') {
-                    unawaited(connectNotifier.connectTo(device));
-                  } else {
+                  Navigator.of(context).pop();
+                  final awadyDevice = CastDevice(
+                    id: device.id,
+                    name: device.name,
+                    host: device.host,
+                    port: device.model == 'Awady Music' ? device.port : 8654,
+                    model: 'Awady Music',
+                  );
+                  final ok = await connectNotifier.connectTo(awadyDevice);
+                  if (!ok) {
                     unawaited(chromecastNotifier.connectTo(device));
                   }
-                  Navigator.of(context).pop();
                 },
               ),
             ],
@@ -206,27 +213,6 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             onPressed: _showManualIpDialog,
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: tokens.bgElevated,
-              foregroundColor: tokens.textPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: tokens.glassStroke),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-            icon: const Icon(LucideIcons.radio, size: 18),
-            label: const Text(
-              'System Cast & Media Output',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop();
-              unawaited(castNotifier.openSystemCastSettings());
-            },
           ),
         ],
       ),
@@ -272,11 +258,22 @@ class _CastSheetContentState extends ConsumerState<_CastSheetContent> {
     );
 
     if (ip != null && ip.isNotEmpty && mounted) {
-      final device = CastDevice(id: ip, name: 'Cast TV ($ip)', host: ip);
+      final device = CastDevice(
+        id: ip,
+        name: 'Cast TV ($ip)',
+        host: ip,
+        port: 8654,
+        model: 'Awady Music',
+      );
       ref.read(castProvider.notifier).connect(device);
-      unawaited(ref.read(chromecastClientProvider.notifier).connectTo(device));
-      if (mounted) {
-        Navigator.of(context).pop();
+      Navigator.of(context).pop();
+      final ok = await ref
+          .read(connectClientProvider.notifier)
+          .connectTo(device);
+      if (!ok) {
+        unawaited(
+          ref.read(chromecastClientProvider.notifier).connectTo(device),
+        );
       }
     }
   }

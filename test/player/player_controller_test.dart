@@ -392,5 +392,20 @@ void main() {
       controller.cycleRepeat();
       expect(container.read(playerControllerProvider).repeat, RepeatMode.off);
     });
+
+    test(
+      'pauseLocalForCast pauses local audioHandler and clears buffering',
+      () async {
+        final controller = container.read(playerControllerProvider.notifier);
+        final tracks = [makeTrack('t1')];
+        controller.playTrack(tracks.first);
+        audioHandler.isPlayingState = true;
+
+        await controller.pauseLocalForCast();
+
+        expect(audioHandler.isPlayingState, isFalse);
+        expect(container.read(playerControllerProvider).buffering, isFalse);
+      },
+    );
   });
 }

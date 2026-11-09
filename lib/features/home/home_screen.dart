@@ -96,11 +96,6 @@ class HomeScreen extends ConsumerWidget {
             onPressed: () => unawaited(showCastSheet(context)),
           ),
           IconButton(
-            icon: Icon(LucideIcons.tv, color: tokens.textPrimary),
-            tooltip: 'TV Mode',
-            onPressed: () => context.push('/tv'),
-          ),
-          IconButton(
             icon: Icon(LucideIcons.settings, color: tokens.textPrimary),
             tooltip: 'Settings',
             onPressed: () => context.push('/settings'),

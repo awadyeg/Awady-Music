@@ -21,6 +21,8 @@ import 'package:awady_music/data/sources/ytstream/stream_resolver_impl.dart';
 import 'package:awady_music/data/sources/ytstream/stream_resolver_provider.dart';
 import 'package:awady_music/player/audio_handler.dart';
 import 'package:awady_music/player/chromecast_client.dart';
+import 'package:awady_music/player/connect_client.dart';
+import 'package:awady_music/player/connect_protocol.dart';
 import 'package:awady_music/player/eq.dart';
 import 'package:awady_music/player/loudness.dart';
 import 'package:awady_music/player/player_state.dart';
@@ -117,6 +119,32 @@ class PlayerController extends Notifier<PlayerState> {
 
   late final StatsRecorder _statsRecorder;
   StatsRecorder get statsRecorder => _statsRecorder;
+
+  bool get isRemoteCasting =>
+      ref.read(chromecastClientProvider).isConnected ||
+      ref.read(connectClientProvider).isConnected;
+
+  Future<void> pauseLocalForCast() async {
+    loadSeq++;
+    await _audioHandler.pausePlayer();
+    await _audioHandler.setVolume(0);
+    state = state.copyWith(buffering: false);
+  }
+
+  void syncRemotePlaybackState({
+    bool? isPlaying,
+    Duration? position,
+    Duration? duration,
+  }) {
+    state = state.copyWith(
+      isPlaying: isPlaying ?? state.isPlaying,
+      currentTime: position ?? state.currentTime,
+      duration: duration != null && duration > Duration.zero
+          ? duration
+          : state.duration,
+      buffering: false,
+    );
+  }
 
   @override
   PlayerState build() {
@@ -490,6 +518,7 @@ class PlayerController extends Notifier<PlayerState> {
     _subscriptions
       ..add(
         _audioHandler.playbackState.listen((ps) {
+          if (isRemoteCasting) return;
           final wasPlaying = state.isPlaying;
           state = state.copyWith(
             isPlaying: ps.playing,
@@ -511,6 +540,7 @@ class PlayerController extends Notifier<PlayerState> {
       )
       ..add(
         _audioHandler.positionStream.listen((pos) {
+          if (isRemoteCasting) return;
           if (state.isPlaying ||
               _audioHandler.playbackState.value.processingState !=
                   AudioProcessingState.idle) {
@@ -537,6 +567,7 @@ class PlayerController extends Notifier<PlayerState> {
       )
       ..add(
         _audioHandler.durationStream.listen((dur) {
+          if (isRemoteCasting) return;
           if (dur != null) {
             state = state.copyWith(duration: dur);
           }
@@ -614,18 +645,28 @@ class PlayerController extends Notifier<PlayerState> {
     final current = state.current;
     if (current == null) return;
 
+    final isConnect = ref.read(connectClientProvider).isConnected;
     final isCast = ref.read(chromecastClientProvider).isConnected;
+
+    if (isConnect || isCast) {
+      unawaited(_audioHandler.pausePlayer());
+    }
 
     if (state.isPlaying) {
       state = state.copyWith(isPlaying: false);
-      if (isCast) {
+      if (isConnect) {
+        ref.read(connectClientProvider.notifier).pause();
+      } else if (isCast) {
         ref.read(chromecastClientProvider.notifier).pause();
       } else {
         await _audioHandler.pausePlayer();
       }
       unawaited(saveQueueStateNow());
     } else {
-      if (isCast) {
+      if (isConnect) {
+        state = state.copyWith(isPlaying: true);
+        ref.read(connectClientProvider.notifier).play();
+      } else if (isCast) {
         state = state.copyWith(isPlaying: true);
         ref.read(chromecastClientProvider.notifier).play();
       } else {
@@ -634,6 +675,7 @@ class PlayerController extends Notifier<PlayerState> {
           await loadAt(state.index, startPos: state.currentTime);
         } else {
           state = state.copyWith(isPlaying: true);
+          await _audioHandler.setVolume(state.muted ? 0.0 : state.volume);
           await _audioHandler.playPlayer();
         }
       }
@@ -740,7 +782,9 @@ class PlayerController extends Notifier<PlayerState> {
               : (position > maxDur ? maxDur : position))
         : (position < Duration.zero ? Duration.zero : position);
 
-    if (ref.read(chromecastClientProvider).isConnected) {
+    if (ref.read(connectClientProvider).isConnected) {
+      ref.read(connectClientProvider.notifier).seek(clamped);
+    } else if (ref.read(chromecastClientProvider).isConnected) {
       ref.read(chromecastClientProvider.notifier).seek(clamped);
     } else {
       unawaited(_audioHandler.seek(clamped));
@@ -754,6 +798,11 @@ class PlayerController extends Notifier<PlayerState> {
     final wasMuted = state.muted;
     final newMuted = vol == 0.0 && wasMuted;
     state = state.copyWith(volume: vol, muted: newMuted);
+    if (ref.read(connectClientProvider).isConnected) {
+      ref.read(connectClientProvider.notifier).setVolume(vol);
+    } else if (ref.read(chromecastClientProvider).isConnected) {
+      ref.read(chromecastClientProvider.notifier).setVolume(vol);
+    }
     unawaited(_audioHandler.setVolume(vol));
     unawaited(_savePrefDouble('player_volume', vol));
     unawaited(_savePrefBool('player_muted', newMuted));
@@ -1329,12 +1378,39 @@ class PlayerController extends Notifier<PlayerState> {
     );
     _scheduleSaveQueueState();
 
-    if (ref.read(chromecastClientProvider).isConnected) {
-      unawaited(
-        ref
-            .read(chromecastClientProvider.notifier)
-            .loadTrack(track, startPos ?? Duration.zero),
+    if (isRemoteCasting) {
+      unawaited(_audioHandler.pausePlayer());
+      state = state.copyWith(
+        index: index,
+        buffering: false,
+        isPlaying: true,
+        currentTime: startPos ?? Duration.zero,
+        duration: Duration(seconds: track.duration),
       );
+      if (ref.read(connectClientProvider).isConnected) {
+        final settings = ref.read(settingsProvider);
+        final senderName = settings.userName.trim().isNotEmpty
+            ? settings.userName.trim()
+            : 'Awady Phone';
+        ref
+            .read(connectClientProvider.notifier)
+            .send(
+              ConnectMessage.syncQueue(
+                queue: state.queue,
+                index: index,
+                positionMs: (startPos ?? Duration.zero).inMilliseconds,
+                isPlaying: true,
+                senderName: senderName,
+              ),
+            );
+      } else if (ref.read(chromecastClientProvider).isConnected) {
+        unawaited(
+          ref
+              .read(chromecastClientProvider.notifier)
+              .loadTrack(track, startPos ?? Duration.zero),
+        );
+      }
+      unawaited(maybeFillRadio());
       return;
     }
 

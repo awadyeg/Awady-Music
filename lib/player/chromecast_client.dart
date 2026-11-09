@@ -173,16 +173,41 @@ class LocalAudioProxyServer {
     _server = null;
   }
 
-  static Future<String?> getLocalIp() async {
+  static Future<String?> getLocalIp([String? targetHost]) async {
     try {
       final interfaces = await NetworkInterface.list(
         type: InternetAddressType.IPv4,
       );
+      String? targetPrefix;
+      if (targetHost != null) {
+        final lastDot = targetHost.lastIndexOf('.');
+        if (lastDot > 0) {
+          targetPrefix = targetHost.substring(0, lastDot + 1);
+        }
+      }
+      // 1. Prefer an interface on the exact same /24 subnet as the target TV
+      if (targetPrefix != null) {
+        for (final iface in interfaces) {
+          for (final addr in iface.addresses) {
+            if (!addr.isLoopback && addr.address.startsWith(targetPrefix)) {
+              return addr.address;
+            }
+          }
+        }
+      }
+      // 2. Prefer 192.168.x.x Wi-Fi LAN addresses
+      for (final iface in interfaces) {
+        for (final addr in iface.addresses) {
+          if (!addr.isLoopback && addr.address.startsWith('192.168.')) {
+            return addr.address;
+          }
+        }
+      }
+      // 3. Fallback to any private IPv4 address
       for (final iface in interfaces) {
         for (final addr in iface.addresses) {
           if (!addr.isLoopback &&
-              (addr.address.startsWith('192.168.') ||
-                  addr.address.startsWith('10.') ||
+              (addr.address.startsWith('10.') ||
                   addr.address.startsWith('172.'))) {
             return addr.address;
           }
@@ -456,25 +481,31 @@ class ChromecastClientNotifier extends Notifier<ChromecastClientState> {
         },
       );
 
-      // Step 3: Start periodic ping every 5s
-      _heartbeatTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      // Step 3: Start periodic ping and media status poll
+      _heartbeatTimer = Timer.periodic(const Duration(seconds: 2), (_) {
         _send(
           sourceId: 'sender-0',
           destinationId: 'receiver-0',
           namespace: 'urn:x-cast:com.google.cast.tp.heartbeat',
           payload: {'type': 'PING'},
         );
+        if (_transportId != null && state.isPlaying) {
+          _send(
+            sourceId: 'sender-0',
+            destinationId: _transportId!,
+            namespace: 'urn:x-cast:com.google.cast.media',
+            payload: {'type': 'GET_STATUS', 'requestId': ++_requestId},
+          );
+        }
       });
 
       state = state.copyWith(isConnected: true, isConnecting: false);
 
       // Pause local playback
       final player = ref.read(playerControllerProvider.notifier);
-      final ps = ref.read(playerControllerProvider);
-      if (ps.isPlaying) {
-        await player.toggle();
-      }
+      await player.pauseLocalForCast();
 
+      final ps = ref.read(playerControllerProvider);
       // If a track is currently loaded, load it on the TV
       if (ps.current != null) {
         unawaited(loadTrack(ps.current!, ps.currentTime));
@@ -572,6 +603,13 @@ class ChromecastClientNotifier extends Notifier<ChromecastClientState> {
             position: Duration(milliseconds: (currentSecs * 1000).toInt()),
           );
 
+          ref
+              .read(playerControllerProvider.notifier)
+              .syncRemotePlaybackState(
+                isPlaying: playerState == 'PLAYING',
+                position: Duration(milliseconds: (currentSecs * 1000).toInt()),
+              );
+
           if (playerState == 'IDLE' && idleReason == 'FINISHED') {
             // Auto-advance to next track
             ref.read(playerControllerProvider.notifier).next();
@@ -619,7 +657,9 @@ class ChromecastClientNotifier extends Notifier<ChromecastClientState> {
     Track track,
     Duration startPos,
   ) async {
-    final localIp = await LocalAudioProxyServer.getLocalIp() ?? '127.0.0.1';
+    final localIp =
+        await LocalAudioProxyServer.getLocalIp(state.connectedDevice?.host) ??
+        '127.0.0.1';
     final port = _proxyServer?.port ?? 8000;
     final streamUrl = 'http://$localIp:$port/stream/${track.id}.m4a';
     final artworkUrl =
@@ -640,8 +680,12 @@ class ChromecastClientNotifier extends Notifier<ChromecastClientState> {
             'type': 3,
             'metadataType': 3,
             'title': track.title,
-            'artist': track.artist.name,
-            'albumName': track.album?.name ?? '',
+            'subtitle': '${track.artist.name} • Awady Music',
+            'artist': '${track.artist.name} • Awady Music',
+            'albumName': (track.album?.name.isNotEmpty ?? false)
+                ? '${track.album!.name} • Awady Music'
+                : 'Awady Music',
+            'studio': 'Awady Music',
             if (artworkUrl != null)
               'images': [
                 {'url': artworkUrl},

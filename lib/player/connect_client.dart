@@ -127,10 +127,9 @@ class ConnectClientNotifier extends Notifier<ConnectClientState> {
 
       // Pause local playback so audio streams from TV
       final player = ref.read(playerControllerProvider.notifier);
+      await player.pauseLocalForCast();
+
       final ps = ref.read(playerControllerProvider);
-      if (ps.isPlaying) {
-        await player.toggle();
-      }
 
       // Sync current queue to the TV
       final settings = ref.read(settingsProvider);
@@ -179,6 +178,18 @@ class ConnectClientNotifier extends Notifier<ConnectClientState> {
         remoteTrack: msg.track != null ? () => msg.track : null,
         remoteVolume: msg.volume ?? state.remoteVolume,
       );
+
+      ref
+          .read(playerControllerProvider.notifier)
+          .syncRemotePlaybackState(
+            isPlaying: msg.isPlaying,
+            position: msg.positionMs != null
+                ? Duration(milliseconds: msg.positionMs!)
+                : null,
+            duration: msg.durationMs != null
+                ? Duration(milliseconds: msg.durationMs!)
+                : null,
+          );
     }
   }
 
