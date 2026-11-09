@@ -337,7 +337,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
           opaque: false,
-          barrierColor: Colors.black54,
+          barrierColor: Colors.transparent,
           transitionDuration: const Duration(milliseconds: 280),
           reverseTransitionDuration: const Duration(milliseconds: 240),
           child: const NowPlayingScreen(),

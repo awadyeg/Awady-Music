@@ -328,5 +328,138 @@ void main() {
         expect(previewSize.width, equals(artworkSize.width));
       },
     );
+
+    testWidgets(
+      'dragging down pops cleanly without leaving an opaque barrier',
+      (tester) async {
+        final fake = FakePlayerController(
+          initial: const PlayerState(
+            queue: [sampleTrack],
+            index: 0,
+            isPlaying: true,
+            duration: Duration(seconds: 286),
+          ),
+        );
+
+        var didPop = false;
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              playerControllerProvider.overrideWith(() => fake),
+              libraryRepositoryProvider.overrideWithValue(libraryRepo),
+              lyricsForTrackProvider.overrideWith(
+                (ref, track) async => const NoLyrics(),
+              ),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.dark(),
+              supportedLocales: const [
+                Locale('en'),
+                Locale('es'),
+                Locale('ar'),
+              ],
+              localizationsDelegates: const [
+                L10n.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              home: Builder(
+                builder: (context) {
+                  return Scaffold(
+                    body: TextButton(
+                      onPressed: () async {
+                        await Navigator.of(context).push<void>(
+                          MaterialPageRoute(
+                            builder: (_) => const NowPlayingScreen(),
+                          ),
+                        );
+                        didPop = true;
+                      },
+                      child: const Text('Open Player'),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Open NowPlayingScreen
+        await tester.tap(find.text('Open Player'));
+        await tester.pumpAndSettle();
+        expect(find.byType(NowPlayingScreen), findsOneWidget);
+
+        // Drag down on NowPlayingScreen
+        await tester.drag(find.text('Skyfall'), const Offset(0, 300));
+        await tester.pumpAndSettle();
+
+        expect(didPop, isTrue);
+        expect(find.byType(NowPlayingScreen), findsNothing);
+        expect(find.text('Open Player'), findsOneWidget);
+      },
+    );
+
+    testWidgets('chevronDown button pops cleanly', (tester) async {
+      final fake = FakePlayerController(
+        initial: const PlayerState(
+          queue: [sampleTrack],
+          index: 0,
+          isPlaying: true,
+          duration: Duration(seconds: 286),
+        ),
+      );
+
+      var didPop = false;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            playerControllerProvider.overrideWith(() => fake),
+            libraryRepositoryProvider.overrideWithValue(libraryRepo),
+            lyricsForTrackProvider.overrideWith(
+              (ref, track) async => const NoLyrics(),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.dark(),
+            supportedLocales: const [Locale('en'), Locale('es'), Locale('ar')],
+            localizationsDelegates: const [
+              L10n.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: Builder(
+              builder: (context) {
+                return Scaffold(
+                  body: TextButton(
+                    onPressed: () async {
+                      await Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => const NowPlayingScreen(),
+                        ),
+                      );
+                      didPop = true;
+                    },
+                    child: const Text('Open Player'),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Open Player'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
+      await tester.pumpAndSettle();
+
+      expect(didPop, isTrue);
+      expect(find.byType(NowPlayingScreen), findsNothing);
+    });
   });
 }

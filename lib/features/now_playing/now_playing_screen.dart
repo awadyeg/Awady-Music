@@ -46,6 +46,25 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen>
   );
   AnimationController? _dismissController;
   bool _showLyrics = false;
+  bool _isClosing = false;
+
+  void _closeNowPlaying() {
+    if (_isClosing || !mounted) return;
+    _isClosing = true;
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      if (router.canPop()) {
+        router.pop();
+      } else {
+        router.go('/home');
+      }
+      return;
+    }
+    final navigator = Navigator.maybeOf(context);
+    if (navigator != null && navigator.canPop()) {
+      navigator.pop();
+    }
+  }
 
   @override
   void dispose() {
@@ -55,32 +74,14 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen>
   }
 
   void _onDragEnd(DragEndDetails details, double screenHeight) {
-    if (_showLyrics) return;
+    if (_showLyrics || _isClosing) return;
     final velocity = details.primaryVelocity ?? 0.0;
     final currentOffset = _dragOffsetNotifier.value;
 
     if (currentOffset > 90 || velocity > 380) {
       _dismissController?.dispose();
-      final controller = AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 180),
-      );
-      _dismissController = controller;
-      final animation = Tween<double>(begin: currentOffset, end: screenHeight)
-          .animate(
-            CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
-          );
-      animation.addListener(() {
-        _dragOffsetNotifier.value = animation.value;
-      });
-
-      unawaited(
-        controller.forward().then((_) {
-          if (mounted) {
-            Navigator.of(context).pop();
-          }
-        }),
-      );
+      _dismissController = null;
+      _closeNowPlaying();
     } else {
       _dismissController?.dispose();
       final controller = AnimationController(
@@ -163,7 +164,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen>
           backgroundColor: Colors.transparent,
           leading: IconButton(
             icon: Icon(LucideIcons.chevronDown, color: tokens.textPrimary),
-            onPressed: () => context.pop(),
+            onPressed: _closeNowPlaying,
           ),
         ),
         body: Center(
@@ -225,12 +226,13 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen>
     final screenHeight = MediaQuery.sizeOf(context).height;
 
     return Scaffold(
-      backgroundColor: tokens.bg,
+      backgroundColor: Colors.transparent,
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
-        onVerticalDragUpdate: _showLyrics
+        onVerticalDragUpdate: (_showLyrics || _isClosing)
             ? null
             : (details) {
+                _dismissController?.stop();
                 if (details.delta.dy > 0 || _dragOffsetNotifier.value > 0) {
                   _dragOffsetNotifier.value = math.max(
                     0,
@@ -238,7 +240,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen>
                   );
                 }
               },
-        onVerticalDragEnd: _showLyrics
+        onVerticalDragEnd: (_showLyrics || _isClosing)
             ? null
             : (details) => _onDragEnd(details, screenHeight),
         child: ValueListenableBuilder<double>(
@@ -252,6 +254,9 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen>
           child: RepaintBoundary(
             child: Stack(
               children: [
+                // Base solid background so transparent outer scaffold doesn't
+                // leak through.
+                Positioned.fill(child: ColoredBox(color: tokens.bg)),
                 // Bilinear low-res ambient artwork wash background
                 Positioned.fill(
                   child: _AmbientArtworkWash(
@@ -277,7 +282,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen>
                                 color: tokens.textPrimary,
                               ),
                               tooltip: 'Close',
-                              onPressed: () => context.pop(),
+                              onPressed: _closeNowPlaying,
                             ),
                             Expanded(
                               child: Column(
