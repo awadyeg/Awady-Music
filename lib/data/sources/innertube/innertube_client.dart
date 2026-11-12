@@ -739,7 +739,27 @@ class InnertubeClient {
       'browseId': 'FEmusic_moods_and_genres_category',
       'params': params,
     });
-    return _browseParser.parseMoodPage(res);
+    final data = _browseParser.parseMoodPage(res);
+    if (data.tracks.length < 12 && data.playlists.isNotEmpty) {
+      try {
+        final topPls = data.playlists.take(3).toList();
+        final futures = topPls.map((pl) => playlist(pl.id));
+        final pages = await Future.wait(futures);
+        final extraTracks = <Track>[];
+        for (final p in pages) {
+          extraTracks.addAll(p.tracks);
+        }
+        final combined = [...data.tracks, ...extraTracks];
+        final seen = <String>{};
+        final unique = combined.where((t) => seen.add(t.id)).toList();
+        return MoodPageData(
+          name: data.name,
+          playlists: data.playlists,
+          tracks: unique.take(40).toList(),
+        );
+      } on Object catch (_) {}
+    }
+    return data;
   }
 
   /// Fetches upNext / autoplay radio tracks for [videoId].

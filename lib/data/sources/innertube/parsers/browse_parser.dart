@@ -173,6 +173,32 @@ class BrowseParser {
         return;
       }
 
+      if (node.containsKey('musicTwoRowItemRenderer')) {
+        final item = node['musicTwoRowItemRenderer'] as Map<String, dynamic>;
+        final videoId =
+            digAs<String>(item, [
+              'navigationEndpoint',
+              'watchEndpoint',
+              'videoId',
+            ]) ??
+            digAs<String>(item, [
+              'thumbnailOverlay',
+              'musicItemThumbnailOverlayRenderer',
+              'content',
+              'musicPlayButtonRenderer',
+              'playNavigationEndpoint',
+              'watchEndpoint',
+              'videoId',
+            ]);
+        if (videoId != null && videoId.length == 11 && seen.add(videoId)) {
+          final track = _parseTwoRowSongItem(item, videoId);
+          if (track != null) {
+            tracks.add(track);
+          }
+        }
+        return;
+      }
+
       node.values.forEach(walkSongs);
     }
 
@@ -180,7 +206,56 @@ class BrowseParser {
     return MoodPageData(
       name: name,
       playlists: playlists.length > 24 ? playlists.sublist(0, 24) : playlists,
-      tracks: tracks.length > 30 ? tracks.sublist(0, 30) : tracks,
+      tracks: tracks.length > 40 ? tracks.sublist(0, 40) : tracks,
+    );
+  }
+
+  Track? _parseTwoRowSongItem(Map<String, dynamic> item, String videoId) {
+    final title = digAs<String>(item, ['title', 'runs', 0, 'text']) ?? 'Song';
+    var artistName = 'Unknown artist';
+    String? artistChannelId;
+
+    final subRuns = dig(item, ['subtitle', 'runs']) as List?;
+    if (subRuns != null) {
+      for (final run in subRuns) {
+        if (run is! Map<String, dynamic>) continue;
+        final t = run['text'] as String? ?? '';
+        final bid = digAs<String>(run, [
+          'navigationEndpoint',
+          'browseEndpoint',
+          'browseId',
+        ]);
+        if (bid != null && RegExp('^(UC|MPLA|FE)').hasMatch(bid)) {
+          artistName = t;
+          artistChannelId = bid;
+          break;
+        } else if (artistName == 'Unknown artist' && t.isNotEmpty && t != '•') {
+          artistName = t;
+        }
+      }
+    }
+
+    final effectiveArtistId = artistChannelId != null
+        ? 'yt-$artistChannelId'
+        : 'yt-$artistName';
+    final fallbackThumb = 'https://i.ytimg.com/vi/$videoId/hqdefault.jpg';
+    final artwork = parseArtwork(
+      item['thumbnailRenderer'] ?? item['thumbnail'],
+      fallback: fallbackThumb,
+    );
+
+    return Track(
+      id: 'yt-$videoId',
+      source: TrackSource.yt,
+      streamId: videoId,
+      title: title,
+      artwork: artwork,
+      artist: Artist(
+        id: effectiveArtistId,
+        streamId: artistChannelId,
+        name: artistName,
+        handle: artistName,
+      ),
     );
   }
 

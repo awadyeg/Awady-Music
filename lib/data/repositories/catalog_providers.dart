@@ -121,10 +121,17 @@ final moodCategoriesProvider = FutureProvider<List<MoodCategory>>((ref) async {
   final countryCode = ref.watch(settingsProvider.select((s) => s.countryCode));
   final likedAsync = ref.watch(likedTracksStreamProvider);
   final likes = likedAsync.asData?.value ?? const [];
+  final stats = ref.watch(statsRepositoryProvider);
+  var mostPlayed = const <Track>[];
+  try {
+    mostPlayed = stats.mostPlayedTracks;
+  } on Object catch (_) {}
+
+  final hasFavorites = likes.isNotEmpty || mostPlayed.isNotEmpty;
   final country = findMusicCountry(countryCode);
 
   final personalized = <MoodCategory>[];
-  if (likes.isNotEmpty) {
+  if (hasFavorites) {
     personalized.addAll(const [
       MoodCategory(
         name: 'My Likes Vibe',
@@ -208,7 +215,34 @@ final moodPageProvider = FutureProvider.family<MoodPageData, String>((
   params,
 ) {
   ref.keepAlive5Min();
-  return ref.watch(catalogRepositoryProvider).mood(params);
+  final likedAsync = ref.watch(likedTracksStreamProvider);
+  final lib = ref.watch(libraryRepositoryProvider);
+  final stats = ref.watch(statsRepositoryProvider);
+
+  var liked = likedAsync.asData?.value ?? const <Track>[];
+  try {
+    if (liked.isEmpty) liked = lib.likedTracks;
+  } on Object catch (_) {}
+
+  var mostPlayed = const <Track>[];
+  try {
+    mostPlayed = stats.mostPlayedTracks;
+  } on Object catch (_) {}
+
+  var recents = const <Track>[];
+  try {
+    recents = lib.recents;
+  } on Object catch (_) {}
+
+  final effectiveFavorites = getEffectiveFavoriteTracks(
+    likedTracks: liked,
+    mostPlayedTracks: mostPlayed,
+    recentTracks: recents,
+  );
+
+  return ref
+      .watch(catalogRepositoryProvider)
+      .mood(params, favoriteTracks: effectiveFavorites);
 });
 
 /// Future provider family for up next / radio tracks.

@@ -81,6 +81,8 @@ void main() {
     catalogRepo = MockCatalogRepository();
     audiusClient = MockAudiusClient();
     playerController = FakePlayerController();
+    when(() => catalogRepo.search(any()))
+        .thenAnswer((_) async => const SearchResults(songs: [sampleTrack]));
   });
 
   group('GenreScreen widget tests', () {
@@ -136,8 +138,8 @@ void main() {
     testWidgets('switching time chips fetches trending from Audius', (
       tester,
     ) async {
-      when(() => catalogRepo.search('Electronic hits'))
-          .thenAnswer((_) async => const SearchResults(songs: [sampleTrack]));
+      when(() => catalogRepo.search('Electronic trending songs this week'))
+          .thenAnswer((_) async => const SearchResults());
 
       const audiusTrack = Track(
         id: 't_g_audius',
@@ -173,7 +175,7 @@ void main() {
     testWidgets('shows error state and retry button on load failure', (
       tester,
     ) async {
-      when(() => catalogRepo.search('Electronic hits'))
+      when(() => catalogRepo.search(any()))
           .thenThrow(Exception('Catalog network failure'));
 
       when(

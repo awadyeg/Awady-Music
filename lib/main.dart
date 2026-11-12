@@ -5,12 +5,19 @@ import 'package:awady_music/app.dart';
 import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/player/audio_handler.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.linux)) {
+    JustAudioMediaKit.ensureInitialized();
+  }
   await Log.init();
   await initAudioSession();
   final prefs = await SharedPreferences.getInstance();

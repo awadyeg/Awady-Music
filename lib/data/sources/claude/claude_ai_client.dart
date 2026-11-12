@@ -146,6 +146,39 @@ class ClaudeAiClient {
     return await _completeJson(systemPrompt, userPrompt);
   }
 
+  Future<List<TrackSuggestion>> suggestForMood({
+    required String moodName,
+    String? moodQuery,
+    List<Track> seedTracks = const [],
+    int limit = 10,
+  }) async {
+    const systemPrompt =
+        'You are Claude Code Music AI curator. Return ONLY a valid JSON '
+        'array of objects [{"title": "Song Title", "artist": "Artist Name"}] '
+        'with no markdown or extra text. Suggest iconic, authentic, '
+        'high-quality songs that strictly match the mood/genre across diverse '
+        'artists (max 1 song per artist).';
+
+    final queryStr = moodQuery != null && moodQuery.isNotEmpty
+        ? moodQuery
+        : moodName;
+    final seedJoin = seedTracks
+        .take(5)
+        .map((t) => '"${t.title}" by ${t.artist.name}')
+        .join(', ');
+    final seeds = seedTracks.isNotEmpty
+        ? ' Listener cultural/language vibe based on favorite tracks: '
+              '$seedJoin.'
+        : '';
+
+    final userPrompt =
+        'Mood/Genre: "$moodName" (query: "$queryStr").$seeds '
+        'Suggest $limit iconic, authentic songs matching this mood strictly '
+        'across diverse artists.';
+
+    return await _completeJson(systemPrompt, userPrompt);
+  }
+
   Future<List<TrackSuggestion>> _completeJson(
     String systemPrompt,
     String userPrompt,

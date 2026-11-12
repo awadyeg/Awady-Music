@@ -42,3 +42,31 @@ bool isTvLayout(BuildContext context, [WidgetRef? ref]) {
   final isBigScreen = size.width >= 960 && (size.width / size.height) >= 1.5;
   return isLandscape && isBigScreen;
 }
+
+/// Checks if the host Android OS identifies as a Wear OS watch device.
+final isNativeWatchProvider = FutureProvider<bool>((ref) async {
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    try {
+      const channel = MethodChannel('com.awady.awady_music/tv');
+      final isWatch = await channel.invokeMethod<bool>('isWatch');
+      return isWatch ?? false;
+    } on Object catch (_) {
+      return false;
+    }
+  }
+  return false;
+});
+
+/// Indicates whether Watch mode is currently active based on system detection.
+final isWatchModeProvider = Provider<bool>((ref) {
+  return ref.watch(isNativeWatchProvider).value ?? false;
+});
+
+/// Utility for detecting Wear OS round/square watch screen layout.
+bool isWatchLayout(BuildContext context, [WidgetRef? ref]) {
+  if (ref != null && ref.watch(isWatchModeProvider)) {
+    return true;
+  }
+  final size = MediaQuery.sizeOf(context);
+  return size.shortestSide <= 280 && (size.width - size.height).abs() <= 60;
+}

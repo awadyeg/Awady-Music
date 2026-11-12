@@ -114,6 +114,11 @@ class MainActivity : AudioServiceActivity() {
                             Configuration.UI_MODE_TYPE_TELEVISION ||
                             packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
                     result.success(isTv)
+                } else if (call.method == "isWatch") {
+                    val uiModeManager = getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
+                    val isWatch = uiModeManager?.currentModeType == Configuration.UI_MODE_TYPE_WATCH ||
+                            packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)
+                    result.success(isWatch)
                 } else if (call.method == "bringToFront") {
                     try {
                         val intent = Intent(this, MainActivity::class.java).apply {

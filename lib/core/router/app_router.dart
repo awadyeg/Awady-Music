@@ -18,6 +18,7 @@ import 'package:awady_music/features/search/search_screen.dart';
 import 'package:awady_music/features/settings/settings_screen.dart';
 import 'package:awady_music/features/stats/stats_screen.dart';
 import 'package:awady_music/features/tv/tv_home_screen.dart';
+import 'package:awady_music/features/wear/wear_home_screen.dart';
 import 'package:awady_music/player/connect_receiver.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/equalizer_sheet.dart';
@@ -25,9 +26,11 @@ import 'package:awady_music/widgets/glass_tab_bar.dart';
 import 'package:awady_music/widgets/import_sheet.dart';
 import 'package:awady_music/widgets/mini_player.dart';
 import 'package:awady_music/widgets/offline_banner.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -88,6 +91,12 @@ class AppShell extends ConsumerWidget {
       }
     });
 
+    final isWatch =
+        ref.watch(isWatchModeProvider) || isWatchLayout(context, ref);
+    if (isWatch) {
+      return const WearHomeScreen();
+    }
+
     final isTv = ref.watch(isTvModeProvider);
     if (isTv) {
       return TvHomeScreen(
@@ -100,6 +109,87 @@ class AppShell extends ConsumerWidget {
     final hasTrack = ref.watch(
       playerControllerProvider.select((s) => s.current != null),
     );
+
+    final size = MediaQuery.sizeOf(context);
+    final isDesktopPlatform =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.windows ||
+            defaultTargetPlatform == TargetPlatform.macOS ||
+            defaultTargetPlatform == TargetPlatform.linux);
+    final isDesktopWide = isDesktopPlatform && size.width >= 800 && !isTv;
+
+    if (isDesktopWide) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).glass.bg,
+        body: Column(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    width: 240,
+                    color: Theme.of(context).glass.bgElevated,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Text(
+                            'Awady Music',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        _buildDesktopNavItem(
+                          context,
+                          currentPath,
+                          '/home',
+                          'Home',
+                          LucideIcons.home,
+                        ),
+                        _buildDesktopNavItem(
+                          context,
+                          currentPath,
+                          '/search',
+                          'Search',
+                          LucideIcons.search,
+                        ),
+                        _buildDesktopNavItem(
+                          context,
+                          currentPath,
+                          '/library',
+                          'Library',
+                          LucideIcons.library,
+                        ),
+                        _buildDesktopNavItem(
+                          context,
+                          currentPath,
+                          '/stats',
+                          'Stats',
+                          LucideIcons.barChart2,
+                        ),
+                        _buildDesktopNavItem(
+                          context,
+                          currentPath,
+                          '/settings',
+                          'Settings',
+                          LucideIcons.settings,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(child: RepaintBoundary(child: child)),
+                ],
+              ),
+            ),
+            if (hasTrack) const MiniPlayer(),
+          ],
+        ),
+      );
+    }
 
     final currentIndex = _calculateIndex(currentPath);
 
@@ -150,6 +240,31 @@ class AppShell extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDesktopNavItem(
+    BuildContext context,
+    String currentPath,
+    String route,
+    String label,
+    IconData icon,
+  ) {
+    final selected = currentPath.startsWith(route);
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: selected ? Colors.purpleAccent : Colors.white70,
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: selected ? Colors.white : Colors.white70,
+          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      selected: selected,
+      onTap: () => context.go(route),
     );
   }
 }
@@ -344,6 +459,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             }
           },
         ),
+      ),
+      GoRoute(
+        path: '/wear',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const WearHomeScreen(),
       ),
       // Root-level modal routes
       GoRoute(

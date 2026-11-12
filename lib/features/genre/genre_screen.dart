@@ -5,6 +5,7 @@ import 'package:awady_music/core/theme/glass.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/repositories/catalog_providers.dart';
+import 'package:awady_music/data/repositories/catalog_repository.dart';
 import 'package:awady_music/data/sources/audius/audius_client.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/large_title_scaffold.dart';
@@ -33,28 +34,59 @@ class _GenreScreenState extends ConsumerState<GenreScreen> {
 
   Future<List<Track>> _loadTracks() async {
     final genreName = widget.name;
-    if (_filter == GenreTimeFilter.topHits) {
-      final searchRes = await ref
-          .read(catalogRepositoryProvider)
-          .search('$genreName hits');
-      if (searchRes.songs.isNotEmpty) {
-        return searchRes.songs;
-      }
-    }
-
-    final audiusTime = switch (_filter) {
-      GenreTimeFilter.topHits => 'week',
-      GenreTimeFilter.week => 'week',
-      GenreTimeFilter.month => 'month',
-      GenreTimeFilter.allTime => 'all',
+    final query = switch (_filter) {
+      GenreTimeFilter.topHits => '$genreName top hits',
+      GenreTimeFilter.week => '$genreName trending songs this week',
+      GenreTimeFilter.month => '$genreName popular songs this month',
+      GenreTimeFilter.allTime => '$genreName greatest hits of all time',
     };
 
-    final audius = ref.read(audiusClientProvider);
-    return await audius.trendingTracks(
-      genre: genreName,
-      time: audiusTime,
-      limit: 60,
-    );
+    Exception? ytError;
+    try {
+      var searchRes = await ref.read(catalogRepositoryProvider).search(query);
+      if (searchRes.songs.isEmpty && _filter == GenreTimeFilter.topHits) {
+        searchRes = await ref
+            .read(catalogRepositoryProvider)
+            .search('$genreName hits');
+      }
+      var tracks = searchRes.songs;
+      if (searchRes.playlists.isNotEmpty) {
+        try {
+          final topPl = searchRes.playlists.first;
+          final plPage = await ref
+              .read(catalogRepositoryProvider)
+              .playlist(topPl.id);
+          tracks = [...tracks, ...plPage.tracks];
+        } on Object catch (_) {}
+      }
+      if (tracks.isNotEmpty) {
+        final seen = <String>{};
+        final unique = tracks.where((t) => seen.add(t.id)).toList();
+        return CatalogRepositoryImpl.interleaveByArtist(unique);
+      }
+    } on Exception catch (e) {
+      ytError = e;
+    } on Object catch (e) {
+      ytError = Exception(e.toString());
+    }
+
+    try {
+      final audiusTime = switch (_filter) {
+        GenreTimeFilter.topHits => 'week',
+        GenreTimeFilter.week => 'week',
+        GenreTimeFilter.month => 'month',
+        GenreTimeFilter.allTime => 'all',
+      };
+      final audius = ref.read(audiusClientProvider);
+      return await audius.trendingTracks(
+        genre: genreName,
+        time: audiusTime,
+        limit: 60,
+      );
+    } on Object catch (_) {
+      if (ytError != null) throw ytError;
+      rethrow;
+    }
   }
 
   @override

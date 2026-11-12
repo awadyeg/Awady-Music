@@ -60,7 +60,10 @@ abstract interface class CatalogRepository {
 
   Future<List<MoodCategory>> moods();
 
-  Future<MoodPageData> mood(String params);
+  Future<MoodPageData> mood(
+    String params, {
+    List<Track> favoriteTracks = const [],
+  });
 
   Future<List<Track>> upNext(String videoId, {int limit = 40});
 
@@ -399,41 +402,136 @@ class CatalogRepositoryImpl implements CatalogRepository {
   Future<List<MoodCategory>> moods() => innertubeClient.moods();
 
   @override
-  Future<MoodPageData> mood(String params) async {
+  Future<MoodPageData> mood(
+    String params, {
+    List<Track> favoriteTracks = const [],
+  }) async {
     if (params.startsWith('custom:')) {
       final rest = params.substring('custom:'.length);
       final parts = rest.split('|');
       final title = parts.first;
       final query = parts.length > 1 ? parts[1] : title;
+
+      if ((title.contains('Likes') || title.contains('My Likes')) &&
+          favoriteTracks.isNotEmpty) {
+        try {
+          final upNextFutures = favoriteTracks
+              .where((t) => t.streamId != null)
+              .take(2)
+              .map((t) => upNext(t.streamId!));
+          final upNextResults = await Future.wait(upNextFutures);
+          final upNextTracks = upNextResults.expand((e) => e).toList();
+
+          var claudeTracks = const <Track>[];
+          if (claudeAiClient != null && claudeAiClient!.enabled) {
+            final suggestions = await claudeAiClient!.suggestForMood(
+              moodName: title,
+              moodQuery: query,
+              seedTracks: favoriteTracks,
+            );
+            claudeTracks = await resolveClaudeSuggestions(
+              suggestions,
+              excludeIds: favoriteTracks.map((t) => t.id).toSet(),
+            );
+          }
+
+          final searchRes = await search(query);
+
+          var filteredFavorites = favoriteTracks;
+          if (title.toLowerCase().contains('chill')) {
+            filteredFavorites = favoriteTracks
+                .where((t) => t.duration >= 195 || t.duration == 0)
+                .toList();
+            if (filteredFavorites.isEmpty) filteredFavorites = favoriteTracks;
+          } else if (title.toLowerCase().contains('upbeat')) {
+            filteredFavorites = favoriteTracks
+                .where((t) => t.duration < 220)
+                .toList();
+            if (filteredFavorites.isEmpty) filteredFavorites = favoriteTracks;
+          }
+
+          final combined = [
+            ...filteredFavorites,
+            ...upNextTracks,
+            ...claudeTracks,
+            ...searchRes.songs,
+          ];
+          final seen = <String>{};
+          final unique = combined.where((t) => seen.add(t.id)).toList();
+          final interleaved = interleaveByArtist(unique);
+          return MoodPageData(
+            name: title,
+            playlists: searchRes.playlists,
+            tracks: interleaved.take(40).toList(),
+          );
+        } on Object catch (_) {}
+      }
+
       try {
-        final res = await search(query);
+        final searchRes = await search(query);
+        final playlistTracks = <Track>[];
+        if (searchRes.playlists.isNotEmpty) {
+          final topPls = searchRes.playlists.take(2).toList();
+          final plFutures = topPls.map((pl) => playlist(pl.id));
+          final plPages = await Future.wait(plFutures);
+          for (final p in plPages) {
+            playlistTracks.addAll(p.tracks);
+          }
+        }
+
+        var claudeTracks = const <Track>[];
+        if (claudeAiClient != null && claudeAiClient!.enabled) {
+          final suggestions = await claudeAiClient!.suggestForMood(
+            moodName: title,
+            moodQuery: query,
+            seedTracks: favoriteTracks,
+            limit: 12,
+          );
+          claudeTracks = await resolveClaudeSuggestions(suggestions);
+        }
+
+        final combined = [
+          ...playlistTracks,
+          ...claudeTracks,
+          ...searchRes.songs,
+        ];
+        final seen = <String>{};
+        final unique = combined.where((t) => seen.add(t.id)).toList();
+        final interleaved = interleaveByArtist(unique);
         return MoodPageData(
           name: title,
-          playlists: res.playlists,
-          tracks: res.songs,
+          playlists: searchRes.playlists,
+          tracks: interleaved.take(40).toList(),
         );
-      } on Object {
+      } on Object catch (_) {
         return MoodPageData(name: title);
       }
     }
 
     final data = await innertubeClient.mood(params);
-    if (data.tracks.isEmpty && data.playlists.isNotEmpty) {
+    var tracks = data.tracks;
+    if (tracks.length < 10) {
       try {
-        final query = data.name.isNotEmpty ? data.name : 'mood music';
-        final res = await search(query);
-        if (res.songs.isNotEmpty) {
-          return MoodPageData(
-            name: data.name,
-            playlists: data.playlists,
-            tracks: res.songs,
+        var claudeTracks = const <Track>[];
+        if (claudeAiClient != null && claudeAiClient!.enabled) {
+          final suggestions = await claudeAiClient!.suggestForMood(
+            moodName: data.name.isNotEmpty ? data.name : 'mood music',
+            seedTracks: favoriteTracks,
+            limit: 12,
           );
+          claudeTracks = await resolveClaudeSuggestions(suggestions);
         }
-      } on Object {
-        // Fall back to original data
-      }
+        final searchRes = await search('${data.name} official playlist songs');
+        final combined = [...tracks, ...claudeTracks, ...searchRes.songs];
+        final seen = <String>{};
+        tracks = combined.where((t) => seen.add(t.id)).toList();
+      } on Object catch (_) {}
     }
-    return data;
+    return MoodPageData(
+      name: data.name,
+      playlists: data.playlists,
+      tracks: interleaveByArtist(tracks),
+    );
   }
 
   @override
