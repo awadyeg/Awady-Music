@@ -92,6 +92,11 @@ void main() {
   setUp(ClaudeAiClient.clearCache);
 
   group('ClaudeAiClient parser tests', () {
+    test('defaults model to claude-sonnet-5-5', () {
+      final client = ClaudeAiClient();
+      expect(client.model, equals('claude-sonnet-5-5'));
+    });
+
     test('parses pure json array correctly', () {
       const json = '[{"title": "Song A", "artist": "Artist A"}]';
       final res = ClaudeAiClient.parseTrackSuggestions(json);

@@ -279,7 +279,7 @@ class AppSettings {
     this.enableClaudeAi = true,
     this.claudeApiKey = const String.fromEnvironment('CLAUDE_API_KEY'),
     this.claudeBaseUrl = 'https://api.anthropic.com',
-    this.claudeModel = 'claude-sonnet-4-20250514',
+    this.claudeModel = 'claude-sonnet-5-5',
     this.ytmLoggedIn = false,
     this.ytmAccountName = '',
   });
@@ -416,8 +416,15 @@ class SettingsNotifier extends Notifier<AppSettings> {
         const String.fromEnvironment('CLAUDE_API_KEY');
     final claudeBaseUrl =
         prefs.getString(_keyClaudeBaseUrl) ?? 'https://api.anthropic.com';
+    final savedModel = prefs.getString(_keyClaudeModel);
     final claudeModel =
-        prefs.getString(_keyClaudeModel) ?? 'claude-sonnet-4-20250514';
+        (savedModel == null ||
+            savedModel.isEmpty ||
+            savedModel == 'claude-sonnet-4-20250514' ||
+            savedModel == 'claude-3-7-sonnet-latest' ||
+            savedModel == 'claude-3-5-haiku-latest')
+        ? 'claude-sonnet-5-5'
+        : savedModel;
     final ytmCookie = prefs.getString(_keyYtmAccountCookie) ?? '';
     final ytmLoggedIn = ytmCookie.isNotEmpty;
     final ytmAccountName = prefs.getString(_keyYtmAccountName) ?? '';

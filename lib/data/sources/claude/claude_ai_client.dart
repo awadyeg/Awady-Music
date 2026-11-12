@@ -14,7 +14,7 @@ class ClaudeAiClient {
   ClaudeAiClient({
     this.apiKey = '',
     this.baseUrl = 'https://api.anthropic.com',
-    this.model = 'claude-sonnet-4-20250514',
+    this.model = 'claude-sonnet-5-5',
     this.enabled = true,
     this.httpClient,
   });

@@ -181,7 +181,7 @@ void main() {
 
       // App name & version
       expect(find.text('Awady Music'), findsOneWidget);
-      expect(find.text('v1.0.13 (build 13)'), findsOneWidget);
+      expect(find.text('v1.0.14 (build 14)'), findsOneWidget);
 
       // Verify attribution, contribute on GitHub, and legal are not shown
       expect(

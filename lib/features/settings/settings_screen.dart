@@ -609,7 +609,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'v1.0.13 (build 13)',
+                                  'v1.0.14 (build 14)',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: tokens.textDim,
@@ -739,7 +739,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final baseUrlController = TextEditingController(
       text: settings.claudeBaseUrl,
     );
-    var selectedModel = settings.claudeModel;
+    const validClaudeModels = [
+      'claude-sonnet-5-5',
+      'claude-opus-5-5',
+      'claude-haiku-5-5',
+    ];
+    var selectedModel = validClaudeModels.contains(settings.claudeModel)
+        ? settings.claudeModel
+        : 'claude-sonnet-5-5';
 
     await showDialog<void>(
       context: context,
@@ -812,16 +819,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       style: TextStyle(color: tokens.textPrimary, fontSize: 13),
                       items: const [
                         DropdownMenuItem(
-                          value: 'claude-sonnet-4-20250514',
-                          child: Text('Claude Sonnet 4'),
+                          value: 'claude-sonnet-5-5',
+                          child: Text('Claude Sonnet 5.5'),
                         ),
                         DropdownMenuItem(
-                          value: 'claude-3-7-sonnet-latest',
-                          child: Text('Claude 3.7 Sonnet'),
+                          value: 'claude-opus-5-5',
+                          child: Text('Claude Opus 5.5'),
                         ),
                         DropdownMenuItem(
-                          value: 'claude-3-5-haiku-latest',
-                          child: Text('Claude 3.5 Haiku'),
+                          value: 'claude-haiku-5-5',
+                          child: Text('Claude Haiku 5.5'),
                         ),
                       ],
                       onChanged: (val) {
