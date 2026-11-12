@@ -1,13 +1,23 @@
 package com.awady.awady_music
 
 import android.Manifest
+import android.app.Dialog
 import android.app.UiModeManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
+import android.view.ViewGroup
+import android.webkit.CookieManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.core.content.FileProvider
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -116,6 +126,125 @@ class MainActivity : AudioServiceActivity() {
                     }
                 } else {
                     result.notImplemented()
+                }
+            }
+
+        val ytmAuthChannel = "com.awady.awady_music/ytm_auth"
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ytmAuthChannel)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "loginYouTubeMusic" -> {
+                        try {
+                            val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+                            val rootLayout = LinearLayout(this).apply {
+                                orientation = LinearLayout.VERTICAL
+                                setBackgroundColor(Color.parseColor("#121212"))
+                                layoutParams = ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                            }
+
+                            val headerLayout = LinearLayout(this).apply {
+                                orientation = LinearLayout.HORIZONTAL
+                                gravity = Gravity.CENTER_VERTICAL
+                                setBackgroundColor(Color.parseColor("#1E1E1E"))
+                                setPadding(24, 16, 24, 16)
+                                layoutParams = LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                )
+                            }
+
+                            val titleView = TextView(this).apply {
+                                text = "Sign in to YouTube Music"
+                                setTextColor(Color.WHITE)
+                                textSize = 16f
+                                layoutParams = LinearLayout.LayoutParams(
+                                    0,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    1f
+                                )
+                            }
+
+                            var completed = false
+                            fun finishWithCookie(cookie: String?) {
+                                if (completed) return
+                                completed = true
+                                dialog.dismiss()
+                                result.success(cookie)
+                            }
+
+                            val doneButton = Button(this).apply {
+                                text = "Done"
+                                setTextColor(Color.parseColor("#4CAF50"))
+                                setBackgroundColor(Color.TRANSPARENT)
+                                setOnClickListener {
+                                    val cookie = CookieManager.getInstance().getCookie("https://music.youtube.com")
+                                    finishWithCookie(cookie)
+                                }
+                            }
+
+                            val cancelButton = Button(this).apply {
+                                text = "Cancel"
+                                setTextColor(Color.parseColor("#B0B0B0"))
+                                setBackgroundColor(Color.TRANSPARENT)
+                                setOnClickListener {
+                                    finishWithCookie(null)
+                                }
+                            }
+
+                            headerLayout.addView(titleView)
+                            headerLayout.addView(doneButton)
+                            headerLayout.addView(cancelButton)
+                            rootLayout.addView(headerLayout)
+
+                            val webView = WebView(this).apply {
+                                layoutParams = LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    LinearLayout.LayoutParams.MATCH_PARENT
+                                )
+                                settings.javaScriptEnabled = true
+                                settings.domStorageEnabled = true
+                                settings.userAgentString =
+                                    "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
+                                CookieManager.getInstance().setAcceptCookie(true)
+                                CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+                                webViewClient = object : WebViewClient() {
+                                    override fun onPageFinished(view: WebView?, url: String?) {
+                                        super.onPageFinished(view, url)
+                                        if (url != null && url.contains("music.youtube.com")) {
+                                            val cookie = CookieManager.getInstance().getCookie("https://music.youtube.com")
+                                            if (cookie != null && (cookie.contains("SAPISID") || cookie.contains("__Secure-3PAPISID"))) {
+                                                finishWithCookie(cookie)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            rootLayout.addView(webView)
+                            dialog.setContentView(rootLayout)
+                            dialog.setOnCancelListener {
+                                finishWithCookie(null)
+                            }
+                            dialog.show()
+
+                            webView.loadUrl("https://accounts.google.com/ServiceLogin?service=youtube&continue=https%3A%2F%2Fmusic.youtube.com")
+                        } catch (e: Exception) {
+                            result.error("AUTH_ERROR", e.localizedMessage, null)
+                        }
+                    }
+                    "logout" -> {
+                        try {
+                            CookieManager.getInstance().removeAllCookies(null)
+                            CookieManager.getInstance().flush()
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("LOGOUT_ERROR", e.localizedMessage, null)
+                        }
+                    }
+                    else -> result.notImplemented()
                 }
             }
     }

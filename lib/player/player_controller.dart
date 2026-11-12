@@ -10,7 +10,9 @@ import 'package:awady_music/data/db/app_database.dart';
 import 'package:awady_music/data/models/enums.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/models/track_validator.dart';
+import 'package:awady_music/data/repositories/catalog_providers.dart';
 import 'package:awady_music/data/repositories/catalog_repository.dart';
+import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/data/repositories/stats_repository.dart';
 import 'package:awady_music/data/sources/audius/audius_client.dart';
 import 'package:awady_music/data/sources/deezer/deezer_client.dart';
@@ -513,7 +515,11 @@ class PlayerController extends Notifier<PlayerState> {
       }
       ..onPlaybackCompleted = () {
         next(auto: true);
-      };
+      }
+      ..onGetChildren = _handleAndroidAutoGetChildren
+      ..onPlayFromMediaId = _handleAndroidAutoPlayFromMediaId
+      ..onPlayFromSearch = _handleAndroidAutoPlayFromSearch
+      ..onSearch = _handleAndroidAutoSearch;
 
     _subscriptions
       ..add(
@@ -573,6 +579,189 @@ class PlayerController extends Notifier<PlayerState> {
           }
         }),
       );
+  }
+
+  Future<List<MediaItem>> _handleAndroidAutoGetChildren(
+    String parentMediaId,
+  ) async {
+    const rootId = 'root';
+    if (parentMediaId == rootId || parentMediaId.isEmpty) {
+      return const [
+        MediaItem(
+          id: 'folder_foryou',
+          title: 'For You & Most Played',
+          playable: false,
+          extras: {'is_folder': true},
+        ),
+        MediaItem(
+          id: 'folder_likes',
+          title: 'Liked Songs',
+          playable: false,
+          extras: {'is_folder': true},
+        ),
+        MediaItem(
+          id: 'folder_recents',
+          title: 'Recently Played',
+          playable: false,
+          extras: {'is_folder': true},
+        ),
+        MediaItem(
+          id: 'folder_queue',
+          title: 'Current Queue & Mix',
+          playable: false,
+          extras: {'is_folder': true},
+        ),
+        MediaItem(
+          id: 'folder_playlists',
+          title: 'Playlists',
+          playable: false,
+          extras: {'is_folder': true},
+        ),
+      ];
+    }
+
+    if (parentMediaId == 'folder_foryou') {
+      final mostPlayed = _statsRepo.mostPlayedTracks;
+      final lib = ref.read(libraryRepositoryProvider);
+      final effective = getEffectiveFavoriteTracks(
+        likedTracks: lib.likedTracks,
+        mostPlayedTracks: mostPlayed,
+        recentTracks: lib.recents,
+      );
+      return effective.take(30).map((t) => t.toMediaItem()).toList();
+    }
+
+    if (parentMediaId == 'folder_likes') {
+      final lib = ref.read(libraryRepositoryProvider);
+      return lib.likedTracks.take(40).map((t) => t.toMediaItem()).toList();
+    }
+
+    if (parentMediaId == 'folder_recents') {
+      final lib = ref.read(libraryRepositoryProvider);
+      return lib.recents.take(30).map((t) => t.toMediaItem()).toList();
+    }
+
+    if (parentMediaId == 'folder_queue') {
+      return state.queue.map((t) => t.toMediaItem()).toList();
+    }
+
+    if (parentMediaId == 'folder_playlists') {
+      final lib = ref.read(libraryRepositoryProvider);
+      return lib.playlists
+          .map(
+            (p) => MediaItem(
+              id: 'playlist_${p.id}',
+              title: p.name,
+              playable: false,
+              extras: {'is_folder': true},
+            ),
+          )
+          .toList();
+    }
+
+    if (parentMediaId.startsWith('playlist_')) {
+      final pid = parentMediaId.substring('playlist_'.length);
+      final lib = ref.read(libraryRepositoryProvider);
+      final playlist = lib.getPlaylist(pid);
+      if (playlist != null) {
+        return playlist.tracks.map((t) => t.toMediaItem()).toList();
+      }
+    }
+
+    return const [];
+  }
+
+  Future<void> _handleAndroidAutoPlayFromMediaId(String mediaId) async {
+    final lib = ref.read(libraryRepositoryProvider);
+
+    if (mediaId == 'folder_foryou') {
+      final effective = getEffectiveFavoriteTracks(
+        likedTracks: lib.likedTracks,
+        mostPlayedTracks: _statsRepo.mostPlayedTracks,
+        recentTracks: lib.recents,
+      );
+      if (effective.isNotEmpty) playContext(effective, 0);
+      return;
+    }
+    if (mediaId == 'folder_likes') {
+      if (lib.likedTracks.isNotEmpty) playContext(lib.likedTracks, 0);
+      return;
+    }
+    if (mediaId == 'folder_recents') {
+      if (lib.recents.isNotEmpty) playContext(lib.recents, 0);
+      return;
+    }
+    if (mediaId == 'folder_queue') {
+      if (state.queue.isNotEmpty) jumpTo(state.index);
+      return;
+    }
+    if (mediaId.startsWith('playlist_')) {
+      final pid = mediaId.substring('playlist_'.length);
+      final playlist = lib.getPlaylist(pid);
+      if (playlist != null && playlist.tracks.isNotEmpty) {
+        playContext(playlist.tracks, 0);
+      }
+      return;
+    }
+
+    final queueIdx = state.queue.indexWhere((t) => t.id == mediaId);
+    if (queueIdx >= 0) {
+      jumpTo(queueIdx);
+      return;
+    }
+
+    final likeIdx = lib.likedTracks.indexWhere((t) => t.id == mediaId);
+    if (likeIdx >= 0) {
+      playContext(lib.likedTracks, likeIdx);
+      return;
+    }
+
+    final mp = _statsRepo.mostPlayedTracks;
+    final mpIdx = mp.indexWhere((t) => t.id == mediaId);
+    if (mpIdx >= 0) {
+      playContext(mp, mpIdx);
+      return;
+    }
+
+    final recIdx = lib.recents.indexWhere((t) => t.id == mediaId);
+    if (recIdx >= 0) {
+      playContext(lib.recents, recIdx);
+      return;
+    }
+
+    try {
+      final res = await _innertubeClient.search(mediaId);
+      if (res.songs.isNotEmpty) {
+        playContext(res.songs, 0);
+      }
+    } on Object catch (_) {}
+  }
+
+  Future<void> _handleAndroidAutoPlayFromSearch(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return;
+    try {
+      final res = await _innertubeClient.search(trimmed);
+      if (res.songs.isNotEmpty) {
+        playContext(res.songs, 0);
+      } else if (res.tracks.isNotEmpty) {
+        playContext(res.tracks, 0);
+      }
+    } on Object catch (e) {
+      Log.w('Android Auto playFromSearch failed: $e');
+    }
+  }
+
+  Future<List<MediaItem>> _handleAndroidAutoSearch(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return const [];
+    try {
+      final res = await _innertubeClient.search(trimmed);
+      return res.songs.map((t) => t.toMediaItem()).toList();
+    } on Object catch (e) {
+      Log.w('Android Auto search failed: $e');
+      return const [];
+    }
   }
 
   void notify(String message) {
@@ -1095,12 +1284,27 @@ class PlayerController extends Notifier<PlayerState> {
       }
     }
 
+    Future<List<Track>> safeClaudeMix() async {
+      try {
+        final catalog = ref.read(catalogRepositoryProvider);
+        return await catalog.similarToSearch(seed.title, seedTrack: seed);
+      } on Object catch (_) {
+        return const <Track>[];
+      }
+    }
+
     final results = await Future.wait([
+      safeClaudeMix(),
       safeUpNext(),
       safeDeezer(),
       safeSearch(),
     ]);
-    final rawCandidates = <Track>[...results[0], ...results[1], ...results[2]];
+    final rawCandidates = <Track>[
+      ...results[0],
+      ...results[1],
+      ...results[2],
+      ...results[3],
+    ];
 
     final seedTitle = normTitle(seed.title);
     final seenIds = <String>{seed.id};

@@ -10,7 +10,9 @@ import 'package:awady_music/data/models/search_results.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/repositories/catalog_repository.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
+import 'package:awady_music/data/repositories/stats_repository.dart';
 import 'package:awady_music/data/sources/audius/audius_client.dart';
+import 'package:awady_music/data/sources/claude/claude_ai_client.dart';
 import 'package:awady_music/data/sources/innertube/innertube_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,9 +28,11 @@ extension _KeepAlive5Min on Ref {
 final catalogRepositoryProvider = Provider<CatalogRepository>((ref) {
   final innertube = ref.watch(innertubeClientProvider);
   final audius = ref.watch(audiusClientProvider);
+  final claudeAi = ref.watch(claudeAiClientProvider);
   return CatalogRepositoryImpl(
     innertubeClient: innertube,
     audiusClient: audius,
+    claudeAiClient: claudeAi,
   );
 });
 
@@ -216,8 +220,39 @@ final upNextTracksProvider = FutureProvider.family<List<Track>, String>((
   return ref.watch(catalogRepositoryProvider).upNext(videoId);
 });
 
-/// Future provider for personalized recommendations based on the user's likes
-/// and followed artists.
+/// Merges explicit likes with most-played tracks (implicit favorites)
+/// and recent listening history, deduplicated in order of relevance.
+List<Track> getEffectiveFavoriteTracks({
+  required List<Track> likedTracks,
+  required List<Track> mostPlayedTracks,
+  required List<Track> recentTracks,
+}) {
+  final seen = <String>{};
+  final effective = <Track>[];
+
+  for (final t in likedTracks) {
+    if (seen.add(t.id)) {
+      effective.add(t);
+    }
+  }
+
+  for (final t in mostPlayedTracks.take(25)) {
+    if (seen.add(t.id)) {
+      effective.add(t);
+    }
+  }
+
+  for (final t in recentTracks.take(15)) {
+    if (seen.add(t.id)) {
+      effective.add(t);
+    }
+  }
+
+  return effective;
+}
+
+/// Future provider for personalized recommendations based on the user's likes,
+/// most played songs (implicit favorites), and followed artists.
 final recommendedForYouProvider = FutureProvider<CatalogList<Track>>((
   ref,
 ) async {
@@ -225,6 +260,7 @@ final recommendedForYouProvider = FutureProvider<CatalogList<Track>>((
   final likedAsync = ref.watch(likedTracksStreamProvider);
   final followedAsync = ref.watch(followedArtistsStreamProvider);
   final lib = ref.watch(libraryRepositoryProvider);
+  final stats = ref.watch(statsRepositoryProvider);
 
   var liked = likedAsync.asData?.value ?? const <Track>[];
   var followed = followedAsync.asData?.value ?? const <Artist>[];
@@ -244,25 +280,38 @@ final recommendedForYouProvider = FutureProvider<CatalogList<Track>>((
     recents = lib.recents;
   } on Object catch (_) {}
 
-  if (liked.isEmpty && followed.isEmpty) {
+  var mostPlayed = const <Track>[];
+  try {
+    mostPlayed = stats.mostPlayedTracks;
+  } on Object catch (_) {}
+
+  final effectiveFavorites = getEffectiveFavoriteTracks(
+    likedTracks: liked,
+    mostPlayedTracks: mostPlayed,
+    recentTracks: recents,
+  );
+
+  if (liked.isEmpty && mostPlayed.isEmpty && followed.isEmpty) {
     return CatalogList(const []);
   }
 
   return await ref
       .watch(catalogRepositoryProvider)
       .recommendedFromLikes(
-        liked,
+        effectiveFavorites,
         followedArtists: followed,
         recentTracks: recents,
       );
 });
 
-/// Future provider for AI-generated mixes based on user's liked tracks.
+/// Future provider for AI-generated mixes based on user's liked and
+/// most-played tracks.
 final aiMixesProvider = FutureProvider<List<AiMixPlaylist>>((ref) async {
   ref.keepAlive5Min();
   final likedAsync = ref.watch(likedTracksStreamProvider);
   final followedAsync = ref.watch(followedArtistsStreamProvider);
   final lib = ref.watch(libraryRepositoryProvider);
+  final stats = ref.watch(statsRepositoryProvider);
 
   var liked = likedAsync.asData?.value ?? const <Track>[];
   var followed = followedAsync.asData?.value ?? const <Artist>[];
@@ -278,11 +327,40 @@ final aiMixesProvider = FutureProvider<List<AiMixPlaylist>>((ref) async {
     }
   } on Object catch (_) {}
 
-  if (liked.isEmpty) {
+  var mostPlayed = const <Track>[];
+  try {
+    mostPlayed = stats.mostPlayedTracks;
+  } on Object catch (_) {}
+
+  var recents = const <Track>[];
+  try {
+    recents = lib.recents;
+  } on Object catch (_) {}
+
+  final effectiveFavorites = getEffectiveFavoriteTracks(
+    likedTracks: liked,
+    mostPlayedTracks: mostPlayed,
+    recentTracks: recents,
+  );
+
+  if (liked.isEmpty && mostPlayed.isEmpty) {
     return const [];
   }
 
   return await ref
       .watch(catalogRepositoryProvider)
-      .aiMixesFromLikes(liked, followedArtists: followed);
+      .aiMixesFromLikes(effectiveFavorites, followedArtists: followed);
 });
+
+/// Future provider family for similar tracks on search results powered
+/// by Claude AI.
+final similarSearchTracksProvider =
+    FutureProvider.family<List<Track>, ({String query, Track? topTrack})>((
+      ref,
+      arg,
+    ) {
+      ref.keepAlive5Min();
+      return ref
+          .watch(catalogRepositoryProvider)
+          .similarToSearch(arg.query, seedTrack: arg.topTrack);
+    });

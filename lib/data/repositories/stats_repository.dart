@@ -248,6 +248,52 @@ class StatsRepository {
   StatsState _state = const StatsState();
   StatsState get state => _state;
 
+  List<Track> get mostPlayedTracks {
+    final entries = _state.tracks.values.toList()
+      ..sort((a, b) {
+        final scoreA = a.plays * 60000 + a.ms;
+        final scoreB = b.plays * 60000 + b.ms;
+        return scoreB.compareTo(scoreA);
+      });
+    return entries.map((e) => e.track).toList();
+  }
+
+  void recordImportedFavorites(List<Track> tracks) {
+    if (tracks.isEmpty) return;
+    final updatedTracks = Map<String, TrackAgg>.from(_state.tracks);
+    final updatedArtists = Map<String, ArtistAgg>.from(_state.artists);
+
+    for (final track in tracks) {
+      final slimmed = slimTrack(track);
+      final prev = updatedTracks[track.id];
+      updatedTracks[track.id] = TrackAgg(
+        track: slimmed,
+        plays: (prev?.plays ?? 0) + 3,
+        ms: (prev?.ms ?? 0) + 180000,
+      );
+
+      final artistName = track.artist.name.trim().isNotEmpty
+          ? track.artist.name.trim()
+          : 'Unknown artist';
+      final prevArt = updatedArtists[artistName];
+      final art =
+          track.artwork?.s480 ?? track.artwork?.s150 ?? track.artwork?.fallback;
+      updatedArtists[artistName] = ArtistAgg(
+        name: artistName,
+        plays: (prevArt?.plays ?? 0) + 3,
+        ms: (prevArt?.ms ?? 0) + 180000,
+        art: prevArt?.art ?? art,
+      );
+    }
+
+    _state = _state.copyWith(
+      tracks: prune(updatedTracks, maxTracks, (t) => t.ms),
+      artists: prune(updatedArtists, maxArtists, (a) => a.ms),
+    );
+    _controller.add(_state);
+    _persist();
+  }
+
   final StreamController<StatsState> _controller =
       StreamController<StatsState>.broadcast();
   Stream<StatsState> get stream => _controller.stream;

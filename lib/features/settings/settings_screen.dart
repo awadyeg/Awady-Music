@@ -7,6 +7,7 @@ import 'package:awady_music/core/util/log.dart';
 import 'package:awady_music/data/repositories/backup_repository.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/data/repositories/stats_repository.dart';
+import 'package:awady_music/data/sources/youtube/yt_account_importer.dart';
 import 'package:awady_music/player/player_controller.dart';
 import 'package:awady_music/widgets/equalizer_sheet.dart';
 import 'package:awady_music/widgets/glass_toast.dart';
@@ -100,6 +101,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       tokens: tokens,
                       onTap: () {
                         unawaited(_editUserName(context, settings.userName));
+                      },
+                    ),
+                    _buildDivider(tokens),
+                    _buildNavTile(
+                      icon: LucideIcons.globe,
+                      title: 'Google / YouTube Music Account',
+                      subtitle: settings.ytmLoggedIn
+                          ? 'Connected • Tap to sync or disconnect'
+                          : 'Not connected • Tap to sign in and auto-sync',
+                      tokens: tokens,
+                      onTap: () {
+                        unawaited(_showYtmAccountSheet(context, settings));
                       },
                     ),
                   ],
@@ -230,6 +243,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               .read(settingsProvider.notifier)
                               .setAutoDownloadLikes(enabled: val),
                         );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Claude Code AI Section
+                const SectionHeader(title: 'Claude Code AI'),
+                _buildCard(
+                  tokens: tokens,
+                  children: [
+                    _buildSwitchTile(
+                      title: 'Claude AI Recommendations & Mixes',
+                      subtitle:
+                          'Smart recommendations, mixes & similar search songs',
+                      value: settings.enableClaudeAi,
+                      tokens: tokens,
+                      onChanged: (val) {
+                        unawaited(
+                          settingsNotifier.setEnableClaudeAi(enabled: val),
+                        );
+                      },
+                    ),
+                    _buildDivider(tokens),
+                    _buildNavTile(
+                      icon: LucideIcons.sparkles,
+                      title: 'Claude Code API Configuration',
+                      subtitle: settings.claudeApiKey.isNotEmpty
+                          ? 'API Key set (${settings.claudeModel})'
+                          : 'Built-in AI active • Tap to set Claude API Key',
+                      tokens: tokens,
+                      onTap: () {
+                        unawaited(_configureClaudeAi(context, settings));
                       },
                     ),
                   ],
@@ -563,7 +609,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'v1.0.12 (build 12)',
+                                  'v1.0.13 (build 13)',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: tokens.textDim,
@@ -683,6 +729,236 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (saved != null) {
       unawaited(ref.read(settingsProvider.notifier).setUserName(saved));
     }
+  }
+
+  Future<void> _configureClaudeAi(
+    BuildContext context,
+    AppSettings settings,
+  ) async {
+    final apiKeyController = TextEditingController(text: settings.claudeApiKey);
+    final baseUrlController = TextEditingController(
+      text: settings.claudeBaseUrl,
+    );
+    var selectedModel = settings.claudeModel;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        final tokens = Theme.of(ctx).glass;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: tokens.bgElevated,
+              title: Row(
+                children: [
+                  Icon(LucideIcons.sparkles, color: tokens.accent, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Claude Code API',
+                    style: TextStyle(
+                      color: tokens.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Provide an Anthropic API key or Claude Code proxy. '
+                      'Leave empty to use built-in zero-config AI.',
+                      style: TextStyle(fontSize: 12, color: tokens.textDim),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: apiKeyController,
+                      style: TextStyle(color: tokens.textPrimary, fontSize: 13),
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: 'API Key',
+                        labelStyle: TextStyle(color: tokens.accent),
+                        hintText: 'sk-ant-api...',
+                        hintStyle: TextStyle(color: tokens.textFaint),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: baseUrlController,
+                      style: TextStyle(color: tokens.textPrimary, fontSize: 13),
+                      decoration: InputDecoration(
+                        labelText: 'Base URL',
+                        labelStyle: TextStyle(color: tokens.accent),
+                        hintText: 'https://api.anthropic.com',
+                        hintStyle: TextStyle(color: tokens.textFaint),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Model',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: tokens.textDim,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedModel,
+                      dropdownColor: tokens.bgElevated,
+                      style: TextStyle(color: tokens.textPrimary, fontSize: 13),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'claude-sonnet-4-20250514',
+                          child: Text('Claude Sonnet 4'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'claude-3-7-sonnet-latest',
+                          child: Text('Claude 3.7 Sonnet'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'claude-3-5-haiku-latest',
+                          child: Text('Claude 3.5 Haiku'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() => selectedModel = val);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: tokens.textDim),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: tokens.accent,
+                    foregroundColor: tokens.onAccent,
+                  ),
+                  onPressed: () {
+                    final notifier = ref.read(settingsProvider.notifier);
+                    unawaited(notifier.setClaudeApiKey(apiKeyController.text));
+                    unawaited(
+                      notifier.setClaudeBaseUrl(baseUrlController.text),
+                    );
+                    unawaited(notifier.setClaudeModel(selectedModel));
+                    Navigator.of(ctx).pop();
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _showYtmAccountSheet(
+    BuildContext context,
+    AppSettings settings,
+  ) async {
+    if (!settings.ytmLoggedIn) {
+      await YtMusicAccountImporter.signInAndImport(context, ref);
+      return;
+    }
+
+    final tokens = Theme.of(context).glass;
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: tokens.bgElevated,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Icon(LucideIcons.globe, color: tokens.accent, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            settings.ytmAccountName.isNotEmpty
+                                ? settings.ytmAccountName
+                                : 'Google / YouTube Music',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: tokens.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            'Connected • Two-way likes sync active',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: tokens.textDim,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: tokens.accent,
+                    foregroundColor: tokens.onAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(LucideIcons.refreshCw, size: 16),
+                  label: const Text('Sync Likes & History Now'),
+                  onPressed: () async {
+                    Navigator.of(ctx).pop();
+                    await YtMusicAccountImporter.signInAndImport(context, ref);
+                  },
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: tokens.danger,
+                    side: BorderSide(color: tokens.danger),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(LucideIcons.logOut, size: 16),
+                  label: const Text('Disconnect Account'),
+                  onPressed: () async {
+                    Navigator.of(ctx).pop();
+                    await YtMusicAccountImporter.logout();
+                    await ref.read(settingsProvider.notifier).clearYtmAccount();
+                    _showToast(
+                      'Disconnected from YouTube Music',
+                      LucideIcons.check,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _showCountryDialog(BuildContext context) {

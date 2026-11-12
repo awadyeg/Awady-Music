@@ -35,6 +35,8 @@ class _FakeStatsRepository extends Fake implements StatsRepository {
   StatsState get state => const StatsState();
   @override
   Stream<StatsState> get stream => Stream.value(const StatsState());
+  @override
+  List<Track> get mostPlayedTracks => const [];
 }
 
 class _FakePlayerController extends PlayerController {

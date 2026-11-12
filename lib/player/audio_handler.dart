@@ -81,6 +81,12 @@ class AwadyAudioHandler extends BaseAudioHandler
   Future<void> Function(int index)? onSkipToQueueItemRequested;
   void Function()? onPlaybackCompleted;
 
+  // Android Auto / MediaBrowser hooks
+  Future<List<MediaItem>> Function(String parentMediaId)? onGetChildren;
+  Future<void> Function(String mediaId)? onPlayFromMediaId;
+  Future<void> Function(String query)? onPlayFromSearch;
+  Future<List<MediaItem>> Function(String query)? onSearch;
+
   int? _currentQueueIndex;
 
   AudioPlayer get player => _player;
@@ -244,6 +250,48 @@ class AwadyAudioHandler extends BaseAudioHandler
 
   @override
   Future<void> setSpeed(double speed) => _player.setSpeed(speed);
+
+  @override
+  Future<List<MediaItem>> getChildren(
+    String parentMediaId, [
+    Map<String, dynamic>? options,
+  ]) async {
+    if (onGetChildren != null) {
+      return await onGetChildren!(parentMediaId);
+    }
+    return queue.value;
+  }
+
+  @override
+  Future<void> playFromMediaId(
+    String mediaId, [
+    Map<String, dynamic>? extras,
+  ]) async {
+    if (onPlayFromMediaId != null) {
+      await onPlayFromMediaId!(mediaId);
+    }
+  }
+
+  @override
+  Future<void> playFromSearch(
+    String query, [
+    Map<String, dynamic>? extras,
+  ]) async {
+    if (onPlayFromSearch != null) {
+      await onPlayFromSearch!(query);
+    }
+  }
+
+  @override
+  Future<List<MediaItem>> search(
+    String query, [
+    Map<String, dynamic>? extras,
+  ]) async {
+    if (onSearch != null) {
+      return await onSearch!(query);
+    }
+    return const [];
+  }
 
   Future<void> setVolume(double volume) => _player.setVolume(volume);
 

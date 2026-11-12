@@ -10,6 +10,7 @@ import 'package:awady_music/data/repositories/import_queue.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
 import 'package:awady_music/data/sources/importer/playlist_file_parser.dart';
 import 'package:awady_music/data/sources/spotify/spotify_importer.dart';
+import 'package:awady_music/data/sources/youtube/yt_account_importer.dart';
 import 'package:awady_music/data/sources/youtube/yt_playlist_importer.dart';
 import 'package:awady_music/widgets/glass_toast.dart';
 import 'package:file_picker/file_picker.dart';
@@ -536,6 +537,38 @@ class _ImportSheetState extends ConsumerState<ImportSheet> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 side: BorderSide(color: tokens.glassStroke),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Sign in & sync Google / YouTube Music account button
+            OutlinedButton.icon(
+              key: const Key('import_ytm_account_button'),
+              onPressed: _busy
+                  ? null
+                  : () async {
+                      Navigator.of(context).pop();
+                      await YtMusicAccountImporter.signInAndImport(
+                        context,
+                        ref,
+                      );
+                    },
+              icon: Icon(LucideIcons.globe, size: 18, color: tokens.accent),
+              label: Text(
+                'Connect & Sync YouTube Music Account',
+                style: TextStyle(
+                  color: tokens.accent,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: BorderSide(color: tokens.accent.withValues(alpha: 0.5)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),

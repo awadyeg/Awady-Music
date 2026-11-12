@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:awady_music/core/l10n/l10n.dart';
+import 'package:awady_music/core/settings/settings_provider.dart';
 import 'package:awady_music/core/theme/glass.dart';
 import 'package:awady_music/core/theme/tokens.dart';
 import 'package:awady_music/data/db/app_database.dart';
 import 'package:awady_music/data/models/artwork.dart';
 import 'package:awady_music/data/repositories/library_repository.dart';
+import 'package:awady_music/data/sources/youtube/yt_account_importer.dart';
 import 'package:awady_music/widgets/artwork_image.dart';
 import 'package:awady_music/widgets/collage_cover.dart';
 import 'package:awady_music/widgets/import_sheet.dart';
@@ -252,6 +254,35 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: Column(
                 children: [
+                  // YouTube Music Google Account Sync Row
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final settings = ref.watch(settingsProvider);
+                      final isConnected = settings.ytmLoggedIn;
+                      return _buildPinnedRow(
+                        icon: LucideIcons.globe,
+                        iconColor: isConnected
+                            ? tokens.accent
+                            : const Color(0xFFFF0000),
+                        title: isConnected
+                            ? 'YouTube Music Synced'
+                            : 'Sync with YouTube Music',
+                        subtitle: isConnected
+                            ? 'Two-way likes sync active • Tap to resync'
+                            : 'Sign in to auto-sync likes & import history',
+                        onTap: () {
+                          unawaited(
+                            YtMusicAccountImporter.signInAndImport(
+                              context,
+                              ref,
+                            ),
+                          );
+                        },
+                        tokens: tokens,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
                   if (_selectedFilter == LibraryFilter.all ||
                       _selectedFilter == LibraryFilter.playlists) ...[
                     _buildPinnedRow(

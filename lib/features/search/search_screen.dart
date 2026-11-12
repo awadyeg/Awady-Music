@@ -641,6 +641,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ),
                   ),
                 ],
+
+                // Similar Songs • Claude AI
+                SliverToBoxAdapter(
+                  child: _buildSimilarTracksSection(
+                    context,
+                    tokens,
+                    results.songs.isNotEmpty ? results.songs.first : null,
+                  ),
+                ),
               ] else if (_filter == SearchFilter.songs) ...[
                 SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
@@ -665,6 +674,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           showTrackMenuSheet(context: context, track: track),
                     );
                   }, childCount: results.songs.length),
+                ),
+                SliverToBoxAdapter(
+                  child: _buildSimilarTracksSection(
+                    context,
+                    tokens,
+                    results.songs.isNotEmpty ? results.songs.first : null,
+                  ),
                 ),
               ] else if (_filter == SearchFilter.artists) ...[
                 SliverPadding(
@@ -803,6 +819,91 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSimilarTracksSection(
+    BuildContext context,
+    GlassTokens tokens,
+    Track? topTrack,
+  ) {
+    final similarAsync = ref.watch(
+      similarSearchTracksProvider((query: _submittedQuery, topTrack: topTrack)),
+    );
+
+    return similarAsync.when(
+      data: (tracks) {
+        if (tracks.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 28, 16, 8),
+              child: Row(
+                children: [
+                  Icon(LucideIcons.sparkles, color: tokens.accent, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Similar Songs • Claude AI',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
+                  ),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: tokens.accent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                    ),
+                    icon: const Icon(LucideIcons.play, size: 14),
+                    label: const Text(
+                      'Play Mix',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    onPressed: () {
+                      ref
+                          .read(playerControllerProvider.notifier)
+                          .playContext(tracks, 0);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            ...tracks.map((track) {
+              final isPlaying = ref.watch(
+                playerControllerProvider.select(
+                  (s) => s.current?.id == track.id && s.isPlaying,
+                ),
+              );
+              return TrackTile(
+                title: track.title,
+                artist: track.artist.name,
+                artwork: track.artwork,
+                duration: track.duration,
+                isPlaying: isPlaying,
+                onTap: () {
+                  ref
+                      .read(playerControllerProvider.notifier)
+                      .playTrack(track, tracks);
+                },
+                onMoreTap: () =>
+                    showTrackMenuSheet(context: context, track: track),
+              );
+            }),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }

@@ -11,6 +11,7 @@ import 'package:awady_music/data/models/remote_playlist.dart';
 import 'package:awady_music/data/models/search_results.dart';
 import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/sources/audius/audius_client.dart';
+import 'package:awady_music/data/sources/claude/claude_ai_client.dart';
 import 'package:awady_music/data/sources/innertube/innertube_client.dart';
 import 'package:awady_music/data/sources/innertube/matcher.dart';
 
@@ -75,6 +76,12 @@ abstract interface class CatalogRepository {
     List<Track> likedTracks, {
     List<Artist> followedArtists = const [],
   });
+
+  Future<List<Track>> similarToSearch(
+    String query, {
+    Track? seedTrack,
+    List<Track>? excludeTracks,
+  });
 }
 
 /// Implementation of [CatalogRepository] with automatic Audius fallback.
@@ -82,10 +89,12 @@ class CatalogRepositoryImpl implements CatalogRepository {
   CatalogRepositoryImpl({
     required this.innertubeClient,
     required this.audiusClient,
+    this.claudeAiClient,
   });
 
   final InnertubeClient innertubeClient;
   final AudiusClient audiusClient;
+  final ClaudeAiClient? claudeAiClient;
 
   @override
   Future<SearchResults> search(String q) async {
@@ -506,6 +515,18 @@ class CatalogRepositoryImpl implements CatalogRepository {
     }
 
     final likedIds = likedTracks.map((t) => t.id).toSet();
+    var claudeFuture = Future.value(const <Track>[]);
+    if (claudeAiClient != null && claudeAiClient!.enabled) {
+      claudeFuture = claudeAiClient!
+          .suggestRecommendations(
+            likedTracks: likedTracks,
+            followedArtists: followedArtists,
+            recentTracks: recentTracks,
+          )
+          .then((s) => resolveClaudeSuggestions(s, excludeIds: likedIds))
+          .catchError((Object _) => const <Track>[]);
+    }
+
     final fresh = <Track>[];
     final familiar = <Track>[];
     final seen = <String>{};
@@ -530,7 +551,8 @@ class CatalogRepositoryImpl implements CatalogRepository {
       }
     }
 
-    final combined = [...fresh, ...familiar];
+    final claudeTracks = await claudeFuture;
+    final combined = [...claudeTracks, ...fresh, ...familiar];
     final interleaved = interleaveByArtist(combined);
     return CatalogList(
       interleaved.length > 24 ? interleaved.sublist(0, 24) : interleaved,
@@ -708,6 +730,17 @@ class CatalogRepositoryImpl implements CatalogRepository {
                 (res) =>
                     res.songs.where((t) => !likedSet.contains(t.id)).toList(),
               )
+              .catchError((Object _) => const <Track>[]),
+        );
+      }
+
+      if (claudeAiClient != null &&
+          claudeAiClient!.enabled &&
+          seeds.isNotEmpty) {
+        futures.add(
+          claudeAiClient!
+              .suggestForMix(seedTracks: seeds, mixTheme: fallbackGenreQuery)
+              .then((s) => resolveClaudeSuggestions(s, excludeIds: likedSet))
               .catchError((Object _) => const <Track>[]),
         );
       }
@@ -894,5 +927,84 @@ class CatalogRepositoryImpl implements CatalogRepository {
     }
 
     return mixes;
+  }
+
+  Future<List<Track>> resolveClaudeSuggestions(
+    List<TrackSuggestion> suggestions, {
+    Set<String>? excludeIds,
+  }) async {
+    if (suggestions.isEmpty) return const [];
+    final seen = <String>{...?excludeIds};
+    final resolved = <Track>[];
+
+    final searches = suggestions.map((s) async {
+      try {
+        final query = '${s.title} ${s.artist}'.trim();
+        final res = await innertubeClient.search(query);
+        if (res.songs.isNotEmpty) {
+          return res.songs.first;
+        } else if (res.tracks.isNotEmpty) {
+          return res.tracks.first;
+        }
+      } on Object catch (_) {}
+      return null;
+    });
+
+    final results = await Future.wait(searches);
+    for (final track in results) {
+      if (track != null && seen.add(track.id)) {
+        resolved.add(track);
+      }
+    }
+    return resolved;
+  }
+
+  @override
+  Future<List<Track>> similarToSearch(
+    String query, {
+    Track? seedTrack,
+    List<Track>? excludeTracks,
+  }) async {
+    final excludeSet = excludeTracks?.map((t) => t.id).toSet() ?? <String>{};
+    if (seedTrack != null) excludeSet.add(seedTrack.id);
+
+    if (claudeAiClient != null && claudeAiClient!.enabled) {
+      try {
+        final suggestions = await claudeAiClient!.suggestSimilarForSearch(
+          query: query,
+          topTrack: seedTrack,
+          limit: 10,
+        );
+        if (suggestions.isNotEmpty) {
+          final tracks = await resolveClaudeSuggestions(
+            suggestions,
+            excludeIds: excludeSet,
+          );
+          if (tracks.isNotEmpty) {
+            return tracks;
+          }
+        }
+      } on Object catch (e) {
+        Log.w('Claude AI similarToSearch failed: $e');
+      }
+    }
+
+    final vid =
+        seedTrack?.streamId ??
+        (seedTrack?.id.startsWith('yt-') == true
+            ? seedTrack!.id.substring(3)
+            : null);
+    if (vid != null && vid.isNotEmpty) {
+      try {
+        final upNextTracks = await upNext(vid, limit: 10);
+        final filtered = upNextTracks
+            .where((t) => !excludeSet.contains(t.id))
+            .take(8)
+            .toList();
+        if (filtered.isNotEmpty) return filtered;
+      } on Object catch (_) {}
+    }
+
+    return const [];
   }
 }

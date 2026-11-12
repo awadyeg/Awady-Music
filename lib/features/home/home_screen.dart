@@ -62,13 +62,32 @@ class HomeScreen extends ConsumerWidget {
     );
 
     final libraryRepo = ref.watch(libraryRepositoryProvider);
-    final recents = libraryRepo.recents;
+    var recents = const <Track>[];
+    try {
+      recents = libraryRepo.recents;
+    } on Object catch (_) {}
+
+    var mostPlayed = const <Track>[];
+    try {
+      mostPlayed = statsRepo.mostPlayedTracks;
+    } on Object catch (_) {}
+
     var hasLikesOrFollows = false;
     try {
       hasLikesOrFollows =
           libraryRepo.likedTracks.isNotEmpty ||
-          libraryRepo.followedArtists.isNotEmpty;
+          libraryRepo.followedArtists.isNotEmpty ||
+          mostPlayed.isNotEmpty;
     } on Object catch (_) {}
+
+    final quickPicks = <Track>[];
+    final seenQuick = <String>{};
+    for (final t in mostPlayed) {
+      if (seenQuick.add(t.id)) quickPicks.add(t);
+    }
+    for (final t in recents) {
+      if (seenQuick.add(t.id)) quickPicks.add(t);
+    }
 
     final recommendedAsync = ref.watch(recommendedForYouProvider);
     final aiMixesAsync = ref.watch(aiMixesProvider);
@@ -192,12 +211,16 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
           ],
-          // 2. Quick grid 2x3 of recently played
-          if (recents.isNotEmpty) ...[
+          // 2. Quick grid 2x3 of most played & recently played
+          if (quickPicks.isNotEmpty) ...[
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: SectionHeader(title: l10n.libraryRecents),
+                child: SectionHeader(
+                  title: mostPlayed.isNotEmpty
+                      ? 'Quick Picks'
+                      : l10n.libraryRecents,
+                ),
               ),
             ),
             SliverPadding(
@@ -210,7 +233,7 @@ class HomeScreen extends ConsumerWidget {
                   childAspectRatio: 2.8,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
-                  final track = recents[index];
+                  final track = quickPicks[index];
                   return GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
@@ -245,7 +268,7 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   );
-                }, childCount: recents.length > 6 ? 6 : recents.length),
+                }, childCount: quickPicks.length > 6 ? 6 : quickPicks.length),
               ),
             ),
           ],

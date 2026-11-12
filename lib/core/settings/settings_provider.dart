@@ -276,6 +276,12 @@ class AppSettings {
     this.tvMode = 'auto',
     this.enableConnectReceiver = true,
     this.tvDeviceName = '',
+    this.enableClaudeAi = true,
+    this.claudeApiKey = const String.fromEnvironment('CLAUDE_API_KEY'),
+    this.claudeBaseUrl = 'https://api.anthropic.com',
+    this.claudeModel = 'claude-sonnet-4-20250514',
+    this.ytmLoggedIn = false,
+    this.ytmAccountName = '',
   });
 
   final ThemeMode themeMode;
@@ -289,6 +295,12 @@ class AppSettings {
   final String tvMode;
   final bool enableConnectReceiver;
   final String tvDeviceName;
+  final bool enableClaudeAi;
+  final String claudeApiKey;
+  final String claudeBaseUrl;
+  final String claudeModel;
+  final bool ytmLoggedIn;
+  final String ytmAccountName;
 
   AppSettings copyWith({
     ThemeMode? themeMode,
@@ -302,6 +314,12 @@ class AppSettings {
     String? tvMode,
     bool? enableConnectReceiver,
     String? tvDeviceName,
+    bool? enableClaudeAi,
+    String? claudeApiKey,
+    String? claudeBaseUrl,
+    String? claudeModel,
+    bool? ytmLoggedIn,
+    String? ytmAccountName,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -316,6 +334,12 @@ class AppSettings {
       enableConnectReceiver:
           enableConnectReceiver ?? this.enableConnectReceiver,
       tvDeviceName: tvDeviceName ?? this.tvDeviceName,
+      enableClaudeAi: enableClaudeAi ?? this.enableClaudeAi,
+      claudeApiKey: claudeApiKey ?? this.claudeApiKey,
+      claudeBaseUrl: claudeBaseUrl ?? this.claudeBaseUrl,
+      claudeModel: claudeModel ?? this.claudeModel,
+      ytmLoggedIn: ytmLoggedIn ?? this.ytmLoggedIn,
+      ytmAccountName: ytmAccountName ?? this.ytmAccountName,
     );
   }
 }
@@ -334,6 +358,12 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _keyTvMode = 'settings_tv_mode';
   static const _keyEnableConnectReceiver = 'settings_enable_connect_receiver';
   static const _keyTvDeviceName = 'settings_tv_device_name';
+  static const _keyEnableClaudeAi = 'settings_enable_claude_ai';
+  static const _keyClaudeApiKey = 'settings_claude_api_key';
+  static const _keyClaudeBaseUrl = 'settings_claude_base_url';
+  static const _keyClaudeModel = 'settings_claude_model';
+  static const _keyYtmAccountCookie = 'ytm_account_cookie';
+  static const _keyYtmAccountName = 'ytm_account_name';
 
   @override
   AppSettings build() {
@@ -380,6 +410,17 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final enableConnectReceiver =
         prefs.getBool(_keyEnableConnectReceiver) ?? true;
     final tvDeviceName = prefs.getString(_keyTvDeviceName) ?? '';
+    final enableClaudeAi = prefs.getBool(_keyEnableClaudeAi) ?? true;
+    final claudeApiKey =
+        prefs.getString(_keyClaudeApiKey) ??
+        const String.fromEnvironment('CLAUDE_API_KEY');
+    final claudeBaseUrl =
+        prefs.getString(_keyClaudeBaseUrl) ?? 'https://api.anthropic.com';
+    final claudeModel =
+        prefs.getString(_keyClaudeModel) ?? 'claude-sonnet-4-20250514';
+    final ytmCookie = prefs.getString(_keyYtmAccountCookie) ?? '';
+    final ytmLoggedIn = ytmCookie.isNotEmpty;
+    final ytmAccountName = prefs.getString(_keyYtmAccountName) ?? '';
 
     return AppSettings(
       themeMode: themeMode,
@@ -393,6 +434,12 @@ class SettingsNotifier extends Notifier<AppSettings> {
       tvMode: tvMode,
       enableConnectReceiver: enableConnectReceiver,
       tvDeviceName: tvDeviceName,
+      enableClaudeAi: enableClaudeAi,
+      claudeApiKey: claudeApiKey,
+      claudeBaseUrl: claudeBaseUrl,
+      claudeModel: claudeModel,
+      ytmLoggedIn: ytmLoggedIn,
+      ytmAccountName: ytmAccountName,
     );
   }
 
@@ -489,6 +536,63 @@ class SettingsNotifier extends Notifier<AppSettings> {
         ref.read(sharedPreferencesProvider) ??
         await SharedPreferences.getInstance();
     await prefs.setString(_keyTvDeviceName, trimmed);
+  }
+
+  Future<void> setEnableClaudeAi({required bool enabled}) async {
+    state = state.copyWith(enableClaudeAi: enabled);
+    final prefs =
+        ref.read(sharedPreferencesProvider) ??
+        await SharedPreferences.getInstance();
+    await prefs.setBool(_keyEnableClaudeAi, enabled);
+  }
+
+  Future<void> setClaudeApiKey(String apiKey) async {
+    final trimmed = apiKey.trim();
+    state = state.copyWith(claudeApiKey: trimmed);
+    final prefs =
+        ref.read(sharedPreferencesProvider) ??
+        await SharedPreferences.getInstance();
+    await prefs.setString(_keyClaudeApiKey, trimmed);
+  }
+
+  Future<void> setClaudeBaseUrl(String baseUrl) async {
+    final trimmed = baseUrl.trim();
+    state = state.copyWith(claudeBaseUrl: trimmed);
+    final prefs =
+        ref.read(sharedPreferencesProvider) ??
+        await SharedPreferences.getInstance();
+    await prefs.setString(_keyClaudeBaseUrl, trimmed);
+  }
+
+  Future<void> setClaudeModel(String model) async {
+    final trimmed = model.trim();
+    state = state.copyWith(claudeModel: trimmed);
+    final prefs =
+        ref.read(sharedPreferencesProvider) ??
+        await SharedPreferences.getInstance();
+    await prefs.setString(_keyClaudeModel, trimmed);
+  }
+
+  Future<void> setYtmAccount({required bool loggedIn, String? name}) async {
+    state = state.copyWith(
+      ytmLoggedIn: loggedIn,
+      ytmAccountName: name ?? state.ytmAccountName,
+    );
+    final prefs =
+        ref.read(sharedPreferencesProvider) ??
+        await SharedPreferences.getInstance();
+    if (name != null) {
+      await prefs.setString(_keyYtmAccountName, name);
+    }
+  }
+
+  Future<void> clearYtmAccount() async {
+    state = state.copyWith(ytmLoggedIn: false, ytmAccountName: '');
+    final prefs =
+        ref.read(sharedPreferencesProvider) ??
+        await SharedPreferences.getInstance();
+    await prefs.remove(_keyYtmAccountCookie);
+    await prefs.remove(_keyYtmAccountName);
   }
 }
 

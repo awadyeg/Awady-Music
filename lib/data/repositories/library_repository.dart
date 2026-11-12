@@ -12,6 +12,7 @@ import 'package:awady_music/data/models/track.dart';
 import 'package:awady_music/data/models/track_validator.dart';
 import 'package:awady_music/data/repositories/downloads_repository.dart';
 import 'package:awady_music/data/sources/innertube/matcher.dart';
+import 'package:awady_music/data/sources/youtube/yt_account_importer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Playlist reordering sort modes.
@@ -250,7 +251,8 @@ class LibraryRepositoryImpl implements LibraryRepository {
 
   @override
   void toggleLike(Track track) {
-    if (_liked.containsKey(track.id)) {
+    final willLike = !_liked.containsKey(track.id);
+    if (!willLike) {
       _liked.remove(track.id);
       _likedOrder.remove(track.id);
       if (db != null) {
@@ -272,6 +274,9 @@ class LibraryRepositoryImpl implements LibraryRepository {
       _maybeAutoDownload(repaired);
     }
     _likedController.add(likedTracks);
+    unawaited(
+      YtMusicAccountImporter.syncLikeWithSavedCookie(track.id, like: willLike),
+    );
   }
 
   void _maybeAutoDownload(Track track) {
